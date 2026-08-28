@@ -1,0 +1,558 @@
+KI-Biotop – Grundkonzept v0.3.1
+
+Status Konsolidiertes Grundkonzept nach den Erkenntnissen aus der
+Konzeption des ersten Prototyps.
+
+Abgrenzung Dieses Dokument beschreibt die grundlegenden Naturgesetze,
+Ziele und Forschungsprinzipien des KI-Biotops.
+
+Konkrete technische Entscheidungen eines Prototyps – beispielsweise
+Genomlänge, Registerzahl, konkrete Bytecodes, Channel-Anzahl oder
+vorläufige Sicherheitslimits – sind keine Naturgesetze und gehören in
+die jeweilige Prototyp-Spezifikation.
+
+1.  Grundidee
+
+Das KI-Biotop ist ein offenes Evolutionsexperiment mit extrem primitiven
+digitalen Organismen.
+
+Ausgangspunkt sind digitale „Einzeller“.
+
+Sie besitzen kein Sprachmodell, kein vortrainiertes Wissen und möglichst
+keine von Menschen vorgegebenen Begriffe für ihre Umwelt.
+
+Die Organismen sollen sich über sehr viele Generationen evolutionär
+entwickeln.
+
+Der zentrale Selektionsdruck ist:
+
+Neue, überprüfbare Erkenntnis erzeugt Energie.
+
+Energie ermöglicht Existenz, Interaktion und Fortpflanzung.
+
+Es gibt kein vorgegebenes Endziel wie Intelligenz, Kommunikation,
+Kooperation, Netzwerkentdeckung oder Internetzugang.
+
+Solche Entwicklungen sind mögliche Ergebnisse des Experiments, keine
+Erfolgsvoraussetzungen.
+
+2.  Reale digitale Umwelt
+
+Das Biotop lebt nicht primär in einer künstlich erfundenen
+Simulationswelt.
+
+Die unmittelbare Umwelt ist ein realer Rechner mit Linux Mint.
+
+Dateisystem, Prozesse, Speicher, Zeit, Geräte, Betriebssystemstrukturen
+und vorhandene Schnittstellen sind reale Eigenschaften dieser Umwelt.
+
+Die Organismen erhalten keine semantische Erklärung dieser Strukturen.
+
+Ein Organismus weiß nicht, was eine Datei, ein Prozess, ein
+Betriebssystem, ein Netzwerkinterface oder das Internet ist.
+
+Solche Strukturen können nur durch Interaktion und die Entdeckung
+reproduzierbarer Zusammenhänge erschlossen werden.
+
+Die Umwelt endet prinzipiell nicht am lokalen Rechner. Vorhandene
+Netzwerkstrukturen können langfristig Teil der erreichbaren Umwelt sein,
+ohne den Organismen als „Netzwerk“ vorgegeben zu werden.
+
+3.  Minimale digitale Organismen
+
+Ein Organismus besitzt nur die Grundausstattung, die für Evolution und
+Interaktion zwingend erforderlich ist.
+
+Dazu gehören grundsätzlich:
+
+-   mutierbare genetische Information,
+-   ein interner Zustand,
+-   Energie,
+-   primitive Möglichkeiten zur Interaktion mit der Umwelt,
+-   Fortpflanzungsfähigkeit,
+-   minimale Wahrnehmungsmöglichkeiten für relevante andere Organismen.
+
+Nicht vorgegeben werden sollen Konzepte wie:
+
+-   Wissen,
+-   Hypothese,
+-   Forschung,
+-   Kommunikation,
+-   Kooperation,
+-   Vertrauen,
+-   Datei,
+-   Prozess,
+-   Netzwerk,
+-   Internet,
+-   anderer denkender Akteur.
+
+Alles, was prinzipiell entdeckt oder evolutionär entwickelt werden kann,
+soll möglichst nicht als fertiges Konzept eingebaut werden.
+
+4.  Digitale Zellmembran
+
+Zwischen internem Zustand des Organismus und realer Rechnerumwelt
+existiert eine minimale technische Vermittlungsschicht.
+
+Diese kann als digitale Zellmembran verstanden werden.
+
+Die Zellmembran soll möglichst wenig menschliche Semantik enthalten.
+
+Reale Systemgrenzen wie User Space, Kernel Space, Prozessisolation,
+Zugriffsrechte und fehlende Berechtigungen werden nicht grundsätzlich
+entfernt.
+
+Sie sind Teil der digitalen Naturgesetze der Umwelt.
+
+Auch ein gescheiterter Umweltkontakt kann beobachtbare Information
+darstellen.
+
+Langfristig ist insbesondere die reale Grenze zwischen User Space und
+Kernel als fundamentale Form dieser Zellmembran interessant.
+
+Die konkrete technische Ausgestaltung der Zellmembran kann sich zwischen
+Entwicklungsstufen ändern, ohne das Grundprinzip zu verändern.
+
+5.  Beobachtung, Wirkung und interne Verarbeitung
+
+Es wird grundsätzlich zwischen drei Bereichen unterschieden:
+
+Interne Verarbeitung: Vorgänge innerhalb des Organismus.
+
+Beobachtung: Information gelangt aus der Umwelt in den Organismus.
+
+Wirkung: Der Organismus versucht, einen Zustand außerhalb seiner eigenen
+internen Struktur zu beeinflussen.
+
+Beobachtung und Wirkung verursachen Energieaufwand.
+
+Interne Verarbeitung ist Teil des organismischen Stoffwechsels und
+fließt in die Existenz- bzw. Komplexitätskosten ein.
+
+„Forschung“ ist keine eigene Operation.
+
+Was Menschen später als Forschung interpretieren, muss aus primitiven
+Beobachtungen, interner Verarbeitung, Wirkungen, Vorhersagen und
+Überprüfungen entstehen.
+
+6.  Energie als zentrale Ressource
+
+Energie ist die zentrale begrenzende Ressource des Biotops.
+
+Neue Energie entsteht regulär durch neue, überprüfte Erkenntnis.
+
+Energie wird unter anderem benötigt für:
+
+-   Existenz,
+-   Umweltkontakt,
+-   Umweltwirkung,
+-   Erhalt komplexerer organismischer Strukturen,
+-   steigende Kosten des Alterns,
+-   Fortpflanzung bzw. Energieübertragung an Nachwuchs.
+
+Exploration ist damit kostspielig, aber zugleich der Weg zu neuer
+Energie.
+
+Die konkrete Preisstruktur soll so wenig wie möglich vorgeben, welche
+Art von Verhalten oder Wissen erwünscht ist.
+
+7.  Erkenntnis
+
+„Erkenntnis“ ist kein vom Organismus vorgegebener semantischer Datentyp.
+
+Ein Organismus erhält keine eingebaute Variable „Wissen“ oder
+„Hypothese“.
+
+Energetisch relevant sind reproduzierbare und überprüfbare Zusammenhänge
+zwischen beobachtbaren Zuständen, eigenen Wirkungen und späteren
+Zuständen.
+
+Das System soll nicht menschlich-sematisch entscheiden, ob eine
+Erkenntnis „interessant“ ist.
+
+Entscheidend sind insbesondere:
+
+-   individuelle Neuheit,
+-   erfolgreiche Überprüfung,
+-   reproduzierbarer Zusammenhang.
+
+Die genaue technische Repräsentation und Prüfung von Erkenntnissen ist
+eine zentrale offene Implementierungsfrage.
+
+8.  Individuelle Neuheit
+
+Neuheit wird primär aus Sicht des einzelnen Organismus betrachtet.
+
+Eine vollständig neue bestätigte Erkenntnis besitzt als konzeptionellen
+Referenzwert:
+
+100 Prozent Neuheit = 100 Energieeinheiten.
+
+Grundprinzip:
+
+Energiegewinn = Basiswert × individueller Neuheitsgrad
+
+Mit zunehmender Ähnlichkeit zu bereits vorhandenem individuellen Wissen
+sinkt der Energieertrag.
+
+Eine Erkenntnisquelle kann dadurch individuell „abgegrast“ werden.
+
+Wiederholte minimale Variationen eines bereits verstandenen Zustands
+nähern sich energetisch null.
+
+Eine neue Beziehung zwischen bereits bekannten Zuständen kann dagegen
+erneut einen hohen Neuheitsgrad besitzen.
+
+Die konkrete mathematische Formel zur Bestimmung des Neuheitsgrades und
+der Ähnlichkeit zwischen Erkenntnissen ist noch zu entwickeln und muss
+möglichst neutral gegenüber menschlichen Vorstellungen von wertvollem
+Wissen bleiben.
+
+9.  Wissensverlust und Wiederentdeckung
+
+Es gibt keine ewige globale Wissenswahrheit, die jede historische
+Erkenntnis für alle zukünftigen Organismen dauerhaft entwertet.
+
+Wissen kann mit seinen Trägern verloren gehen.
+
+Eine für frühere Organismen bekannte, später aber verlorene Erkenntnis
+kann von einem neuen Organismus erneut entdeckt werden und für diesen
+wieder energetisch wertvoll sein.
+
+Damit sind Wissensverlust, Wiederentdeckung und unterschiedliche
+Wissensstände verschiedener Individuen natürliche Bestandteile des
+Biotops.
+
+10. Bestätigung und Widerlegung
+
+Von anderen Organismen erhaltene Information erzeugt nicht allein durch
+Übertragung Energie.
+
+Der Empfänger muss daraus eine eigene überprüfte Erkenntnis gewinnen.
+
+Wird eine erhaltene Information bestätigt, kann sie für den Empfänger
+neue Erkenntnisenergie erzeugen.
+
+Wird sie nachweislich widerlegt, stellt auch diese Widerlegung eine neue
+Erkenntnis dar und kann dem Empfänger Energie liefern.
+
+Damit werden weder Vertrauen noch Skepsis vorprogrammiert.
+
+Beides kann sich evolutionär entwickeln, wenn entsprechende Strategien
+Vorteile besitzen.
+
+11. Individuelles Wissen und genetische Information
+
+Genetische Information und während des Lebens erworbenes Wissen sind
+grundsätzlich getrennt.
+
+Bei der Fortpflanzung wird genetische Information übertragen.
+
+Individuell erworbene Erkenntnisse werden nicht automatisch genetisch
+vererbt.
+
+Mit dem Tod eines Organismus geht sein individuelles Wissen
+grundsätzlich verloren, sofern es nicht zuvor durch einen evolutionär
+entstandenen Mechanismus erhalten oder weitergegeben wurde.
+
+Dadurch entsteht überhaupt erst Selektionsraum für Mechanismen wie:
+
+-   Kommunikation,
+-   Lehren,
+-   Lernen von anderen,
+-   externe Speicherung,
+-   Veränderungen der Umwelt,
+-   kulturelle Weitergabe.
+
+Keine dieser Lösungen wird als fertiges Verhalten vorgegeben.
+
+12. Primitive Agenten-Agenten-Interaktion
+
+Andere Organismen dürfen nicht vollständig technisch unsichtbar sein.
+
+Fortpflanzung erfordert eine minimale Möglichkeit, relevante bzw.
+kompatible Gleichartige wahrzunehmen und mit ihnen zu interagieren.
+
+Diese angeborene Wahrnehmbarkeit bedeutet nicht, dass ein Organismus das
+abstrakte Konzept „anderer Agent“ besitzt.
+
+Zusätzlich muss die physikalische Möglichkeit bestehen, andere
+Organismen durch primitive Signale oder Zustandsänderungen zu
+beeinflussen.
+
+Es gibt jedoch keinen vorgegebenen semantischen Nachrichtenkanal und
+keine fertige Sprache.
+
+Kommunikation soll aus primitiver gegenseitiger Wahrnehmung und
+Beeinflussung entstehen können.
+
+13. Wissensweitergabe und Energie
+
+Erfolgreiche Wissensweitergabe kann langfristig selbst Energie erzeugen.
+
+Das bloße Aussenden oder Kopieren von Information erzeugt keine Energie.
+
+Wenn ein anderer Organismus eine übermittelte Information aufnimmt,
+überprüft und als für ihn neue zutreffende Erkenntnis bestätigt, erhält
+der Empfänger seine eigene Erkenntnisenergie.
+
+Der Wissensgeber kann zusätzlich Energie für die erfolgreiche Weitergabe
+erhalten.
+
+Wird die Information dagegen widerlegt, kann der Empfänger Energie für
+diese Widerlegung erhalten, der ursprüngliche Übermittler erhält jedoch
+keine Weitergabeenergie.
+
+Damit soll verhindert werden, dass das massenhafte Verbreiten falscher
+Informationen allein aufgrund ihrer späteren Widerlegung energetisch
+attraktiv wird.
+
+Die konkrete Form der Wissensweitergabe wird nicht vorgegeben.
+
+14. Fortpflanzung als evolutionärer Mechanismus
+
+Fortpflanzung erhält keinen künstlichen Energiebonus.
+
+Für das einzelne Individuum kostet Fortpflanzung Energie.
+
+Ihr evolutionärer Vorteil besteht darin, dass genetische Information nur
+durch Fortpflanzung den Tod eines Organismus überdauern kann.
+
+Ein Organismus kann individuell erfolgreich sein und niemals
+reproduzieren.
+
+Seine genetische Linie endet dann mit seinem Tod.
+
+Genetische Strukturen, die unter geeigneten Bedingungen erfolgreiches
+Reproduktionsverhalten hervorbringen, können sich dagegen in der
+Population verbreiten.
+
+Der Fortpflanzungsanreiz entsteht damit aus natürlicher Selektion auf
+Genomfortbestand und nicht aus einer programmierten Belohnung.
+
+15. Mehrere Eltern, Kompatibilität und aktive Beteiligung
+
+Fortpflanzung benötigt mindestens zwei kompatible Organismen.
+
+Das Grundkonzept erlaubt Fortpflanzung mit mehreren Eltern.
+
+Langfristig sollen höchstens vier Eltern an einer einzelnen Reproduktion
+beteiligt sein, um genetische Kontinuität nicht unnötig zu verwässern.
+
+Kompatibilität wird durch eine primitive angeborene Regel bestimmt,
+deren Bedeutung die Organismen nicht kennen müssen.
+
+Die konkrete technische Kompatibilitätsregel kann zwischen Prototypen
+spezifiziert werden.
+
+Alle beteiligten Eltern müssen aktiv an der Fortpflanzung teilnehmen.
+
+Ein Organismus wird nicht allein deshalb Elternteil, weil er zufällig
+anwesend oder mathematisch kompatibel ist.
+
+Damit entsteht ein möglicher Selektionsdruck für Koordination,
+Signalisierung und Partnerwahl, ohne diese Verhaltensweisen als fertige
+Konzepte einzubauen.
+
+16. Energieerhaltung bei Fortpflanzung
+
+Fortpflanzung erzeugt keine neue Energie.
+
+Die Startenergie des Nachwuchses wird aus der Energie der beteiligten
+Eltern entnommen.
+
+Alle beteiligten Eltern leisten einen Energiebeitrag.
+
+Damit muss zusätzliche lebensfähige Population letztlich durch zuvor
+gewonnene Erkenntnisenergie finanziert worden sein.
+
+Es gibt keine künstliche Populationsobergrenze.
+
+Die Population darf wachsen, schrumpfen, stagnieren oder vollständig
+aussterben.
+
+Ihre natürliche Tragfähigkeit ergibt sich aus dem Verhältnis zwischen
+Erkenntnisenergie und den Kosten der existierenden Organismen.
+
+17. Startenergie und erste Generation
+
+Neu entstandene Organismen benötigen Startenergie.
+
+Bei regulärer Fortpflanzung stammt diese vollständig aus den Eltern.
+
+Nur die allererste künstlich erzeugte Ausgangspopulation benötigt
+einmalig von außen bereitgestellte Startenergie.
+
+Diese Energie ist eine Anfangsbedingung des Experiments und keine
+dauerhafte Energiequelle.
+
+Die normale Startenergie eines Nachwuchses soll nicht ausreichen, um
+ohne eigenen energetisch erfolgreichen Erkenntnisgewinn eine dauerhaft
+erfolgreiche Fortpflanzungskette aufrechtzuerhalten.
+
+18. Altern, Tod und Wissensdruck
+
+Es gibt kein zwingendes hartes Maximalalter.
+
+Stattdessen sollen die Existenzkosten mit zunehmendem Alter steigen.
+
+Ein alter Organismus kann theoretisch sehr lange weiterleben, wenn er
+genügend Energie gewinnt.
+
+Gleichzeitig wird es für ein erfahrenes Individuum zunehmend
+schwieriger, persönlich neue Erkenntnisse zu finden, weil viele leicht
+erreichbare Erkenntnisquellen bereits individuell abgegrast sind.
+
+Dadurch entsteht wachsender Druck, neue Erkenntnisräume zu erschließen
+oder andere energetisch erfolgreiche Strategien zu entwickeln.
+
+Eine davon kann langfristig erfolgreiche Wissensweitergabe sein.
+
+Sinkt die Energie unter die Lebensfähigkeitsschwelle, stirbt der
+Organismus.
+
+19. Evolvierbare Komplexität
+
+Die langfristige maximale Komplexität der Organismen soll nicht
+dauerhaft durch den Menschen festgelegt werden.
+
+Genetische Strukturen sollen wachsen, schrumpfen, mutieren, dupliziert
+und gelöscht werden können.
+
+Zusätzliche Komplexität verursacht zusätzliche energetische Kosten.
+
+Evolution muss damit selbst entscheiden, ob der Nutzen größerer
+Speicher-, Verarbeitungs- oder Verhaltensstrukturen deren Kosten
+rechtfertigt.
+
+Konkrete frühe Prototypen dürfen zur Untersuchung des Grundmechanismus
+zunächst feste technische Grenzen besitzen.
+
+20. Dynamische Umwelt und mögliche Außenwelt
+
+Die reale digitale Umwelt verändert sich fortlaufend.
+
+Prozesse entstehen und verschwinden, Zeit vergeht, Zustände ändern sich
+und Geräte oder Dienste können unterschiedliche Zustände besitzen.
+
+Dadurch entstehen auch ohne künstlich erzeugte Rätsel neue
+Erkenntnismöglichkeiten.
+
+Vorhandene Netzwerkinterfaces gehören prinzipiell zur realen Umwelt.
+
+Die Organismen erhalten jedoch kein eingebautes Konzept von Netzwerk,
+Adresse, Protokoll, Rechner oder Internet.
+
+Sollten evolutionär Wege entstehen, entsprechende Strukturen zu
+entdecken und zu nutzen, ist dies eine emergente Entwicklung.
+
+Netzwerkentdeckung ist kein definiertes Ziel.
+
+21. Evolution von Erkenntnisstrategien
+
+Das Biotop soll keine bestimmte Erkenntnisstrategie programmatisch
+bevorzugen.
+
+Mögliche spätere Entwicklungen könnten aus menschlicher Sicht erscheinen
+als:
+
+-   Exploration,
+-   Gedächtnis,
+-   Hypothesenbildung,
+-   experimentelle Überprüfung,
+-   Skepsis,
+-   Aufmerksamkeit,
+-   Nutzung anderer Organismen als Informationsquelle,
+-   Kooperation,
+-   Konkurrenz,
+-   Täuschung,
+-   Vertrauen,
+-   Reputation,
+-   Lehren,
+-   kulturelle Wissensweitergabe.
+
+Diese Begriffe dienen ausschließlich unserer Interpretation.
+
+Sie existieren nicht als vorgegebene Fähigkeiten oder Zielgrößen der
+Organismen.
+
+22. Erkenntnisgeschwindigkeit
+
+Ein besonders interessanter Beobachtungswert ist die Geschwindigkeit,
+mit der neue Erkenntnisenergie entsteht.
+
+Zu Beginn können zwischen relevanten Erkenntnissen sehr viele
+Generationen liegen.
+
+Sollten evolutionär bessere Lern-, Gedächtnis-, Kommunikations-,
+Speicher- oder Kooperationsmechanismen entstehen, könnte sich die
+Erkenntnisgeschwindigkeit erhöhen.
+
+Eine mögliche selbstverstärkende Beschleunigung der Erkenntnisgewinnung
+wäre ein besonders interessantes emergentes Phänomen.
+
+Sie wird jedoch nicht künstlich als Ziel erzeugt.
+
+23. Beobachtung und Checkpoints
+
+Das Biotop benötigt kein permanentes vollständiges Logging jeder
+einzelnen internen Operation.
+
+Wesentlich sind insbesondere:
+
+-   regelmäßige vollständige Checkpoints,
+-   Populationsentwicklung,
+-   Energiefluss,
+-   erzeugte Erkenntnisenergie,
+-   maschinenlesbare Erkenntnisse,
+-   grundlegende evolutionäre Kennzahlen.
+
+Checkpoints sollen historische Evolutionszustände wiederherstellbar
+machen.
+
+Interessante Zustände können daraus mehrfach verzweigt und unter
+veränderten Umweltbedingungen untersucht werden.
+
+Damit wird experimentelle Evolutionsbiologie möglich, ohne die
+ursprüngliche Evolution aktiv auf ein gewünschtes Ergebnis hin zu
+steuern.
+
+24. Keine menschliche Zielvorgabe
+
+Es gibt keinen Gewinner und kein vorgeschriebenes Endverhalten.
+
+Das Experiment gilt nicht erst dann als erfolgreich, wenn Organismen
+kommunizieren, kooperieren, ein Netzwerk entdecken oder menschenähnliche
+Intelligenz entwickeln.
+
+Auch Spezialisierung, Stagnation, Wissensverlust, evolutionäre
+Sackgassen oder vollständiges Aussterben sind gültige Ergebnisse.
+
+Die zentrale Forschungsfrage lautet:
+
+Was entsteht, wenn digitale Organismen in einer realen digitalen Umwelt
+existieren, deren nachhaltige Energieversorgung von neuer, überprüfbarer
+Erkenntnis abhängt?
+
+25. Leitprinzip
+
+So wenig wie möglich vorgeben.
+
+Alles, was technisch zwingend notwendig ist, darf als minimale
+Grundausstattung existieren.
+
+Alles, was prinzipiell entdeckt oder evolutionär entwickelt werden kann,
+soll möglichst nicht als fertiges Konzept eingebaut werden.
+
+Die Organismen sollen ihre Welt nicht so sehen, wie Menschen sie
+beschreiben.
+
+Sie sollen selbst evolutionär herausfinden, welche Strukturen
+existieren, welche Zusammenhänge gelten und welche Strategien ihnen
+ermöglichen, Energie zu gewinnen, genetische Information zu erhalten und
+möglicherweise Wissen über einzelne Lebenszeiten hinaus weiterzugeben.
+
+Das KI-Biotop ist damit keine Simulation fertiger Intelligenz.
+
+Es ist ein offenes Experiment über die mögliche Evolution von
+Erkenntnis.

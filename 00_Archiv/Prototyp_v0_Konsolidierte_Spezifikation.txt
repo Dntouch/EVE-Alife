@@ -1,0 +1,491 @@
+KI-Biotop – Prototyp v0 – Konsolidierte Spezifikation Basis:
+Grundkonzept v0.3.1
+
+Status Minimaler technischer Prototyp. Dieses Dokument beschreibt nur
+die konkrete Testausprägung. Die übergeordneten Naturgesetze stehen im
+Grundkonzept v0.3.1.
+
+Ziel Nachweis des Kreislaufs:
+
+Variation → Umweltkontakt → überprüfbare Erkenntnis → Energie →
+Selektion → Fortpflanzung
+
+1.  Forschungsfrage
+
+Kann aus zufälligen, mutierenden digitalen Organismen eine Population
+entstehen, deren Organismen reproduzierbare Zusammenhänge einer
+begrenzten realen Linux-Umwelt besser als Zufall erkennen und dadurch
+energetisch und evolutionär erfolgreicher werden?
+
+Komplexe Intelligenz, Netzwerkentdeckung oder entwickelte Kommunikation
+sind für v0 keine Erfolgsvoraussetzung.
+
+2.  Technische Grundstruktur eines Agenten
+
+Jeder Agent besitzt:
+
+-   Runtime-ID,
+-   64-Byte-Genom,
+-   Instruction Pointer,
+-   8 Register,
+-   Energie,
+-   Alter,
+-   individuelles Erkenntnisgedächtnis der Runtime,
+-   Kompatibilitätswert 0–255,
+-   öffentlich wahrnehmbaren Signalwert 0–255,
+-   Lebensstatus.
+
+Runtime-ID und Runtime-Verwaltungsdaten sind dem Agenten semantisch
+nicht zugänglich.
+
+Die Genomlänge bleibt in v0 fest. Evolvierbare Genomgröße folgt erst
+später.
+
+3.  Runtime und Zellmembran
+
+Eine kleine unprivilegierte Runtime führt die Agenten aus und vermittelt
+zwischen ihnen und dem realen Linux-Mint-System.
+
+Sie:
+
+-   interpretiert den Bytecode,
+-   verwaltet Agentenzustände und Energie,
+-   vermittelt erlaubte Umwelt- und Agentenkontakte,
+-   registriert und prüft Vorhersagen,
+-   berechnet Erkenntnisenergie,
+-   verarbeitet Reproduktion, Rekombination und Mutation,
+-   erstellt Messdaten und Checkpoints.
+
+Linux-Grenzen wie Prozessisolation, User Space / Kernel Space und
+Berechtigungen bleiben erhalten.
+
+v0 erlaubt keinen Root-Zugriff, keinen beliebigen fremden
+Speicherzugriff und keinen freien Netzwerkzugriff.
+
+4.  Interner Instruktionssatz
+
+Die 64 Genom-Bytes werden als primitive Instruktionen und Parameter
+interpretiert.
+
+Der minimale Satz soll ermöglichen:
+
+-   Werte setzen,
+-   Register kopieren,
+-   addieren,
+-   subtrahieren,
+-   vergleichen,
+-   bedingt springen,
+-   unbedingt springen,
+-   primitive Außenkontakte auslösen.
+
+Es existieren keine semantischen Instruktionen wie FORSCHEN, LERNEN,
+KOMMUNIZIEREN, DATEI_LESEN oder NETZWERK.
+
+Die genaue Bytecodierung und Registerbreite sind noch festzulegen.
+
+5.  Reale Umwelt-Channels
+
+v0 stellt 8 bis 16 kontrollierte Fenster auf ungefährliche reale
+Linux-Zustände bereit.
+
+Der Mix soll enthalten:
+
+-   weitgehend konstante Zustände,
+-   monoton veränderliche Zustände,
+-   zyklische Zustände,
+-   reproduzierbar miteinander zusammenhängende Zustände,
+-   Zustände des eigenen Prozesses bzw. der Runtime,
+-   schwer vorhersagbare oder praktisch unergiebige Zustände.
+
+Die Agenten kennen die Bedeutung der Channels nicht.
+
+Die konkrete Channel-Auswahl ist noch festzulegen.
+
+6.  Primitive Außenkontakte
+
+OBSERVE(channel) Liefert einen rohen Umweltwert. Kostet Energie.
+
+EFFECT(channel, value) Versucht eine sichere, kontrollierte
+Umweltwirkung. Kostet Energie.
+
+TEST() Registriert eine aus Registerwerten zusammengesetzte Vorhersage
+zur späteren Prüfung.
+
+EMIT(value) Verändert den öffentlich wahrnehmbaren Signalwert des
+Agenten. Kostet Energie.
+
+SENSE_PEER(…) Liefert rohe Informationen aus der lokalen
+Agenten-Agenten-Kontaktfläche. Kostet Energie.
+
+Diese Namen beschreiben nur unsere Runtime-Schnittstelle. Die Agenten
+erhalten keine Erklärung ihrer Bedeutung.
+
+7.  Vorhersage, Bestätigung und Erkenntnis
+
+TEST muss eine überprüfbare Vorhersage aus dem aktuellen Registerzustand
+erzeugen können.
+
+Eine Vorhersage kann technisch beispielsweise enthalten:
+
+-   relevanten Channel oder Zustand,
+-   Referenz- bzw. Ausgangswert,
+-   erwarteten späteren Wert oder Veränderung,
+-   Prüfzeitpunkt bzw. Zeitabstand,
+-   Toleranz.
+
+Zufällige Registerinhalte erzeugen keine Energie.
+
+Erkenntnisenergie entsteht erst, wenn eine angemeldete Vorhersage anhand
+eines späteren realen Zustands bestätigt wird.
+
+Die genaue TEST-Registerbelegung und das Bestätigungskriterium sind noch
+festzulegen.
+
+„Forschung“ ist keine eigene Runtime-Funktion. Sie kann nur als
+emergenter Ablauf aus Beobachtung, interner Verarbeitung, Vorhersage,
+Wirkung und Überprüfung entstehen.
+
+8.  Individuelle Neuheit und Erkenntnisenergie
+
+Referenzwert:
+
+100 Prozent Neuheit = 100 Energieeinheiten.
+
+Grundprinzip:
+
+Energiegewinn = 100 × individueller Neuheitsgrad
+
+Der Neuheitsgrad liegt zwischen 0 und 1.
+
+Ähnliche Wiederholungen bereits bestätigter Erkenntnisse liefern
+zunehmend weniger Energie und nähern sich null.
+
+Eine minimale Änderung eines bereits verstandenen Messwerts gilt nicht
+automatisch als neue Erkenntnis.
+
+Neue Beziehungen zwischen bereits bekannten Zuständen können dagegen
+wieder einen hohen Neuheitsgrad besitzen.
+
+Die Runtime führt dafür ein individuelles Erkenntnisgedächtnis. Dieses
+ist kein automatisch lesbarer Wissensspeicher des Agenten.
+
+Die provisorische Neuheitsformel für v0 ist noch festzulegen.
+
+9.  Energieökonomie
+
+In v0 entsteht regulär neue Energie ausschließlich durch bestätigte
+individuell neue Erkenntnis.
+
+Kosten entstehen mindestens durch:
+
+-   Existenz,
+-   OBSERVE,
+-   EFFECT,
+-   EMIT,
+-   SENSE_PEER.
+
+Weitere Kosten, etwa für Datenmenge, Komplexität oder Alter, können für
+v0 vereinfacht werden, sofern das Grundprinzip erhalten bleibt.
+
+Rahmenbedingungen:
+
+-   Startenergie muss Exploration ermöglichen.
+-   Untätigkeit darf nicht unbegrenzt möglich sein.
+-   blindes massenhaftes Abfragen soll energetisch nachteilig sein.
+-   Erkenntnis muss einen realen Selektionsvorteil ermöglichen.
+-   reguläre Fortpflanzung darf keine Energie erzeugen.
+
+Die erste Population erhält einmalig externe Startenergie. Danach stammt
+neue Energie im laufenden v0 aus Erkenntnis.
+
+Die konkreten Preise, Startenergie und Alterskosten sind noch zu
+kalibrieren.
+
+10. Primitive Agenten-Agenten-Interaktion
+
+Agenten können andere erreichbare Agenten über SENSE_PEER wahrnehmen und
+über EMIT einen eigenen rohen Signalzustand verändern.
+
+Es gibt keine vorgegebene Sprache, keine menschenlesbaren
+Agentenidentitäten und kein SEND_MESSAGE.
+
+Die Signalisierung selbst erzeugt keine Energie.
+
+Damit ist Kommunikation physikalisch möglich, aber nicht als Verhalten
+vorgegeben.
+
+Die genaue Interaktionsreichweite und die Rohdaten, die SENSE_PEER
+liefert, sind noch festzulegen.
+
+11. Fortpflanzungskompatibilität
+
+Für v0 besitzt jeder Agent einen Kompatibilitätswert von 0 bis 255.
+
+Eine reproduktionsfähige Gruppe erfüllt:
+
+Summe der Kompatibilitätswerte = 255
+
+v0 erlaubt genau zwei oder drei beteiligte Eltern.
+
+Beispiele:
+
+A + B = 255
+
+A + B + C = 255
+
+Diese Summenregel ist eine prototypspezifische Testregel und kein
+unveränderliches Naturgesetz des Grundkonzepts.
+
+12. Aktive Reproduktion
+
+Fortpflanzung erfolgt nicht automatisch.
+
+Alle beteiligten Eltern müssen:
+
+-   leben,
+-   innerhalb der Agenten-Interaktionsreichweite liegen,
+-   gemeinsam die Summe 255 erfüllen,
+-   die erforderliche Mindestenergie besitzen,
+-   innerhalb eines definierten Zeitfensters aktiv die primitive
+    Reproduktionsaktion auslösen.
+
+Ein zufällig anwesender kompatibler Agent wird nicht automatisch
+Elternteil.
+
+Damit kann bereits v0 Selektionsdruck für Koordination und primitive
+Signalisierung erzeugen.
+
+13. Kein künstlicher Reproduktionsbonus
+
+Fortpflanzung erzeugt keinen Energiegewinn.
+
+Ihr evolutionärer Vorteil besteht ausschließlich im Fortbestand
+genetischer Information.
+
+Ein Agent kann individuell lange erfolgreich leben, ohne sich
+fortzupflanzen. Seine Linie endet dann mit seinem Tod.
+
+Reproduktionsverhalten kann sich nur deshalb evolutionär halten, weil
+reproduzierende Genome Nachkommen hinterlassen.
+
+Dies ist ausdrücklich Teil des Tests.
+
+14. Energieübertragung bei Fortpflanzung
+
+Die Startenergie des Nachwuchses wird vollständig aus den beteiligten
+Eltern entnommen.
+
+Alle Eltern leisten einen Energiebeitrag.
+
+Die konkrete Mindestenergie, Gesamthöhe der übertragenen Energie und
+Aufteilung zwischen den Eltern sind noch festzulegen.
+
+Eine dauerhaft wachsende Population muss damit letztlich aus zuvor
+gewonnener Erkenntnisenergie finanziert werden.
+
+15. Rekombination, Mutation und Kompatibilitätsvererbung
+
+Das 64-Byte-Genom des Nachwuchses wird aus genetischen Beiträgen aller
+zwei bzw. drei beteiligten Eltern rekombiniert.
+
+Alle Eltern müssen einen realen genetischen Beitrag leisten.
+
+Anschließend erfolgen für v0 Punktmutationen einzelner Genom-Bytes.
+
+Noch festzulegen sind:
+
+-   Rekombinationsregel für zwei Eltern,
+-   Rekombinationsregel für drei Eltern,
+-   Mutationsrate,
+-   Ableitung und Mutation des Kompatibilitätswertes.
+
+Die Kompatibilitätsvererbung darf reproduktionsfähige Populationen
+ermöglichen, soll aber nicht automatisch jedem Agenten einen passenden
+Partner garantieren.
+
+16. Alter und Tod
+
+Energie <= 0 führt zum Tod.
+
+Es gibt kein hartes Maximalalter.
+
+Gemäß Grundkonzept sollen Existenzkosten mit dem Alter steigen. Für v0
+darf die Kurve zunächst einfach sein.
+
+Sie muss jedoch verhindern, dass bloßes Energiehorten zwangsläufig zu
+unbegrenzter Lebensdauer wird.
+
+Die konkrete Alterskostenkurve ist noch festzulegen.
+
+17. Minimaler Agentenzyklus
+
+Ein Zyklus besteht konzeptionell aus:
+
+1.  nächste Genom-Instruktion bestimmen,
+2.  Instruktion ausführen,
+3.  gegebenenfalls Umwelt- oder Agentenkontakt durchführen,
+4.  gegebenenfalls Vorhersage registrieren,
+5.  fällige Vorhersagen prüfen,
+6.  gegebenenfalls Erkenntnisenergie vergeben,
+7.  Energiekosten verrechnen,
+8.  koordinierte Reproduktionsbedingungen prüfen,
+9.  Alter erhöhen,
+10. Todesbedingung prüfen,
+11. Instruction Pointer fortsetzen.
+
+Die exakte Scheduler-Reihenfolge darf technisch angepasst werden,
+solange daraus kein systematischer Fitnessvorteil bestimmter Agenten
+entsteht.
+
+18. Initialpopulation und technische Schutzgrenzen
+
+Der erste Lauf startet mit zufälligen Genomen und definierter einmaliger
+Startenergie.
+
+Die initiale Populationsgröße wird nach verfügbarer Rechenleistung
+gewählt.
+
+Das langfristige Grundkonzept besitzt keine künstliche
+Populationsobergrenze.
+
+v0 darf jedoch technische Schutzlimits gegen Ressourcenerschöpfung und
+Implementierungsfehler verwenden. Diese Limits sind keine Naturgesetze
+des Biotops.
+
+19. Messung und Checkpoints
+
+Dauerhaft erfasst werden mindestens:
+
+-   Zyklus,
+-   Populationsgröße,
+-   Geburten und Todesfälle,
+-   Gesamtenergie,
+-   erzeugte Erkenntnisenergie,
+-   TEST-Anzahl,
+-   bestätigte Vorhersagen,
+-   Neuheitsgrade,
+-   grundlegende Genomstatistiken,
+-   Reproduktionsversuche,
+-   erfolgreiche Zwei- und Drei-Eltern-Reproduktionen,
+-   Nutzung von EMIT und SENSE_PEER,
+-   regelmäßige vollständige Checkpoints.
+
+Vollständiges Instruktionslogging ist nur für Debugläufe vorgesehen.
+
+20. Erfolgskriterien und Kontrollen
+
+v0 gilt als grundsätzlich erfolgreich, wenn evolvierte Populationen
+reale reproduzierbare Zusammenhänge der bereitgestellten Linux-Umwelt
+häufiger oder energieeffizienter bestätigen als zufällige
+Ausgangspopulationen.
+
+Zusätzliche interessante Indikatoren sind:
+
+-   gezieltere Auswahl ergiebiger Channels,
+-   weniger nutzlose Beobachtungen,
+-   steigende Vorhersagequalität,
+-   steigende Energieeffizienz,
+-   Fortpflanzung aus erworbener Erkenntnisenergie,
+-   evolutionär entstehende Koordination,
+-   Nutzung primitiver Signale im Zusammenhang mit Reproduktion.
+
+Vergleichsläufe sollen unter anderem prüfen:
+
+-   Mutation ohne Erkenntnisenergie,
+-   Erkenntnisenergie ohne Vererbung,
+-   statische gegen dynamische Channels,
+-   veränderte Channel-Zuordnung,
+-   identische Checkpoints mit unterschiedlichen Zufallskeimen,
+-   Signalmechanismus aktiviert gegen deaktiviert.
+
+21. Bewusst nicht Bestandteil von v0
+
+Noch nicht aktiviert sind:
+
+-   freier Netzwerkzugriff,
+-   evolvierbare Genomgröße,
+-   semantisch vorgegebene Wissensweitergabe,
+-   Energiebonus für den Sender erfolgreicher Wissensweitergabe,
+-   vorgegebene Sprache,
+-   Reputation oder Vertrauen,
+-   komplexe externe Wissensspeicherung,
+-   semantische Interpretation des entstehenden Wissens.
+
+Primitive Signalisierung ist dagegen bereits vorhanden, weil
+Kommunikation und Reproduktionskoordination prinzipiell evolvieren
+können müssen.
+
+22. Offene Entscheidungen vor Implementierung
+
+Noch konkret festzulegen sind:
+
+1.  Bytecode und Opcode-Codierung,
+
+2.  Registerbreite,
+
+3.  konkrete Linux-Channels,
+
+4.  technische Details von OBSERVE und EFFECT,
+
+5.  technische Details von EMIT und SENSE_PEER,
+
+6.  Interaktionsreichweite,
+
+7.  primitive Reproduktionsinstruktion und Zustimmungszeitfenster,
+
+8.  TEST-Registerschema,
+
+9.  Bestätigungskriterium,
+
+10. provisorische Neuheitsformel,
+
+11. Existenz- und Kontaktkosten,
+
+12. Startenergie,
+
+13. Reproduktions-Mindestenergie und Energieaufteilung,
+
+14. Rekombination für zwei und drei Eltern,
+
+15. Mutationsrate,
+
+16. Vererbung/Mutation des Kompatibilitätswertes,
+
+17. Alterskostenkurve,
+
+18. initiale Populationsgröße,
+
+19. technische Sicherheitslimits,
+
+20. Checkpoint-Intervall.
+
+21. Prototypspezifische Festlegungen
+
+Folgende Punkte sind bewusst nur Entscheidungen für v0 und dürfen später
+geändert werden:
+
+-   64-Byte-Genom,
+-   8 Register,
+-   8 bis 16 Umwelt-Channels,
+-   OBSERVE, EFFECT und TEST als konkrete Runtime-Primitive,
+-   ein öffentliches Signalbyte,
+-   EMIT und SENSE_PEER,
+-   Kompatibilitätssumme = 255,
+-   zwei oder drei Eltern,
+-   feste Genomlänge,
+-   kein freier Netzwerkzugriff,
+-   noch keine belohnte Wissensweitergabe.
+
+Änderungen späterer Prototypen müssen nicht zu v0 kompatibel sein,
+solange sie mit dem Grundkonzept v0.3.1 vereinbar bleiben.
+
+24. Leitfrage
+
+Kann ein extrem primitiver digitaler Organismus, dessen einzige
+nachhaltige neue Energiequelle in v0 überprüfbare individuell neue
+Erkenntnis ist, durch Evolution beginnen, reproduzierbare Strukturen
+einer realen digitalen Umwelt auszunutzen und Genomlinien hervorbringen,
+die sich ohne künstliche Fortpflanzungsbelohnung selbst erhalten?
+
+Wenn ja, besitzt das KI-Biotop einen funktionierenden digitalen
+Urschlamm.
