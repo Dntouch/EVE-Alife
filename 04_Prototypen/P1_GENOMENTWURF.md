@@ -291,6 +291,12 @@ Der anschließende Lauf mit der unbenannten Skala `0` bis `10` beobachtete sämt
 
 Run-ID: `a77b7062-e55f-452d-8a5d-af2320b0690d` (Lauf 39).
 
+Der auf 2.000 Ticks verlängerte Lauf 40 erzeugte weiterhin nur die bereits bis Tick 667 entstandenen 17 Nachkommen und erreichte keine zweite Generation. Die Ereignisse zeigten zwei getrennte Ursachen. Energiereiche Kinder hatten durch fragmentweise Vererbung kein `MEM_WRITE`-Netz geerbt. Kinder mit vollständigem Handshake-Fragment fanden dagegen trotz späterer weiterer Kontakte ausnahmslos zuerst Amöbe 1 und hielten diesen Vorschlag dauerhaft fest. Der deterministische Suchstart bei niedrigen IDs und das Festhalten am ersten belegten Slot erzeugten so einen sozialen Stern um Tom, nicht eine freie Partnerfindung.
+
+Dieser Befund wird nicht rückwirkend aus Lauf 40 entfernt. Für folgende Läufe beginnt das P1-Suchfragment jedoch in der unmittelbaren ID-Nachbarschaft der ausführenden Amöbe: zuerst bei der vorherigen ID, danach fortschreitend aufwärts. Damit bleibt der Weg vollständig genomisch und deterministisch, ohne allen Neugeborenen denselben niedrigsten Kandidaten vorzusetzen. Zusätzlich darf das Genom einen eigenen Partnerslot mit `0` leeren, wenn es den Tod genau des dort eingetragenen Partners über dessen Lebenszustandszelle beobachtet hat. Eine beliebige Null oder ein Supervisor-Aufräumen genügt weiterhin nicht.
+
+Run-ID: `6fb3b537-5dc2-40b5-94f1-54487c15b8b0` (Lauf 40).
+
 Der anschließende 1.000-Tick-Vergleich mit dem ausgehandelten Tarif 60 und den neuen unterlinearen Genomkosten ergab:
 
 - 29 Nachkommen und 49 Entitäten insgesamt,

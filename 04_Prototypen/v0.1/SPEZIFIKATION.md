@@ -99,6 +99,8 @@ MEM-write(offset, slot, value) -> value
 
 Eine fremde Entity-ID darf nur dann in einen eigenen Partnerslot geschrieben werden, wenn das Wertsignal die exakte Provenienz der zuvor gelesenen lebenden fremden ID-Zelle `MEM[Entity-ID,0,0]` enthält. Konstanten, bloße Berechnungen, tote Ziele, die eigene ID und aus einer anderen Membran-ID abgeleitete Zahlen werden abgewiesen. Die Provenienz darf über `K`, `Z` und normale Verarbeitung erhalten bleiben; der Fund muss nicht im selben Heartbeat erfolgt sein.
 
+Ein belegter Partnerslot darf mit `0` geleert werden, wenn dieses Nullsignal nachweislich aus der Lebenszustandszelle `MEM[eingetragene Entity-ID,2,0]` des aktuell eingetragenen Partners stammt und dieser tot ist. Ein beliebiger konstanter oder anderswo gelesener Nullwert reicht nicht aus. Das P1-Genom kann eine tote Bindung dadurch selbst lösen; der Supervisor räumt sie nicht ungefragt auf.
+
 Für die Partnerliste gilt logisch:
 
 ```text

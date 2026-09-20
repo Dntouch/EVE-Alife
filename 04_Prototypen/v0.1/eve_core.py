@@ -407,6 +407,22 @@ class Simulation:
         if kind == "MEM_WRITE":
             offset, slot, signal = inputs["offset"].value, inputs["slot"].value, inputs["value"]
             if offset == 1 and slot in (0, 1):
+                current_partner = entity.partner_ids[slot]
+                death_source = f"MEM[{current_partner},2,0]"
+                observed_partner_death = (
+                    signal.value == 0
+                    and current_partner is not None
+                    and death_source in signal.sources
+                    and not self.entities[current_partner].alive
+                )
+                if observed_partner_death:
+                    entity.partner_ids[slot] = None
+                    self.emit(
+                        "mem_write", entity_id=entity.id, offset=offset,
+                        slot=slot, value=0, cleared_partner=current_partner,
+                        discovered=True,
+                    )
+                    return {"value": signal}
                 target = self.entities.get(signal.value)
                 required_source = f"MEM[{signal.value},0,0]"
                 discovered = required_source in signal.sources
@@ -828,13 +844,19 @@ def p1_explorer_genome(partner_id: int | None = None) -> Genome:
         Node(38, "MEM_READ"), Node(39, "EQ"), Node(40, "GATE"),
         # Der Lebenszustand der gefundenen Amöbe ist eine eigene Beobachtung.
         Node(41, "ADD"), Node(42, "ADD"), Node(43, "RAM_READ"),
+        # Die Membransuche beginnt bei der vorherigen ID der eigenen Nachbarschaft.
+        Node(44, "MEM_READ"), Node(45, "CONST", -1), Node(46, "ADD"),
+        Node(47, "ADD"),
+        # Ein nachweislich verstorbener eingetragener Partner gibt den Slot frei.
+        Node(48, "EQ"), Node(49, "EQ"), Node(50, "GATE"),
+        Node(51, "GATE"), Node(52, "MEM_WRITE"),
     ]
     edges = [
         Edge(3, "value", 5, "address"), Edge(5, "value", 6, "a"),
-        Edge(2, "value", 6, "b"), Edge(6, "value", 7, "a"),
-        Edge(6, "value", 7, "b"), Edge(7, "value", 8, "a"),
-        Edge(6, "value", 8, "b"), Edge(8, "value", 41, "a"),
-        Edge(6, "value", 41, "b"), Edge(41, "value", 9, "a"),
+        Edge(2, "value", 6, "b"), Edge(47, "value", 7, "a"),
+        Edge(47, "value", 7, "b"), Edge(7, "value", 8, "a"),
+        Edge(47, "value", 8, "b"), Edge(8, "value", 41, "a"),
+        Edge(47, "value", 41, "b"), Edge(41, "value", 9, "a"),
         Edge(4, "value", 9, "b"), Edge(9, "value", 10, "address"),
         Edge(10, "value", 11, "a"), Edge(1, "value", 11, "b"),
         Edge(11, "value", 12, "a"), Edge(1, "value", 12, "b"),
@@ -863,5 +885,14 @@ def p1_explorer_genome(partner_id: int | None = None) -> Genome:
         Edge(39, "value", 40, "condition"), Edge(40, "value", 17, "value"),
         Edge(9, "value", 42, "a"), Edge(3, "value", 42, "b"),
         Edge(42, "value", 43, "address"),
+        Edge(1, "value", 44, "offset"), Edge(1, "value", 44, "slot"),
+        Edge(44, "value", 46, "a"), Edge(45, "value", 46, "b"),
+        Edge(46, "value", 47, "a"), Edge(5, "value", 47, "b"),
+        Edge(43, "value", 48, "a"), Edge(1, "value", 48, "b"),
+        Edge(10, "value", 49, "a"), Edge(38, "value", 49, "b"),
+        Edge(43, "value", 50, "value"), Edge(48, "value", 50, "condition"),
+        Edge(50, "value", 51, "value"), Edge(49, "value", 51, "condition"),
+        Edge(2, "value", 52, "offset"), Edge(1, "value", 52, "slot"),
+        Edge(51, "value", 52, "value"),
     ]
     return Genome(nodes, edges, activity_base=100)

@@ -254,6 +254,21 @@ class EveCoreTests(unittest.TestCase):
         sim._fire(finder, write)
         self.assertEqual(finder.partner_ids, [target.id, None])
 
+    def test_dead_partner_can_be_cleared_only_from_observed_death(self):
+        sim = Simulation(Config(seed=1, ram_size=8))
+        finder = sim.add_entity(Genome([Node(1, "MEM_WRITE")], [], 1), 100)
+        target = sim.add_entity(Genome([Node(1, "PAUSE")], [], 1), 100)
+        write = finder.genome.nodes[0]
+        finder.partner_ids[0] = target.id
+        target.alive = False
+        for sources, expected in ((('G',), target.id), ((f"MEM[{target.id},2,0]",), None)):
+            finder.k.update({
+                "1:offset": Signal(1, ("G",)), "1:slot": Signal(0, ("G",)),
+                "1:value": Signal(0, sources),
+            })
+            sim._fire(finder, write)
+            self.assertEqual(finder.partner_ids[0], expected)
+
     def test_entity_and_invitation_discovery_reward_only_new_information(self):
         sim = Simulation(Config(
             seed=1, ram_size=8, entity_discovery_base=7,
@@ -380,6 +395,22 @@ class EveCoreTests(unittest.TestCase):
         self.assertGreater(len(reads), 1)
         self.assertIsNotNone(sim.entities[1].z[0])
         self.assertIsNotNone(sim.entities[1].z[1])
+
+    def test_p1_partner_search_starts_near_own_id(self):
+        sim = Simulation(Config(
+            seed=42, ram_size=256, standby_cost=0, aging_cost_rate=0,
+            genome_node_cost=0, genome_edge_cost=0,
+        ))
+        for _ in range(4):
+            sim.add_entity(p1_explorer_genome(), 500)
+        for _ in range(80):
+            sim.heartbeat()
+        first_find = {}
+        for event in sim.events:
+            if event["kind"] == "ram_read" and event.get("discovery_type") == "entity":
+                first_find.setdefault(event["entity_id"], event["target_id"])
+        self.assertEqual({key: first_find[key] for key in range(1, 5)}, {1: 2, 2: 1, 3: 2, 4: 3})
+        self.assertEqual(first_find.get(5), 4)
 
     def test_p1_dynamic_pairing_allows_children_to_have_children(self):
         sim = Simulation(Config(
