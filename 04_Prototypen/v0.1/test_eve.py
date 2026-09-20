@@ -320,7 +320,12 @@ class EveCoreTests(unittest.TestCase):
             seed=1, ram_size=8, birth_energy_fraction=0.5,
             birth_min_heartbeats=0,
         ))
-        entity = sim.add_entity(Genome([Node(1, "PAUSE")], [], 1), 500)
+        genome = Genome(
+            [Node(1, "CONST", 1), Node(2, "CONST", 0), Node(3, "MEM_WRITE")],
+            [Edge(1, "value", 3, "offset"), Edge(2, "value", 3, "slot"),
+             Edge(1, "value", 3, "value")], 1,
+        )
+        entity = sim.add_entity(genome, 500)
         self.assertAlmostEqual(sim._reproductive_energy_threshold(entity), 500 / 0.75)
         self.assertEqual(sim._mem_read(entity, 2, 0), 7)
         entity.energy = 500 / 0.75
@@ -329,6 +334,13 @@ class EveCoreTests(unittest.TestCase):
         self.assertEqual(sim._mem_read(entity, 2, 0), 10)
         entity.alive = False
         self.assertEqual(sim._mem_read(entity, 2, 0), 0)
+
+    def test_membrane_vitality_without_operational_mem_write_is_capped_at_nine(self):
+        sim = Simulation(Config(seed=1, ram_size=8, birth_energy_fraction=0.5, birth_min_heartbeats=0))
+        incomplete = Genome([Node(1, "MEM_WRITE")], [], 1)
+        entity = sim.add_entity(incomplete, 500)
+        entity.energy = 10_000
+        self.assertEqual(sim._mem_read(entity, 2, 0), 9)
 
     def test_recombination_keeps_connected_fragments_atomic(self):
         genome = Genome(

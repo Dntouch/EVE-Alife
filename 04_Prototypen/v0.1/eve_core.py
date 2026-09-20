@@ -451,12 +451,22 @@ class Simulation:
             if not entity.alive:
                 return 0
             threshold = self._reproductive_energy_threshold(entity)
-            if entity.energy > threshold:
+            if entity.energy > threshold and self._has_operational_mem_write(entity.genome):
                 return 10
             if threshold == inf:
                 return 9
             return max(1, min(9, ceil(9 * max(0.0, entity.energy) / threshold)))
         return 0
+
+    @staticmethod
+    def _has_operational_mem_write(genome: Genome) -> bool:
+        """Mindestens ein MEM_WRITE besitzt Kanten fuer alle benoetigten Eingangsports."""
+        incoming = {
+            node.id: {edge.target_port for edge in genome.edges if edge.target == node.id}
+            for node in genome.nodes if node.kind == "MEM_WRITE"
+        }
+        required = set(PORTS["MEM_WRITE"][0])
+        return any(required <= ports for ports in incoming.values())
 
     def _reproductive_energy_threshold(self, entity: Entity) -> float:
         """Energetische 10 fuer ein symmetrisches Zweierpaar gleicher Staerke."""
