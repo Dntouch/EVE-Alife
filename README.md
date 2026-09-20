@@ -21,11 +21,15 @@ Dieses Verzeichnis ist das dauerhafte Arbeitsgedächtnis von **EVE-Alife** auf d
 | Größtes Genom | **Tom** (#1) | 100 G | 34 |
 | Höchste Energie | **Cleo 2** (#62) | 22.343,53 | 18 |
 | Meiste direkte Kinder | **Karla** (#13) | 47 | 18 |
+| Größte Nachkommenschaft | **Karla** (#13) | 47 | 18 |
 | Tiefste Generation | **Juri 2** (#44) | 4 | 36 |
 | Älteste Amöbe | **Tom** (#1) | 1000 Ticks | 30 |
 | Meiste RAM-Adressen | **Yara** (#26) | 627 | 32 |
 | Meiste RAM-Energie | **Yara** (#26) | 37.620,00 | 32 |
 | Bester Informationsproduzent | **Tom** (#1) | 4.160,00 | 35 |
+| Meiste Amöbenfunde | **Dora** (#31) | 45 | 36 |
+| Meiste erkannte Einladungen | **Tom** (#1) | 31 | 36 |
+| Meiste RAM-Schreibvorgänge | **Uwe** (#22) | 744 | 36 |
 
 | Lauf | Ticks | Status | Nachkommen | Energiegewinn |
 | ---: | ---: | :--- | ---: | ---: |

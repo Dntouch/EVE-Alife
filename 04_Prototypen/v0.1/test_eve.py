@@ -33,6 +33,9 @@ class EveCoreTests(unittest.TestCase):
                 {"tick": 0, "kind": "birth", "entity_id": 1, "entity_name": "Tom", "parents": []},
                 {"tick": 3, "kind": "birth", "entity_id": 2, "entity_name": "Erna", "parents": [1, 3]},
                 {"tick": 4, "kind": "ram_read", "entity_id": 2, "address": 7, "reward": 12.5, "originators": [1]},
+                {"tick": 4, "kind": "ram_read", "entity_id": 2, "virtual": True, "reward": 10, "discovery_type": "entity"},
+                {"tick": 4, "kind": "ram_read", "entity_id": 2, "virtual": True, "reward": 20, "discovery_type": "invitation"},
+                {"tick": 4, "kind": "ram_write", "entity_id": 2, "address": 2, "value": 2},
                 {"tick": 5, "kind": "death", "entity_id": 2},
                 {"tick": 9, "kind": "death", "entity_id": 1},
             ]
@@ -42,13 +45,17 @@ class EveCoreTests(unittest.TestCase):
             result = dashboard_data(Path(temporary))
             self.assertEqual(result["mass_extinctions"], 1)
             self.assertEqual(result["offspring"], 1)
-            self.assertEqual(result["energy_gained"], 12.5)
+            self.assertEqual(result["energy_gained"], 42.5)
             self.assertEqual(result["shortest_life"]["name"], "Erna")
             self.assertEqual(result["longest_life"]["name"], "Tom")
             self.assertEqual(result["records"]["largest_genome"]["name"], "Erna")
             self.assertEqual(result["records"]["deepest_generation"]["value"], 1)
             self.assertEqual(result["records"]["most_ram_addresses"]["value"], 1)
             self.assertEqual(result["records"]["best_information_producer"]["name"], "Tom")
+            self.assertEqual(result["records"]["most_descendants"]["value"], 1)
+            self.assertEqual(result["records"]["most_entity_discoveries"]["name"], "Erna")
+            self.assertEqual(result["records"]["most_invitations"]["value"], 1)
+            self.assertEqual(result["records"]["most_ram_writes"]["value"], 1)
             readme = Path(temporary) / "README.md"
             readme.write_text("# Test\n\n## Bereiche\n\nText\n", encoding="utf-8")
             update_readme_dashboard(readme, Path(temporary))
@@ -57,14 +64,14 @@ class EveCoreTests(unittest.TestCase):
             self.assertEqual(readme.read_text(encoding="utf-8"), first)
             self.assertEqual(first.count(README_START), 1)
             self.assertEqual(first.count(README_END), 1)
-            self.assertIn("**12,50**", first)
+            self.assertIn("**42,50**", first)
             reports = Path(temporary) / "results"
             written = publish_run_reports(Path(temporary), reports)
             self.assertEqual(len(written), 2)
             self.assertIn("[1](Lauf_001.md)", (reports / "README.md").read_text(encoding="utf-8"))
             report = next(reports.glob("Lauf_*.md")).read_text(encoding="utf-8")
             self.assertIn("`run-a`", report)
-            self.assertIn("12,50", report)
+            self.assertIn("42,50", report)
 
     def test_same_seed_is_deterministic(self):
         def run():

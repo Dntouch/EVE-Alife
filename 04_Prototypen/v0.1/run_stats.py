@@ -41,6 +41,10 @@ def summarize_run(run_dir: Path, run_number: int) -> dict[str, Any]:
     ram_addresses: dict[int, set[int]] = {}
     personal_ram_energy: dict[int, float] = {}
     producer_energy: dict[int, float] = {}
+    discoveries_by_entity: dict[int, int] = {}
+    invitations_by_entity: dict[int, int] = {}
+    writes_by_entity: dict[int, int] = {}
+    parent_links: dict[int, tuple[int, ...]] = {}
     entity_discoveries = 0
     invitation_discoveries = 0
     ram_writes = 0
@@ -71,6 +75,7 @@ def summarize_run(run_dir: Path, run_number: int) -> dict[str, Any]:
                         (generation_depth.get(parent, 0) for parent in parents), default=0
                     )
                     if parents:
+                        parent_links[entity_id] = tuple(parents)
                         offspring += 1
                         for parent in parents:
                             direct_children[parent] = direct_children.get(parent, 0) + 1
@@ -97,15 +102,20 @@ def summarize_run(run_dir: Path, run_number: int) -> dict[str, Any]:
                             producer_energy[originator] = producer_energy.get(originator, 0.0) + share
                     if event.get("discovery_type") == "entity":
                         entity_discoveries += 1
+                        discoveries_by_entity[entity_id] = discoveries_by_entity.get(entity_id, 0) + 1
                     elif event.get("discovery_type") == "invitation":
                         invitation_discoveries += 1
-                elif kind == "ram_write":
+                        invitations_by_entity[entity_id] = invitations_by_entity.get(entity_id, 0) + 1
+                elif kind == "ram_write" and isinstance(entity_id, int):
                     ram_writes += 1
+                    writes_by_entity[entity_id] = writes_by_entity.get(entity_id, 0) + 1
 
     # Sehr alte Ereignisstroeme enthalten eventuell keine Geburtsereignisse fuer
     # fortgesetzte Entitaeten. Die Checkpoint-Abstammung schliesst diese Luecke.
     for entity in sorted(entities, key=lambda item: item["id"]):
         parents = [parent for parent in entity.get("parents", []) if isinstance(parent, int)]
+        if parents:
+            parent_links.setdefault(entity["id"], tuple(parents))
         generation_depth.setdefault(
             entity["id"], 0 if not parents else 1 + max(
                 (generation_depth.get(parent, 0) for parent in parents), default=0
@@ -143,8 +153,27 @@ def summarize_run(run_dir: Path, run_number: int) -> dict[str, Any]:
         for entity in entities
     }
     alive_flags = {entity["id"]: bool(entity.get("alive")) for entity in entities}
+    direct_descendants: dict[int, set[int]] = {}
+    for child, parents in parent_links.items():
+        for parent in parents:
+            direct_descendants.setdefault(parent, set()).add(child)
+    descendant_cache: dict[int, set[int]] = {}
+
+    def descendants(entity_id: int) -> set[int]:
+        if entity_id not in descendant_cache:
+            result = set(direct_descendants.get(entity_id, ()))
+            for child in tuple(result):
+                result.update(descendants(child))
+            descendant_cache[entity_id] = result
+        return descendant_cache[entity_id]
+
+    descendant_counts = {
+        entity_id: len(descendants(entity_id))
+        for entity_id in set(births) | set(direct_descendants)
+        if descendants(entity_id)
+    }
     summary = {
-        "schema": 3,
+        "schema": 4,
         "run_id": metadata.get("run_id", run_dir.name),
         "run_number": run_number,
         "created_at": metadata.get("created_at"),
@@ -164,11 +193,15 @@ def summarize_run(run_dir: Path, run_number: int) -> dict[str, Any]:
             "largest_genome": maximum(genome_sizes, n_f=genome_f, n_p=genome_p),
             "highest_energy": maximum(highest_energy),
             "most_direct_children": maximum(direct_children),
+            "most_descendants": maximum(descendant_counts),
             "deepest_generation": maximum(generation_depth),
             "oldest_entity": maximum(ages, alive=alive_flags),
             "most_ram_addresses": maximum({key: len(value) for key, value in ram_addresses.items()}),
             "most_ram_energy": maximum(personal_ram_energy),
             "best_information_producer": maximum(producer_energy),
+            "most_entity_discoveries": maximum(discoveries_by_entity),
+            "most_invitations": maximum(invitations_by_entity),
+            "most_ram_writes": maximum(writes_by_entity),
         },
     }
     return summary
@@ -199,7 +232,7 @@ def dashboard_data(runs_root: Path) -> dict[str, Any]:
         # Alte oder weitergelaufene Runs werden automatisch neu bilanziert.
         if (
             not summary
-            or summary.get("schema") != 3
+            or summary.get("schema") != 4
             or summary.get("run_number") != number
             or (event_path.exists() and event_path.stat().st_mtime > summary_path.stat().st_mtime)
         ):
@@ -212,8 +245,9 @@ def dashboard_data(runs_root: Path) -> dict[str, Any]:
         if life is not None
     ]
     record_keys = (
-        "largest_genome", "highest_energy", "most_direct_children", "deepest_generation",
+        "largest_genome", "highest_energy", "most_direct_children", "most_descendants", "deepest_generation",
         "oldest_entity", "most_ram_addresses", "most_ram_energy", "best_information_producer",
+        "most_entity_discoveries", "most_invitations", "most_ram_writes",
     )
     records = {}
     for key in record_keys:
@@ -264,11 +298,15 @@ def render_readme_dashboard(stats: dict[str, Any]) -> str:
         ("largest_genome", "Größtes Genom", " G"),
         ("highest_energy", "Höchste Energie", ""),
         ("most_direct_children", "Meiste direkte Kinder", ""),
+        ("most_descendants", "Größte Nachkommenschaft", ""),
         ("deepest_generation", "Tiefste Generation", ""),
         ("oldest_entity", "Älteste Amöbe", " Ticks"),
         ("most_ram_addresses", "Meiste RAM-Adressen", ""),
         ("most_ram_energy", "Meiste RAM-Energie", ""),
         ("best_information_producer", "Bester Informationsproduzent", ""),
+        ("most_entity_discoveries", "Meiste Amöbenfunde", ""),
+        ("most_invitations", "Meiste erkannte Einladungen", ""),
+        ("most_ram_writes", "Meiste RAM-Schreibvorgänge", ""),
     )
     record_rows = []
     for key, label, suffix in record_labels:
