@@ -1,28 +1,28 @@
-# Lauf 34
+# Lauf 38
 
 ## Identität
 
 | Feld | Wert |
 | :--- | :--- |
-| Run-ID | `c0390378-e93b-4329-bfea-b304cfecf58b` |
-| Erzeugt | 2026-09-20T19:57:43.584930+00:00 |
+| Run-ID | `b037b33f-89fc-4dd1-bd25-0fe4ffb6baef` |
+| Erzeugt | 2026-09-20T20:55:30.805725+00:00 |
 | Seed | 42 |
-| Git-Commit | `f78e023dff841362ecfba40d14ff5334bc971142` |
+| Git-Commit | `b8d049a5da32eb062eb66ecc33d6842c01c8ca84` |
 | EVE-Version | 0.1 |
 
 ## Ergebnis
 
 | Ticks | Entitäten gesamt | Am Ende lebend | Nachkommen | Gewonnene Energie | Status |
 | ---: | ---: | ---: | ---: | ---: | :--- |
-| 300 | 20 | 0 | 0 | 17.380,00 | Massenaussterben |
+| 1000 | 40 | 28 | 20 | 354.840,00 | 28 lebend |
 
-- Kürzestes abgeschlossenes Leben: Bruno, 61 Ticks
-- Längstes abgeschlossenes Leben: Sam, 123 Ticks
-- Neue fremde Amöben gefunden: 104
-- Einladungen an die eigene ID erkannt: 4
-- Lebenszustände erkannt: 0, davon 0 tot
-- Energie aus Lebenszuständen: 0,00
-- RAM-Schreibvorgänge: 454
+- Kürzestes abgeschlossenes Leben: Cleo, 140 Ticks
+- Längstes abgeschlossenes Leben: Maja, 967 Ticks
+- Neue fremde Amöben gefunden: 835
+- Einladungen an die eigene ID erkannt: 51
+- Lebenszustände erkannt: 888, davon 90 tot
+- Energie aus Lebenszuständen: 8.880,00
+- RAM-Schreibvorgänge: 8692
 
 ## Konfiguration
 
@@ -32,11 +32,14 @@
 | `birth_energy` | 50.0 |
 | `birth_energy_fraction` | 0.5 |
 | `birth_min_heartbeats` | 5 |
-| `edge_cost` | 0.1 |
+| `edge_cost` | 0.0 |
 | `entity_discovery_base` | 10.0 |
-| `execution_cost` | 1.0 |
+| `execution_cost` | 0.0 |
+| `genome_edge_cost` | 0.1 |
+| `genome_node_cost` | 0.5 |
 | `genome_size_sigma` | 2.0 |
 | `invitation_discovery_base` | 20.0 |
+| `life_state_discovery_base` | 10.0 |
 | `membrane_base` | 1000000 |
 | `mutation_probability` | 0.001 |
 | `novelty_base` | 60.0 |

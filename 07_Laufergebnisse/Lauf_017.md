@@ -20,6 +20,8 @@
 - Längstes abgeschlossenes Leben: Dora 4, 26 Ticks
 - Neue fremde Amöben gefunden: 0
 - Einladungen an die eigene ID erkannt: 0
+- Lebenszustände erkannt: 0, davon 0 tot
+- Energie aus Lebenszuständen: 0,00
 - RAM-Schreibvorgänge: 0
 
 ## Konfiguration

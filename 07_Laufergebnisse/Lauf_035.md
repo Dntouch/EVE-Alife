@@ -20,6 +20,8 @@
 - Längstes abgeschlossenes Leben: Vera, 44 Ticks
 - Neue fremde Amöben gefunden: 424
 - Einladungen an die eigene ID erkannt: 20
+- Lebenszustände erkannt: 0, davon 0 tot
+- Energie aus Lebenszuständen: 0,00
 - RAM-Schreibvorgänge: 2546
 
 ## Konfiguration

@@ -281,6 +281,12 @@ Run-IDs:
 
 Die Kausalkette `finden → vorschlagen → Einladung erkennen → erwidern → Geburt` ist damit ausführbar. Der Tarif für das größere Sozial- und Schreibgenom sowie die noch stark auf frühe gefundene Amöben konzentrierte Partnerwahl bleiben neue Versuchsfragen.
 
+Die Membran stellt zusätzlich unter Offset 2 den Lebenszustand bereit. Das Suchfragment liest zu jeder gefundenen ID auch diesen Wert. `1 → 0` bedeutet, dass eine zuvor lebend beobachtete Amöbe inzwischen tot ist, und kann wie jede neue externe Erkenntnis Energie liefern. Der tote Membraneintrag bleibt beobachtbar, darf aber nicht mehr als Partner verwendet werden.
+
+Der erste 1.000-Tick-Lauf dieser Erweiterung bei Tarif 60 beobachtete 798 lebende und 90 tote Lebenszustände als neue Information. Daraus entstanden 8.880 Energieeinheiten, davon 900 durch das Auffinden Verstorbener. Der Lauf endete mit 28 lebenden von insgesamt 40 Amöben, 20 Nachkommen und Generation 2. Gegenüber dem vorherigen Tarif-60-Lauf ist dies kein isolierter Wirkungsvergleich, weil das vergrößerte Genom den Zufalls- und Ausführungspfad verändert; nachgewiesen ist jedoch, dass die neue Wahrnehmung im laufenden P1-Netz tatsächlich erreicht und energetisch abgerechnet wird.
+
+Run-ID: `b037b33f-89fc-4dd1-bd25-0fe4ffb6baef` (Lauf 38).
+
 Der anschließende 1.000-Tick-Vergleich mit dem ausgehandelten Tarif 60 und den neuen unterlinearen Genomkosten ergab:
 
 - 29 Nachkommen und 49 Entitäten insgesamt,

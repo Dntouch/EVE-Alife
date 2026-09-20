@@ -11,14 +11,14 @@ Dieses Verzeichnis ist das dauerhafte Arbeitsgedächtnis von **EVE-Alife** auf d
 
 | Massenaussterben | Nachkommen | Gewonnene Energie | Gespeicherte Läufe |
 | ---: | ---: | ---: | ---: |
-| **17** | **2400** | **12.161.800,00** | **36** |
+| **17** | **2434** | **12.794.675,00** | **38** |
 
 - Kürzestes abgeschlossenes Leben: **Cleo 2** (Amöbe #62), 2 Ticks in Lauf 10
 - Längstes abgeschlossenes Leben: **Juri** (Amöbe #12), 1000 Ticks in Lauf 36
 
 | Rekord | Amöbe | Wert | Lauf |
 | :--- | :--- | ---: | ---: |
-| Größtes Genom | **Tom** (#1) | 100 G | 34 |
+| Größtes Genom | **Tom** (#1) | 108 G | 38 |
 | Höchste Energie | **Cleo 2** (#62) | 22.343,53 | 18 |
 | Meiste direkte Kinder | **Karla** (#13) | 47 | 18 |
 | Größte Nachkommenschaft | **Karla** (#13) | 47 | 18 |
@@ -33,11 +33,11 @@ Dieses Verzeichnis ist das dauerhafte Arbeitsgedächtnis von **EVE-Alife** auf d
 
 | Lauf | Ticks | Status | Nachkommen | Energiegewinn |
 | ---: | ---: | :--- | ---: | ---: |
+| 38 | 1000 | 28 lebend | 20 | 354.840,00 |
+| 37 | 1000 | 17 lebend | 14 | 278.035,00 |
 | 36 | 1000 | 38 lebend | 29 | 388.240,00 |
 | 35 | 300 | 27 lebend | 9 | 218.080,00 |
 | 34 | 300 | ausgestorben | 0 | 17.380,00 |
-| 33 | 300 | ausgestorben | 0 | 28.420,00 |
-| 32 | 1000 | 32 lebend | 51 | 1.232.700,00 |
 
 _Automatisch aus den lokal gespeicherten Runs erzeugt. Der veröffentlichte Stand entspricht dem letzten Git-Push. [Definitionen und Dashboard](04_Prototypen/v0.1/README.md)_
 <!-- EVE_STATS_END -->

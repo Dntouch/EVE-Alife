@@ -15,6 +15,8 @@ Zusammenhängende Versuchsreihen werden zusätzlich ausgewertet:
 
 | Lauf | Ticks | Status | Nachkommen | Energiegewinn |
 | ---: | ---: | :--- | ---: | ---: |
+| [38](Lauf_038.md) | 1000 | 28 lebend | 20 | 354.840,00 |
+| [37](Lauf_037.md) | 1000 | 17 lebend | 14 | 278.035,00 |
 | [36](Lauf_036.md) | 1000 | 38 lebend | 29 | 388.240,00 |
 | [35](Lauf_035.md) | 300 | 27 lebend | 9 | 218.080,00 |
 | [34](Lauf_034.md) | 300 | Massenaussterben | 0 | 17.380,00 |

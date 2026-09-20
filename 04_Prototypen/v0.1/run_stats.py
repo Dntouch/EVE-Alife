@@ -47,6 +47,9 @@ def summarize_run(run_dir: Path, run_number: int) -> dict[str, Any]:
     parent_links: dict[int, tuple[int, ...]] = {}
     entity_discoveries = 0
     invitation_discoveries = 0
+    life_state_discoveries = 0
+    death_discoveries = 0
+    life_state_energy = 0.0
     ram_writes = 0
 
     def note_energy(entity_id: int, *values: Any) -> None:
@@ -106,6 +109,11 @@ def summarize_run(run_dir: Path, run_number: int) -> dict[str, Any]:
                     elif event.get("discovery_type") == "invitation":
                         invitation_discoveries += 1
                         invitations_by_entity[entity_id] = invitations_by_entity.get(entity_id, 0) + 1
+                    elif event.get("discovery_type") == "life_state":
+                        life_state_discoveries += 1
+                        life_state_energy += reward
+                        if event.get("value") == 0:
+                            death_discoveries += 1
                 elif kind == "ram_write" and isinstance(entity_id, int):
                     ram_writes += 1
                     writes_by_entity[entity_id] = writes_by_entity.get(entity_id, 0) + 1
@@ -173,7 +181,7 @@ def summarize_run(run_dir: Path, run_number: int) -> dict[str, Any]:
         if descendants(entity_id)
     }
     summary = {
-        "schema": 4,
+        "schema": 5,
         "run_id": metadata.get("run_id", run_dir.name),
         "run_number": run_number,
         "created_at": metadata.get("created_at"),
@@ -185,6 +193,9 @@ def summarize_run(run_dir: Path, run_number: int) -> dict[str, Any]:
         "energy_gained": energy_gained,
         "entity_discoveries": entity_discoveries,
         "invitation_discoveries": invitation_discoveries,
+        "life_state_discoveries": life_state_discoveries,
+        "death_discoveries": death_discoveries,
+        "life_state_energy": life_state_energy,
         "ram_writes": ram_writes,
         "mass_extinction": extinct,
         "shortest_life": min(deaths, key=lambda item: item["lifespan"], default=None),
@@ -232,7 +243,7 @@ def dashboard_data(runs_root: Path) -> dict[str, Any]:
         # Alte oder weitergelaufene Runs werden automatisch neu bilanziert.
         if (
             not summary
-            or summary.get("schema") != 4
+            or summary.get("schema") != 5
             or summary.get("run_number") != number
             or (event_path.exists() and event_path.stat().st_mtime > summary_path.stat().st_mtime)
         ):
@@ -407,6 +418,8 @@ def publish_run_reports(runs_root: Path, results_root: Path) -> list[Path]:
 - Längstes abgeschlossenes Leben: {longest['name'] + ', ' + str(longest['lifespan']) + ' Ticks' if longest else '—'}
 - Neue fremde Amöben gefunden: {run.get('entity_discoveries', 0)}
 - Einladungen an die eigene ID erkannt: {run.get('invitation_discoveries', 0)}
+- Lebenszustände erkannt: {run.get('life_state_discoveries', 0)}, davon {run.get('death_discoveries', 0)} tot
+- Energie aus Lebenszuständen: {_number(run.get('life_state_energy', 0))}
 - RAM-Schreibvorgänge: {run.get('ram_writes', 0)}
 
 ## Konfiguration

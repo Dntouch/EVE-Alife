@@ -20,6 +20,8 @@
 - Längstes abgeschlossenes Leben: Ada, 121 Ticks
 - Neue fremde Amöben gefunden: 172
 - Einladungen an die eigene ID erkannt: 9
+- Lebenszustände erkannt: 0, davon 0 tot
+- Energie aus Lebenszuständen: 0,00
 - RAM-Schreibvorgänge: 708
 
 ## Konfiguration

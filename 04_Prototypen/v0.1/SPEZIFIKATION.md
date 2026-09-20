@@ -105,21 +105,23 @@ Für die Partnerliste gilt logisch:
 MEM-read(0, 0)             -> eigene Entity-ID
 MEM-write(1, 0, partnerID) -> erster Partnerslot
 MEM-write(1, 1, partnerID) -> zweiter Partnerslot
+MEM-read(2, 0)             -> Lebenszustand, 1 lebend / 0 tot
 ```
 
 Ein Schreibversuch auf Offset 0 oder einen nicht vorhandenen beziehungsweise nicht schreibbaren Slot verändert keinen Zustand. Die genaue Fehler- und Kostenbehandlung ist Teil der noch festzulegenden P0.1-Ausführungsparameter.
 
-Fremde Membranen können ausschließlich über ihre vom Supervisor freigegebenen Adressen im gemeinsamen Adressraum gelesen werden. P0.1 verwendet dafür einen von der eigentlichen RAM-Suppe getrennten virtuellen Bereich ab dem konfigurierten `membrane_base`. Je Entity-ID liegen dort drei skalare Zellen in stabiler Reihenfolge:
+Fremde Membranen können ausschließlich über ihre vom Supervisor freigegebenen Adressen im gemeinsamen Adressraum gelesen werden. P0.1 verwendet dafür einen von der eigentlichen RAM-Suppe getrennten virtuellen Bereich ab dem konfigurierten `membrane_base`. Je Entity-ID liegen dort vier skalare Zellen in stabiler Reihenfolge:
 
 ```text
-membrane_base + (Entity-ID - 1) * 3 + 0 -> Offset 0, Entity-ID
-membrane_base + (Entity-ID - 1) * 3 + 1 -> Offset 1, Partnerslot 0
-membrane_base + (Entity-ID - 1) * 3 + 2 -> Offset 1, Partnerslot 1
+membrane_base + (Entity-ID - 1) * 4 + 0 -> Offset 0, Entity-ID
+membrane_base + (Entity-ID - 1) * 4 + 1 -> Offset 1, Partnerslot 0
+membrane_base + (Entity-ID - 1) * 4 + 2 -> Offset 1, Partnerslot 1
+membrane_base + (Entity-ID - 1) * 4 + 3 -> Offset 2, Lebenszustand
 ```
 
 `RAM-read` darf diese Zellen lesen. Eine Adresse im virtuellen Membranbereich, für die noch keine Entität existiert, liefert in P0.1 den Wert `0` mit einer stabilen, sättigbaren `MEM_VOID`-Provenienz. `RAM-write` darf keine Adresse dieses Bereichs verändern; Schreibzugriff auf die eigene Partnerliste erfolgt ausschließlich über `MEM-write`. Der virtuelle Membranbereich verkleinert oder verschiebt die RAM-Suppe nicht. Ob und wie eine Entität solche Adressen findet und welche IDs sie in ihre eigene Partnerliste schreibt, ergibt sich aus ihrem P-Netz und der gemeinsamen Umwelt. Der Supervisor liefert keine Partnerauswahl.
 
-Der erste neue Fund einer lebenden fremden ID-Zelle kann Energie liefern. Ebenso kann das Lesen der eigenen ID in einem fremden Partnerslot als erkannte Einladung Energie liefern. Unveränderte Wiederholungen liefern nichts; wiederkehrende identische Informationen werden pro beobachtender Entität und Membranzelle abnehmend vergütet. Schreiben in den eigenen Partnerslot erzeugt keine Energie.
+Der erste neue Fund einer lebenden fremden ID-Zelle kann Energie liefern. Ebenso können das Lesen der eigenen ID in einem fremden Partnerslot und ein neu beobachteter Lebenszustand Energie liefern. Dadurch ist insbesondere der Wechsel einer zuvor lebend gesehenen Amöbe zu `tot` neue Erkenntnis. Unveränderte Wiederholungen liefern nichts; wiederkehrende identische Informationen werden pro beobachtender Entität und Membranzelle abnehmend vergütet. Tote Amöben bleiben als lesbare ehemalige Bewohner im Membranraum erhalten, sind aber keine gültigen Partner. Schreiben in den eigenen Partnerslot erzeugt keine Energie.
 
 `MEM-read` und `MEM-write` sind keine Reproduktionsbefehle. Sie stellen lediglich einen allgemeinen primitiven Zugriff auf die eigene kontrollierte Außenschnittstelle bereit. Erst die vollständig wechselseitige Belegung gemäß Abschnitt 3.2 bildet eine reproduktive Konstellation.
 

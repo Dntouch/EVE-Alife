@@ -159,6 +159,7 @@ class Config:
     novelty_base: float = 10.0
     entity_discovery_base: float = 10.0
     invitation_discovery_base: float = 20.0
+    life_state_discovery_base: float = 10.0
     membrane_base: int = 1_000_000
 
 
@@ -335,6 +336,12 @@ class Simulation:
                     count = entity.source_history.get(count_key, 0)
                     reward = self.config.invitation_discovery_base / (1 + count)
                     entity.source_history[count_key] = count + 1
+                elif target.id != entity.id and offset == 2 and slot == 0 and changed:
+                    discovery_type = "life_state"
+                    count_key = f"{source}:{value}"
+                    count = entity.source_history.get(count_key, 0)
+                    reward = self.config.life_state_discovery_base / (1 + count)
+                    entity.source_history[count_key] = count + 1
                 entity.value_history[source] = value
                 entity.energy += reward
                 self.emit(
@@ -425,19 +432,23 @@ class Simulation:
         if offset == 1 and slot in (0, 1):
             value = entity.partner_ids[slot]
             return 0 if value is None else value
+        if offset == 2 and slot == 0:
+            return int(entity.alive)
         return 0
 
     def _decode_membrane_address(self, address: int) -> tuple[Entity, int, int] | None:
         relative = address - self.config.membrane_base
         if relative < 0:
             return None
-        entity_id, cell = divmod(relative, 3)
+        entity_id, cell = divmod(relative, 4)
         entity = self.entities.get(entity_id + 1)
         if entity is None:
             return None
         if cell == 0:
             return entity, 0, 0
-        return entity, 1, cell - 1
+        if cell in (1, 2):
+            return entity, 1, cell - 1
+        return entity, 2, 0
 
     def _kill(self, entity: Entity, reason: str) -> None:
         entity.alive = False
@@ -782,7 +793,7 @@ def p1_explorer_genome(partner_id: int | None = None) -> Genome:
         # Fragment A: Z[3] durchlaeuft Membran-IDs. Eine reale fremde ID wird
         # vorgeschlagen; eine gelesene Einladung an die eigene ID wird erwidert.
         Node(1, "CONST", 0), Node(2, "CONST", 1), Node(3, "CONST", 3),
-        Node(4, "CONST", 999_997), Node(5, "Z_READ"), Node(6, "ADD"),
+        Node(4, "CONST", 999_996), Node(5, "Z_READ"), Node(6, "ADD"),
         Node(7, "ADD"), Node(8, "ADD"), Node(9, "ADD"), Node(10, "RAM_READ"),
         Node(11, "EQ"), Node(12, "EQ"), Node(13, "GATE"), Node(14, "GATE"),
         Node(15, "Z_WRITE"), Node(16, "GATE"), Node(17, "MEM_WRITE"),
@@ -797,12 +808,15 @@ def p1_explorer_genome(partner_id: int | None = None) -> Genome:
         Node(35, "CONST", 0), Node(36, "MEM_READ"), Node(37, "RAM_WRITE"),
         # Der erste Vorschlag bleibt stehen, solange der eigene Slot belegt ist.
         Node(38, "MEM_READ"), Node(39, "EQ"), Node(40, "GATE"),
+        # Der Lebenszustand der gefundenen Amöbe ist eine eigene Beobachtung.
+        Node(41, "ADD"), Node(42, "ADD"), Node(43, "RAM_READ"),
     ]
     edges = [
         Edge(3, "value", 5, "address"), Edge(5, "value", 6, "a"),
         Edge(2, "value", 6, "b"), Edge(6, "value", 7, "a"),
         Edge(6, "value", 7, "b"), Edge(7, "value", 8, "a"),
-        Edge(6, "value", 8, "b"), Edge(8, "value", 9, "a"),
+        Edge(6, "value", 8, "b"), Edge(8, "value", 41, "a"),
+        Edge(6, "value", 41, "b"), Edge(41, "value", 9, "a"),
         Edge(4, "value", 9, "b"), Edge(9, "value", 10, "address"),
         Edge(10, "value", 11, "a"), Edge(1, "value", 11, "b"),
         Edge(11, "value", 12, "a"), Edge(1, "value", 12, "b"),
@@ -829,5 +843,7 @@ def p1_explorer_genome(partner_id: int | None = None) -> Genome:
         Edge(2, "value", 38, "offset"), Edge(1, "value", 38, "slot"),
         Edge(38, "value", 39, "a"), Edge(1, "value", 39, "b"),
         Edge(39, "value", 40, "condition"), Edge(40, "value", 17, "value"),
+        Edge(9, "value", 42, "a"), Edge(3, "value", 42, "b"),
+        Edge(42, "value", 43, "address"),
     ]
     return Genome(nodes, edges, activity_base=100)

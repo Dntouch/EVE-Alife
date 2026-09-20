@@ -20,6 +20,8 @@
 - Längstes abgeschlossenes Leben: Juri, 1000 Ticks
 - Neue fremde Amöben gefunden: 1460
 - Einladungen an die eigene ID erkannt: 64
+- Lebenszustände erkannt: 0, davon 0 tot
+- Energie aus Lebenszuständen: 0,00
 - RAM-Schreibvorgänge: 9845
 
 ## Konfiguration

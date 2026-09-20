@@ -35,6 +35,7 @@ class EveCoreTests(unittest.TestCase):
                 {"tick": 4, "kind": "ram_read", "entity_id": 2, "address": 7, "reward": 12.5, "originators": [1]},
                 {"tick": 4, "kind": "ram_read", "entity_id": 2, "virtual": True, "reward": 10, "discovery_type": "entity"},
                 {"tick": 4, "kind": "ram_read", "entity_id": 2, "virtual": True, "reward": 20, "discovery_type": "invitation"},
+                {"tick": 4, "kind": "ram_read", "entity_id": 2, "virtual": True, "reward": 10, "discovery_type": "life_state", "value": 0},
                 {"tick": 4, "kind": "ram_write", "entity_id": 2, "address": 2, "value": 2},
                 {"tick": 5, "kind": "death", "entity_id": 2},
                 {"tick": 9, "kind": "death", "entity_id": 1},
@@ -45,7 +46,8 @@ class EveCoreTests(unittest.TestCase):
             result = dashboard_data(Path(temporary))
             self.assertEqual(result["mass_extinctions"], 1)
             self.assertEqual(result["offspring"], 1)
-            self.assertEqual(result["energy_gained"], 42.5)
+            self.assertEqual(result["energy_gained"], 52.5)
+            self.assertEqual(result["history"][0]["death_discoveries"], 1)
             self.assertEqual(result["shortest_life"]["name"], "Erna")
             self.assertEqual(result["longest_life"]["name"], "Tom")
             self.assertEqual(result["records"]["largest_genome"]["name"], "Erna")
@@ -64,14 +66,14 @@ class EveCoreTests(unittest.TestCase):
             self.assertEqual(readme.read_text(encoding="utf-8"), first)
             self.assertEqual(first.count(README_START), 1)
             self.assertEqual(first.count(README_END), 1)
-            self.assertIn("**42,50**", first)
+            self.assertIn("**52,50**", first)
             reports = Path(temporary) / "results"
             written = publish_run_reports(Path(temporary), reports)
             self.assertEqual(len(written), 2)
             self.assertIn("[1](Lauf_001.md)", (reports / "README.md").read_text(encoding="utf-8"))
             report = next(reports.glob("Lauf_*.md")).read_text(encoding="utf-8")
             self.assertIn("`run-a`", report)
-            self.assertIn("42,50", report)
+            self.assertIn("52,50", report)
 
     def test_same_seed_is_deterministic(self):
         def run():
@@ -226,10 +228,13 @@ class EveCoreTests(unittest.TestCase):
         a = sim.add_entity(demo_genome(2), 100)
         b = sim.add_entity(demo_genome(1), 100)
         b.partner_ids[0] = a.id
-        base = sim.config.membrane_base + (b.id - 1) * 3
+        base = sim.config.membrane_base + (b.id - 1) * 4
         self.assertEqual(sim._decode_membrane_address(base)[0].id, b.id)
         self.assertEqual(sim._mem_read(b, 0, 0), b.id)
         self.assertEqual(sim._mem_read(b, 1, 0), a.id)
+        self.assertEqual(sim._mem_read(b, 2, 0), 1)
+        b.alive = False
+        self.assertEqual(sim._mem_read(b, 2, 0), 0)
 
     def test_partner_id_must_come_from_a_living_foreign_membrane(self):
         sim = Simulation(Config(seed=1, ram_size=8))
@@ -257,7 +262,7 @@ class EveCoreTests(unittest.TestCase):
         finder = sim.add_entity(Genome([Node(1, "RAM_READ")], [], 1), 0)
         target = sim.add_entity(Genome([Node(1, "PAUSE")], [], 1), 0)
         read = finder.genome.nodes[0]
-        identity_address = sim.config.membrane_base + (target.id - 1) * 3
+        identity_address = sim.config.membrane_base + (target.id - 1) * 4
         rewards = []
         for _ in range(2):
             before = finder.energy
@@ -272,6 +277,28 @@ class EveCoreTests(unittest.TestCase):
             sim._fire(finder, read)
             rewards.append(finder.energy - before)
         self.assertEqual(rewards, [7, 0, 13, 0])
+
+    def test_changed_life_state_is_new_knowledge(self):
+        sim = Simulation(Config(
+            seed=1, ram_size=8, life_state_discovery_base=11,
+        ))
+        finder = sim.add_entity(Genome([Node(1, "RAM_READ")], [], 1), 0)
+        target = sim.add_entity(Genome([Node(1, "PAUSE")], [], 1), 0)
+        read = finder.genome.nodes[0]
+        status_address = sim.config.membrane_base + (target.id - 1) * 4 + 3
+        rewards = []
+        for alive in (True, True, False, False):
+            target.alive = alive
+            before = finder.energy
+            finder.k["1:address"] = Signal(status_address, ("G",))
+            sim._fire(finder, read)
+            rewards.append(finder.energy - before)
+        self.assertEqual(rewards, [11, 0, 11, 0])
+        discoveries = [
+            event for event in sim.events
+            if event.get("discovery_type") == "life_state"
+        ]
+        self.assertEqual([event["value"] for event in discoveries], [1, 0])
 
     def test_recombination_keeps_connected_fragments_atomic(self):
         genome = Genome(
