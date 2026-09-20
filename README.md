@@ -36,6 +36,7 @@ _Automatisch aus den lokal gespeicherten Runs erzeugt. Der veröffentlichte Stan
 - `04_Prototypen`: konkrete technische Umsetzungen
 - `05_Projektlog`: chronologische Entstehungsgeschichte mit technischen, konzeptionellen und persönlichen Notizen
 - `06_Blog`: lesbare Geschichten, Gedanken und Lab Notes aus dem Projekt
+- `07_Laufergebnisse`: kompakte, versionierte Berichte der ausgeführten Prototyp-Läufe
 
 ## Aktueller Prototyp
 

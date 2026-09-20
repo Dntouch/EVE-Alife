@@ -104,7 +104,7 @@ Jede Amöbe erhält außerdem einen menschenlesbaren, innerhalb ihres Laufs eind
 
 Die **Chronik des Biotops** bilanziert alle Runs im gemeinsamen `runs/`-Verzeichnis. Sie zeigt die Zahl der Massenaussterben, erzeugte Nachkommen, insgesamt aus RAM gewonnene Energie sowie das kürzeste und längste abgeschlossene Leben mit Name, Entity-ID und Laufnummer. Als Massenaussterben zählt genau ein Lauf, dessen Population am Ende vollständig erloschen ist. Lebende Amöben gehen nicht in die Lebensdauerrekorde ein. Für ältere Runs erzeugt die Lupe einmalig eine kompakte `summary.json`; danach muss sie nicht bei jedem Aufruf den vollständigen Ereignisstrom erneut lesen.
 
-Nach jedem regulär abgeschlossenen Lauf aktualisiert `run.py` außerdem den markierten Statistikblock in der Git-Startseite des Projekts. Die großen Run-Daten bleiben lokal und ignoriert; nur die kompakte Bilanz in der Wurzel-`README.md` wird versioniert und mit dem nächsten Commit/Push veröffentlicht. Nach importierten oder manuell veränderten Runs lässt sich dieselbe Aktualisierung ausdrücklich anstoßen:
+Nach jedem regulär abgeschlossenen Lauf aktualisiert `run.py` außerdem den markierten Statistikblock in der Git-Startseite des Projekts und den eigenen Markdown-Bericht unter `07_Laufergebnisse/`. Die großen Run-Daten bleiben lokal und ignoriert; nur die kompakten Ergebnisberichte werden versioniert und mit dem nächsten Commit/Push veröffentlicht. Nach importierten oder manuell veränderten Runs lässt sich dieselbe Aktualisierung ausdrücklich anstoßen:
 
 ```bash
 python3 run_stats.py

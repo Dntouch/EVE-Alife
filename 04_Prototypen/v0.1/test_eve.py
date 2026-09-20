@@ -4,7 +4,7 @@ import tempfile
 from pathlib import Path
 
 from eve_core import Config, Edge, Genome, Node, Signal, Simulation, amoeba_name, demo_genome, p1_explorer_genome
-from run_stats import README_END, README_START, dashboard_data, update_readme_dashboard
+from run_stats import README_END, README_START, dashboard_data, publish_run_reports, update_readme_dashboard
 
 
 class EveCoreTests(unittest.TestCase):
@@ -51,6 +51,13 @@ class EveCoreTests(unittest.TestCase):
             self.assertEqual(first.count(README_START), 1)
             self.assertEqual(first.count(README_END), 1)
             self.assertIn("**12,50**", first)
+            reports = Path(temporary) / "results"
+            written = publish_run_reports(Path(temporary), reports)
+            self.assertEqual(len(written), 2)
+            self.assertIn("[1](Lauf_001_run-a.md)", (reports / "README.md").read_text(encoding="utf-8"))
+            report = next(reports.glob("Lauf_*.md")).read_text(encoding="utf-8")
+            self.assertIn("`run-a`", report)
+            self.assertIn("12,50", report)
 
     def test_same_seed_is_deterministic(self):
         def run():

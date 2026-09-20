@@ -13,7 +13,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from eve_core import Config, Simulation, demo_genome, explorer_demo_genome, p1_explorer_genome
-from run_stats import update_readme_dashboard, write_summary
+from run_stats import publish_run_reports, update_readme_dashboard, write_summary
 
 
 def git_commit(project_root: Path) -> str:
@@ -144,6 +144,7 @@ def main() -> None:
     run_number = ordered_runs.index(run_dir) + 1
     write_summary(run_dir, run_number)
     if args.output.resolve() == canonical_runs:
+        publish_run_reports(canonical_runs, project_root / "07_Laufergebnisse")
         update_readme_dashboard(project_root / "README.md", canonical_runs)
     print(json.dumps({
         "run_id": run_id, "run_number": run_number, "run_dir": str(run_dir), "tick": sim.tick,

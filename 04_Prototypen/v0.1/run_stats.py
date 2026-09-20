@@ -189,12 +189,100 @@ def update_readme_dashboard(readme: Path, runs_root: Path) -> dict[str, Any]:
     return stats
 
 
+def _markdown_value(value: Any) -> str:
+    if value is None:
+        return "—"
+    if isinstance(value, bool):
+        return "ja" if value else "nein"
+    return str(value).replace("|", "\\|")
+
+
+def publish_run_reports(runs_root: Path, results_root: Path) -> list[Path]:
+    """Schreibt kleine, versionierbare Berichte; Rohdaten bleiben lokal."""
+    stats = dashboard_data(runs_root)
+    results_root.mkdir(parents=True, exist_ok=True)
+    written = []
+    index_rows = []
+    for run in reversed(stats["history"]):
+        run_dir = runs_root / run["run_id"]
+        metadata = _read_json(run_dir / "metadata.json", {})
+        filename = f"Lauf_{run['run_number']:03d}_{run['run_id'][:8]}.md"
+        path = results_root / filename
+        status = "Massenaussterben" if run["mass_extinction"] else f"{run['population_alive']} lebend"
+        config = metadata.get("configuration", {})
+        config_rows = "\n".join(
+            f"| `{key}` | {_markdown_value(value)} |" for key, value in sorted(config.items())
+        ) or "| — | — |"
+        shortest = run.get("shortest_life")
+        longest = run.get("longest_life")
+        report = f"""# Lauf {run['run_number']}
+
+## Identität
+
+| Feld | Wert |
+| :--- | :--- |
+| Run-ID | `{run['run_id']}` |
+| Erzeugt | {_markdown_value(run.get('created_at'))} |
+| Seed | {_markdown_value(run.get('seed'))} |
+| Git-Commit | `{metadata.get('git_commit', 'unbekannt')}` |
+| EVE-Version | {_markdown_value(metadata.get('eve_version'))} |
+
+## Ergebnis
+
+| Ticks | Entitäten gesamt | Am Ende lebend | Nachkommen | Gewonnene Energie | Status |
+| ---: | ---: | ---: | ---: | ---: | :--- |
+| {run['tick']} | {run['population_total']} | {run['population_alive']} | {run['offspring']} | {_number(run['energy_gained'])} | {status} |
+
+- Kürzestes abgeschlossenes Leben: {shortest['name'] + ', ' + str(shortest['lifespan']) + ' Ticks' if shortest else '—'}
+- Längstes abgeschlossenes Leben: {longest['name'] + ', ' + str(longest['lifespan']) + ' Ticks' if longest else '—'}
+
+## Konfiguration
+
+| Parameter | Wert |
+| :--- | :--- |
+{config_rows}
+
+_Automatisch aus den lokalen Beobachtungsdaten erzeugter, versionierbarer Laufbericht. Ereignisstrom, Snapshots, RAM und Checkpoint bleiben wegen ihrer Größe lokal._
+"""
+        path.write_text(report, encoding="utf-8")
+        written.append(path)
+        index_rows.append(
+            f"| [{run['run_number']}]({filename}) | {run['tick']} | {status} | "
+            f"{run['offspring']} | {_number(run['energy_gained'])} |"
+        )
+    index = f"""# EVE-Alife – Laufergebnisse
+
+Dieser Bereich enthält die kompakten, versionierten Berichte der tatsächlich ausgeführten Prototyp-Läufe. Jeder Bericht hält Identität, Git-Stand, Konfiguration, Populationsresultat, Energiegewinn und Lebensrekorde fest.
+
+Die vollständigen Rohdaten bleiben lokal unter `04_Prototypen/v0.1/runs/`: Ein einzelner Lauf kann hunderte Megabyte an Snapshots, RAM-Zuständen, Checkpoints und Ereignissen enthalten. Sie werden deshalb nicht ungeprüft in Git aufgenommen. Die Berichte hier sind aus diesen Rohdaten reproduzierbar.
+
+## Übersicht
+
+| Lauf | Ticks | Status | Nachkommen | Energiegewinn |
+| ---: | ---: | :--- | ---: | ---: |
+{chr(10).join(reversed(index_rows))}
+
+## Aktualisieren
+
+```bash
+python3 04_Prototypen/v0.1/run_stats.py
+```
+
+Ein regulärer neuer Lauf aktualisiert seinen Bericht und diese Übersicht automatisch. Veröffentlicht wird der neue Stand mit dem nächsten Git-Commit und Push.
+"""
+    index_path = results_root / "README.md"
+    index_path.write_text(index, encoding="utf-8")
+    return [index_path, *written]
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="EVE-Statistik fuer die Git-Startseite aktualisieren")
     parser.add_argument("--runs", type=Path, default=Path(__file__).resolve().parent / "runs")
     parser.add_argument("--readme", type=Path, default=Path(__file__).resolve().parents[2] / "README.md")
+    parser.add_argument("--results", type=Path, default=Path(__file__).resolve().parents[2] / "07_Laufergebnisse")
     args = parser.parse_args()
     stats = update_readme_dashboard(args.readme, args.runs)
+    publish_run_reports(args.runs, args.results)
     print(json.dumps({key: value for key, value in stats.items() if key != "history"}, ensure_ascii=False))
 
 
