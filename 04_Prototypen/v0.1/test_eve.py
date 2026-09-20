@@ -24,12 +24,15 @@ class EveCoreTests(unittest.TestCase):
                 "run_id": "run-a", "created_at": "2026-01-01T00:00:00+00:00", "seed": 1,
             }), encoding="utf-8")
             (run / "latest.json").write_text(json.dumps({
-                "tick": 9, "entities": [{"id": 1, "alive": False}, {"id": 2, "alive": False}],
+                "tick": 9, "entities": [
+                    {"id": 1, "alive": False, "born_at": 0, "energy": 0, "n_g": 3, "n_f": 2, "n_p": 1},
+                    {"id": 2, "alive": False, "born_at": 3, "energy": 0, "n_g": 5, "n_f": 3, "n_p": 2, "parents": [1, 3]},
+                ],
             }), encoding="utf-8")
             events = [
                 {"tick": 0, "kind": "birth", "entity_id": 1, "entity_name": "Tom", "parents": []},
                 {"tick": 3, "kind": "birth", "entity_id": 2, "entity_name": "Erna", "parents": [1, 3]},
-                {"tick": 4, "kind": "ram_read", "entity_id": 2, "reward": 12.5},
+                {"tick": 4, "kind": "ram_read", "entity_id": 2, "address": 7, "reward": 12.5, "originators": [1]},
                 {"tick": 5, "kind": "death", "entity_id": 2},
                 {"tick": 9, "kind": "death", "entity_id": 1},
             ]
@@ -42,6 +45,10 @@ class EveCoreTests(unittest.TestCase):
             self.assertEqual(result["energy_gained"], 12.5)
             self.assertEqual(result["shortest_life"]["name"], "Erna")
             self.assertEqual(result["longest_life"]["name"], "Tom")
+            self.assertEqual(result["records"]["largest_genome"]["name"], "Erna")
+            self.assertEqual(result["records"]["deepest_generation"]["value"], 1)
+            self.assertEqual(result["records"]["most_ram_addresses"]["value"], 1)
+            self.assertEqual(result["records"]["best_information_producer"]["name"], "Tom")
             readme = Path(temporary) / "README.md"
             readme.write_text("# Test\n\n## Bereiche\n\nText\n", encoding="utf-8")
             update_readme_dashboard(readme, Path(temporary))

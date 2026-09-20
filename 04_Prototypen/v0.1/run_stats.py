@@ -28,9 +28,25 @@ def summarize_run(run_dir: Path, run_number: int) -> dict[str, Any]:
         for entity in latest.get("entities", [])
         if isinstance(entity.get("id"), int)
     }
+    entities = latest.get("entities", [])
+    entity_by_id = {entity["id"]: entity for entity in entities}
     deaths: list[dict[str, Any]] = []
     offspring = 0
     energy_gained = 0.0
+    direct_children: dict[int, int] = {}
+    generation_depth: dict[int, int] = {}
+    highest_energy: dict[int, float] = {
+        entity["id"]: float(entity.get("energy", 0)) for entity in entities
+    }
+    ram_addresses: dict[int, set[int]] = {}
+    personal_ram_energy: dict[int, float] = {}
+    producer_energy: dict[int, float] = {}
+
+    def note_energy(entity_id: int, *values: Any) -> None:
+        numeric = [float(value) for value in values if isinstance(value, (int, float))]
+        if numeric:
+            highest_energy[entity_id] = max(highest_energy.get(entity_id, float("-inf")), *numeric)
+
     event_path = run_dir / "events.jsonl"
     if event_path.exists():
         with event_path.open(encoding="utf-8") as lines:
@@ -42,12 +58,19 @@ def summarize_run(run_dir: Path, run_number: int) -> dict[str, Any]:
                 kind = event.get("kind")
                 entity_id = event.get("entity_id")
                 if kind == "birth" and isinstance(entity_id, int):
+                    parents = [parent for parent in event.get("parents", []) if isinstance(parent, int)]
                     births[entity_id] = {
                         "tick": event.get("tick", 0),
                         "name": event.get("entity_name") or amoeba_name(entity_id),
                     }
-                    if event.get("parents"):
+                    note_energy(entity_id, event.get("energy"))
+                    generation_depth[entity_id] = 0 if not parents else 1 + max(
+                        (generation_depth.get(parent, 0) for parent in parents), default=0
+                    )
+                    if parents:
                         offspring += 1
+                        for parent in parents:
+                            direct_children[parent] = direct_children.get(parent, 0) + 1
                 elif kind == "death" and isinstance(entity_id, int):
                     born = births.get(entity_id, {"tick": 0, "name": amoeba_name(entity_id)})
                     deaths.append({
@@ -55,14 +78,63 @@ def summarize_run(run_dir: Path, run_number: int) -> dict[str, Any]:
                         "name": born["name"],
                         "lifespan": max(0, event.get("tick", 0) - born["tick"]),
                     })
-                elif kind == "ram_read":
-                    energy_gained += float(event.get("reward", 0) or 0)
-    entities = latest.get("entities", [])
+                elif isinstance(entity_id, int) and kind in {"standby", "node_fire", "reproduction_cost"}:
+                    note_energy(entity_id, event.get("energy_before"), event.get("energy_after"))
+                elif kind == "ram_read" and isinstance(entity_id, int):
+                    reward = float(event.get("reward", 0) or 0)
+                    energy_gained += reward
+                    personal_ram_energy[entity_id] = personal_ram_energy.get(entity_id, 0.0) + reward
+                    if not event.get("virtual") and isinstance(event.get("address"), int):
+                        ram_addresses.setdefault(entity_id, set()).add(event["address"])
+                    originators = [item for item in event.get("originators", []) if isinstance(item, int)]
+                    if reward > 0 and originators:
+                        share = reward / len(originators)
+                        for originator in originators:
+                            producer_energy[originator] = producer_energy.get(originator, 0.0) + share
+
+    # Sehr alte Ereignisstroeme enthalten eventuell keine Geburtsereignisse fuer
+    # fortgesetzte Entitaeten. Die Checkpoint-Abstammung schliesst diese Luecke.
+    for entity in sorted(entities, key=lambda item: item["id"]):
+        parents = [parent for parent in entity.get("parents", []) if isinstance(parent, int)]
+        generation_depth.setdefault(
+            entity["id"], 0 if not parents else 1 + max(
+                (generation_depth.get(parent, 0) for parent in parents), default=0
+            ),
+        )
+
     alive = sum(bool(entity.get("alive")) for entity in entities)
     total = len(entities) or len(births)
     extinct = total > 0 and alive == 0
+    def entity_record(entity_id: int, value: float | int, **extra: Any) -> dict[str, Any]:
+        return {
+            "entity_id": entity_id,
+            "name": births.get(entity_id, {}).get("name", amoeba_name(entity_id)),
+            "value": value,
+            **extra,
+        }
+
+    def maximum(values: dict[int, Any], **extra_by_id: dict[int, Any]) -> dict[str, Any] | None:
+        if not values:
+            return None
+        entity_id = max(values, key=lambda item: values[item])
+        return entity_record(
+            entity_id, values[entity_id],
+            **{key: mapping.get(entity_id) for key, mapping in extra_by_id.items()},
+        )
+
+    genome_sizes = {entity["id"]: entity.get("n_g", 0) for entity in entities}
+    genome_f = {entity["id"]: entity.get("n_f", 0) for entity in entities}
+    genome_p = {entity["id"]: entity.get("n_p", 0) for entity in entities}
+    ages = {
+        entity["id"]: max(0, latest.get("tick", 0) - entity.get("born_at", 0))
+        if entity.get("alive") else next(
+            (death["lifespan"] for death in deaths if death["entity_id"] == entity["id"]), 0
+        )
+        for entity in entities
+    }
+    alive_flags = {entity["id"]: bool(entity.get("alive")) for entity in entities}
     summary = {
-        "schema": 1,
+        "schema": 2,
         "run_id": metadata.get("run_id", run_dir.name),
         "run_number": run_number,
         "created_at": metadata.get("created_at"),
@@ -75,6 +147,16 @@ def summarize_run(run_dir: Path, run_number: int) -> dict[str, Any]:
         "mass_extinction": extinct,
         "shortest_life": min(deaths, key=lambda item: item["lifespan"], default=None),
         "longest_life": max(deaths, key=lambda item: item["lifespan"], default=None),
+        "records": {
+            "largest_genome": maximum(genome_sizes, n_f=genome_f, n_p=genome_p),
+            "highest_energy": maximum(highest_energy),
+            "most_direct_children": maximum(direct_children),
+            "deepest_generation": maximum(generation_depth),
+            "oldest_entity": maximum(ages, alive=alive_flags),
+            "most_ram_addresses": maximum({key: len(value) for key, value in ram_addresses.items()}),
+            "most_ram_energy": maximum(personal_ram_energy),
+            "best_information_producer": maximum(producer_energy),
+        },
     }
     return summary
 
@@ -104,7 +186,7 @@ def dashboard_data(runs_root: Path) -> dict[str, Any]:
         # Alte oder weitergelaufene Runs werden automatisch neu bilanziert.
         if (
             not summary
-            or summary.get("schema") != 1
+            or summary.get("schema") != 2
             or summary.get("run_number") != number
             or (event_path.exists() and event_path.stat().st_mtime > summary_path.stat().st_mtime)
         ):
@@ -116,6 +198,17 @@ def dashboard_data(runs_root: Path) -> dict[str, Any]:
         for run in runs for life in (run.get("shortest_life"), run.get("longest_life"))
         if life is not None
     ]
+    record_keys = (
+        "largest_genome", "highest_energy", "most_direct_children", "deepest_generation",
+        "oldest_entity", "most_ram_addresses", "most_ram_energy", "best_information_producer",
+    )
+    records = {}
+    for key in record_keys:
+        candidates = [
+            {**record, "run_number": run["run_number"], "run_id": run["run_id"]}
+            for run in runs if (record := run.get("records", {}).get(key)) is not None
+        ]
+        records[key] = max(candidates, key=lambda item: item["value"], default=None)
     return {
         "runs": len(runs),
         "mass_extinctions": sum(run["mass_extinction"] for run in runs),
@@ -123,6 +216,7 @@ def dashboard_data(runs_root: Path) -> dict[str, Any]:
         "energy_gained": sum(run["energy_gained"] for run in runs),
         "shortest_life": min(lives, key=lambda item: item["lifespan"], default=None),
         "longest_life": max(lives, key=lambda item: item["lifespan"], default=None),
+        "records": records,
         "history": list(reversed(runs)),
     }
 
@@ -153,6 +247,27 @@ def render_readme_dashboard(stats: dict[str, Any]) -> str:
             f"{run['offspring']} | {_number(run['energy_gained'])} |"
         )
     table = "\n".join(rows) if rows else "| — | — | noch keine Läufe | — | — |"
+    record_labels = (
+        ("largest_genome", "Größtes Genom", " G"),
+        ("highest_energy", "Höchste Energie", ""),
+        ("most_direct_children", "Meiste direkte Kinder", ""),
+        ("deepest_generation", "Tiefste Generation", ""),
+        ("oldest_entity", "Älteste Amöbe", " Ticks"),
+        ("most_ram_addresses", "Meiste RAM-Adressen", ""),
+        ("most_ram_energy", "Meiste RAM-Energie", ""),
+        ("best_information_producer", "Bester Informationsproduzent", ""),
+    )
+    record_rows = []
+    for key, label, suffix in record_labels:
+        record = stats.get("records", {}).get(key)
+        if record:
+            value = _number(record["value"]) if isinstance(record["value"], float) else record["value"]
+            record_rows.append(
+                f"| {label} | **{record['name']}** (#{record['entity_id']}) | "
+                f"{value}{suffix} | {record['run_number']} |"
+            )
+        else:
+            record_rows.append(f"| {label} | — | noch nicht beobachtet | — |")
     return f"""{README_START}
 ## Live aus dem Biotop
 
@@ -162,6 +277,10 @@ def render_readme_dashboard(stats: dict[str, Any]) -> str:
 
 - Kürzestes abgeschlossenes Leben: {life(stats['shortest_life'])}
 - Längstes abgeschlossenes Leben: {life(stats['longest_life'])}
+
+| Rekord | Amöbe | Wert | Lauf |
+| :--- | :--- | ---: | ---: |
+{chr(10).join(record_rows)}
 
 | Lauf | Ticks | Status | Nachkommen | Energiegewinn |
 | ---: | ---: | :--- | ---: | ---: |

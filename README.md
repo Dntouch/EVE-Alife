@@ -16,6 +16,17 @@ Dieses Verzeichnis ist das dauerhafte Arbeitsgedächtnis von **EVE-Alife** auf d
 - Kürzestes abgeschlossenes Leben: **Cleo 2** (Amöbe #62), 2 Ticks in Lauf 10
 - Längstes abgeschlossenes Leben: **Dario** (Amöbe #6), 193 Ticks in Lauf 15
 
+| Rekord | Amöbe | Wert | Lauf |
+| :--- | :--- | ---: | ---: |
+| Größtes Genom | **Greta 3** (#73) | 39 G | 26 |
+| Höchste Energie | **Cleo 2** (#62) | 22.343,53 | 18 |
+| Meiste direkte Kinder | **Karla** (#13) | 47 | 18 |
+| Tiefste Generation | **Ada** (#3) | 1 | 1 |
+| Älteste Amöbe | **Tom** (#1) | 1000 Ticks | 30 |
+| Meiste RAM-Adressen | **Emmi 3** (#71) | 619 | 30 |
+| Meiste RAM-Energie | **Emmi 3** (#71) | 37.140,00 | 30 |
+| Bester Informationsproduzent | — | noch nicht beobachtet | — |
+
 | Lauf | Ticks | Status | Nachkommen | Energiegewinn |
 | ---: | ---: | :--- | ---: | ---: |
 | 30 | 1000 | 179 lebend | 230 | 3.078.540,00 |
