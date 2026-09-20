@@ -45,7 +45,7 @@ python3 run.py --ticks 100 --seed 42 --population 20 \
 
 Auch der Adresszähler ist nur eine Testvorrichtung. Im Inselmodus liegt zusätzlich je Startentität eine kleine Wertinsel in unmittelbarer Nähe ihrer genetischen Startadresse, damit der Datenpfad im kurzen Demonstrationslauf tatsächlich auf nichtleere Umweltwerte treffen kann. Beobachtetes Scannen oder Finden darf daher nicht als emergente Exploration interpretiert werden.
 
-Die implementierte Population 1 arbeitet dagegen mit der unveränderten zufälligen RAM-Suppe. Ihr Genom hält den Suchstand in `Z[0]`, speichert gelesene Werte in `Z[1]` und leitet Nichtnull-Werte über `GATE` nach `Z[2]` weiter:
+Die implementierte Population 1 arbeitet dagegen mit der unveränderten zufälligen RAM-Suppe. Ihr Genom hält den Suchstand in `Z[0]`, speichert gelesene Werte in `Z[1]` und leitet Nichtnull-Werte über `GATE` nach `Z[2]` weiter. Die Partner-ID ist nicht mehr als konkrete fremde ID fest verdrahtet: Das Genom liest die eigene Membran-ID, berechnet mit `((ID - 1) XOR 1) + 1` die benachbarte Laufzeit-ID und schreibt sie selbst in den Partnerslot. Dadurch können auch passende Nachkommenpaare eigene Kinder erzeugen.
 
 ```bash
 python3 run.py --ticks 30 --seed 42 --population 20 \
@@ -70,6 +70,8 @@ Ist `--birth-energy-fraction` gesetzt, hat dieser Modus Vorrang vor `--birth-ene
 `--birth-min-heartbeats 5` verlangt zusätzlich, dass diese angebotene Energie das konkrete Kindergenom für fünf volle Heartbeats finanzieren könnte. Der konservative Bedarf umfasst Standby, das Aktivitätsbudget des Kindes, Ausführungskosten und die höchste mögliche Zahl ausgehender Kanten einer ausgeführten Instanz; mögliche Z-Belohnungen werden nicht vorweggenommen. Reicht die angebotene Elternenergie nicht aus, findet keine Geburt statt, es wird nichts abgezogen und die Partnerslots bleiben gemäß der bestehenden P0-Regel belegt.
 
 Unabhängig vom gewählten Geburtsenergiemodell speichert jede Entität ihre eigene Geburtsenergie als `S₀`. Nach dem Elternbeitrag muss jeder Elternteil strikt mehr als sein eigenes `S₀` behalten. Die Startenergie ist damit ausschließlich Existenzvorschuss; Fortpflanzung kann nur aus selbst erwirtschaftetem Überschuss bezahlt werden.
+
+Neue Läufe verwenden standardmäßig eine progressive Altersbelastung von `0.01` Energie je bereits gelebtem Heartbeat. Der Standby eines Heartbeats beträgt damit `1 + Alter × 0.01`. Es existiert weiterhin kein festes Höchstalter; langlebige Amöben müssen ihren steigenden Erhaltungsaufwand finanzieren. Der Parameter kann für Kontrollläufe mit `--aging-cost-rate` verändert oder auf `0` gesetzt werden.
 
 Die Lupe stellt die RAM-Suppe nicht mehr als abstraktes Farbfeld ihrer Rohwerte dar. Die Ansicht **Umweltkontakte** zeigt ausschließlich tatsächlich gelesene oder geschriebene Adressen, Zugriffshäufigkeiten, die letzten Kontakte und einen Filter je Amöbe.
 

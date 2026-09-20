@@ -75,6 +75,20 @@ class EveCoreTests(unittest.TestCase):
             return sim.checkpoint()
         self.assertEqual(run(), run())
 
+    def test_aging_cost_increases_standby_without_fixed_expiry(self):
+        sim = Simulation(Config(
+            seed=1, ram_size=8, standby_cost=1, aging_cost_rate=0.25,
+            execution_cost=0, edge_cost=0,
+        ))
+        entity = sim.add_entity(Genome([Node(1, "PAUSE")], [], 1), 20)
+        entity.k["1:value"] = Signal(0, ("G",))
+        sim.heartbeat()
+        standby = next(event for event in sim.events if event["kind"] == "standby")
+        self.assertEqual(standby["age"], 1)
+        self.assertEqual(standby["aging_cost"], 0.25)
+        self.assertEqual(standby["cost"], 1.25)
+        self.assertTrue(entity.alive)
+
     def test_k_overwrites_and_inputs_are_consumed(self):
         genome = Genome(
             [Node(1, "CONST", 1), Node(2, "CONST", 2), Node(3, "PAUSE")],
@@ -237,6 +251,20 @@ class EveCoreTests(unittest.TestCase):
         self.assertGreater(len(reads), 1)
         self.assertIsNotNone(sim.entities[1].z[0])
         self.assertIsNotNone(sim.entities[1].z[1])
+
+    def test_p1_dynamic_pairing_allows_children_to_have_children(self):
+        sim = Simulation(Config(
+            seed=42, ram_size=256, birth_energy=10, mutation_probability=0,
+            standby_cost=0, aging_cost_rate=0, execution_cost=0, edge_cost=0,
+        ))
+        for _ in range(4):
+            entity = sim.add_entity(p1_explorer_genome(), 100)
+            entity.energy = 200
+        for _ in range(100):
+            sim.heartbeat()
+            if any(entity.parents == (3, 4) for entity in sim.entities.values()):
+                break
+        self.assertTrue(any(entity.parents == (3, 4) for entity in sim.entities.values()))
 
 
 if __name__ == "__main__":

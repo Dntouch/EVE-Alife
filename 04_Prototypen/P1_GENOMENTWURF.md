@@ -38,7 +38,7 @@ Das Startgenom besteht aus nachvollziehbaren Netzfragmenten, nicht aus einem Sup
 2. **Umweltzugriff:** Derselbe Adresswert fließt zu `RAM_READ`.
 3. **Fundspeicher:** Der gelesene RAM-Wert wird über einen eigenen `Z_WRITE` in Z abgelegt. Suchstand und Umweltinhalt verwenden getrennte Z-Adressen.
 4. **Reaktion:** `EQ` und `GATE` können einen Pfad abhängig von einem gelesenen Wert öffnen. Die erste P1-Fixture darf eine einfache, ausdrücklich dokumentierte Bedingung verwenden; sie ist Teststruktur, keine behauptete biologische Bedeutung.
-5. **Reproduktion:** Die bisherige fest verdrahtete Partner-ID darf in einem Kontrollgenom erhalten bleiben, wird aber getrennt vom Explorationsfragment ausgewiesen. So lassen sich Exploration und technische Fortpflanzung in der Lupe auseinanderhalten.
+5. **Reproduktion:** Die frühere fest verdrahtete Partner-ID bleibt nur in den P0-Kontrollgenomen erhalten. Das aktuelle P1-Startgenom liest seine eigene Membran-ID und berechnet durch `((ID - 1) XOR 1) + 1` die benachbarte Laufzeit-ID. Es schreibt dieses Ergebnis selbst in seinen Partnerslot. So bilden aufeinanderfolgende IDs wechselseitige Paare, ohne konkrete fremde IDs erblich festzuschreiben.
 
 Z beginnt weiterhin leer. Der leere Lesezustand liefert wie in P0 den Wert `0`; damit kann das Netz ohne versteckte Initialisierung aus dem Supervisor anlaufen.
 
@@ -215,3 +215,39 @@ Run-IDs:
 - 40: `d992ad6c-1e67-4ca5-b38e-ac640dc973bb`
 - 80: `1cb45901-3595-4fa9-94aa-082e430ddfa9`
 - 160: `491d086f-1249-44d7-801f-6ddcbd4944f6`
+
+### Dynamische Partnersuche und Generation 2
+
+Die Tarifläufe zeigten trotz vieler Kinder ausschließlich Generation 1. Ursache war kein biologischer Befund, sondern die fest verdrahtete Partner-ID der technischen Startpopulation: Gründer schrieben nach jeder Geburt erneut ihre ursprünglichen Partner in die geleerten Slots, während Kinder geerbte, für sie unpassende IDs besaßen.
+
+Das aktuelle P1-Genom berechnet deshalb sein Partnerpaar selbst aus der eigenen Membran-ID. Die Abbildung `((ID - 1) XOR 1) + 1` verbindet `1 ↔ 2`, `3 ↔ 4` und so weiter. Der Supervisor prüft weiterhin nur die wechselseitige Konstellation; sämtliche Lese-, Rechen- und Schreiboperationen werden vom Genom ausgeführt.
+
+Der erste 300-Tick-Test mit Tarif 60 und Altersrate 0,01 ergab:
+
+- 38 Nachkommen,
+- 58 Entitäten insgesamt,
+- 52 lebende Entitäten bei Tick 300,
+- erstmals Generation 2,
+- zwei Kinder des Nachkommenpaars 41 und 42.
+
+Run-ID: `c61fd90c-5a1c-4fc1-80fc-4e1651f872b0`.
+
+Damit ist die technische Sterilität aller Nachkommen beseitigt. Die Generationstiefe bleibt dennoch eine offene Selektionsfrage: Das Partnerfragment kann bei der Rekombination unvollständig vererbt werden, und im anschließenden Langzeitlauf entstand noch keine Generation 3.
+
+### Alterskosten und erneuter Tarif-60-Langzeitlauf
+
+Ein fester Standbybetrag begünstigte frühe Entitäten unbegrenzt. Neue Läufe verwenden daher zusätzliche Alterskosten von `Alter × 0,01` pro Heartbeat. Es gibt weiterhin kein Ablaufdatum; hohes Alter bleibt möglich, muss aber zunehmend finanziert werden.
+
+Der 1.000-Tick-Lauf mit dynamischer Partnersuche, Tarif 60 und Altersrate 0,01 ergab:
+
+| Tick | lebend | insgesamt geboren |
+|---:|---:|---:|
+| 100 | 30 | 31 |
+| 300 | 52 | 58 |
+| 500 | 58 | 70 |
+| 700 | 49 | 71 |
+| 1.000 | 32 | 71 |
+
+Insgesamt entstanden 51 Nachkommen und Generation 2, aber keine Generation 3. Die Population erreichte um Tick 500 ihr beobachtetes Maximum und schrumpfte danach. 19 der 20 Gründer starben; eine Gründerin erreichte weiterhin Tick 1.000. Tarif 60 trägt unter den neuen Bedingungen also eine langfristig überlebende Population, aber kein dauerhaftes Wachstum wie im früheren Lauf ohne Alterskosten und mit kleinerem, fest verdrahtetem Partnerfragment.
+
+Run-ID: `b623e0f1-eccb-41d1-9311-81288617b37d`.

@@ -151,6 +151,7 @@ class Config:
     genome_size_sigma: float = 2.0
     mutation_probability: float = 0.001
     standby_cost: float = 1.0
+    aging_cost_rate: float = 0.01
     execution_cost: float = 1.0
     edge_cost: float = 0.1
     novelty_base: float = 10.0
@@ -201,13 +202,17 @@ class Simulation:
             entity = self.entities[entity_id]
             if not entity.alive:
                 continue
-            if entity.energy < self.config.standby_cost:
+            age = self.tick - entity.born_at
+            aging_cost = age * self.config.aging_cost_rate
+            standby_cost = self.config.standby_cost + aging_cost
+            if entity.energy < standby_cost:
                 self._kill(entity, "standby_unaffordable")
                 continue
             energy_before = entity.energy
-            entity.energy -= self.config.standby_cost
+            entity.energy -= standby_cost
             self.emit(
-                "standby", entity_id=entity.id, cost=self.config.standby_cost,
+                "standby", entity_id=entity.id, cost=standby_cost,
+                base_cost=self.config.standby_cost, aging_cost=aging_cost, age=age,
                 energy_before=energy_before, energy_after=entity.energy,
             )
             self._execute_entity(entity)
@@ -452,6 +457,7 @@ class Simulation:
         maximum_edges = max(outgoing.values(), default=0)
         heartbeat_cost = (
             self.config.standby_cost
+            + self.config.birth_min_heartbeats * self.config.aging_cost_rate
             + budget * (self.config.execution_cost + self.config.edge_cost * maximum_edges)
         )
         return self.config.birth_min_heartbeats * heartbeat_cost
@@ -701,28 +707,34 @@ def explorer_demo_genome(partner_id: int, ram_start: int = 0) -> Genome:
     return Genome(nodes, edges, activity_base=48)
 
 
-def p1_explorer_genome(partner_id: int) -> Genome:
-    """P1: Partnersignal plus persistenter RAM-Suchstand und konditionale Reaktion."""
+def p1_explorer_genome(partner_id: int | None = None) -> Genome:
+    """P1: dynamisches ID-Paar, persistenter RAM-Suchstand und GATE-Reaktion."""
     nodes = [
-        # Technische P0-Reproduktion als getrenntes Kontrollfragment.
-        Node(1, "CONST", 1), Node(2, "CONST", 0), Node(3, "CONST", partner_id),
-        Node(4, "MEM_WRITE"),
+        # Die Partner-ID wird aus der eigenen ID berechnet: ((ID-1) XOR 1)+1.
+        # Damit bilden aufeinanderfolgende, zur Laufzeit entdeckbare IDs Paare,
+        # ohne dass konkrete fremde IDs im Genom fest verdrahtet sind.
+        Node(1, "CONST", 0), Node(2, "MEM_READ"), Node(3, "CONST", 1),
+        Node(4, "SUB"), Node(5, "XOR"), Node(6, "ADD"), Node(7, "MEM_WRITE"),
         # Z[0] enthält den Suchstand; leerer Z-Zustand startet definitionsgemäß bei 0.
-        Node(5, "CONST", 0), Node(6, "Z_READ"), Node(7, "CONST", 1),
-        Node(8, "ADD"), Node(9, "Z_WRITE"), Node(10, "RAM_READ"),
+        Node(8, "CONST", 0), Node(9, "Z_READ"), Node(10, "CONST", 1),
+        Node(11, "ADD"), Node(12, "Z_WRITE"), Node(13, "RAM_READ"),
         # Jeder gelesene Umweltwert wird in Z[1] abgelegt.
-        Node(11, "CONST", 1), Node(12, "Z_WRITE"),
+        Node(14, "CONST", 1), Node(15, "Z_WRITE"),
         # Nichtnull-Werte öffnen GATE und erreichen zusätzlich Z[2].
-        Node(13, "CONST", 2), Node(14, "GATE"), Node(15, "Z_WRITE"),
+        Node(16, "CONST", 2), Node(17, "GATE"), Node(18, "Z_WRITE"),
     ]
     edges = [
-        Edge(1, "value", 4, "offset"), Edge(2, "value", 4, "slot"),
-        Edge(3, "value", 4, "value"),
-        Edge(5, "value", 6, "address"), Edge(5, "value", 9, "address"),
-        Edge(6, "value", 8, "a"), Edge(7, "value", 8, "b"),
-        Edge(8, "value", 9, "value"), Edge(8, "value", 10, "address"),
-        Edge(10, "value", 12, "value"), Edge(11, "value", 12, "address"),
-        Edge(10, "value", 14, "value"), Edge(10, "value", 14, "condition"),
-        Edge(13, "value", 15, "address"), Edge(14, "value", 15, "value"),
+        Edge(1, "value", 2, "offset"), Edge(1, "value", 2, "slot"),
+        Edge(2, "value", 4, "a"), Edge(3, "value", 4, "b"),
+        Edge(4, "value", 5, "a"), Edge(3, "value", 5, "b"),
+        Edge(5, "value", 6, "a"), Edge(3, "value", 6, "b"),
+        Edge(3, "value", 7, "offset"), Edge(1, "value", 7, "slot"),
+        Edge(6, "value", 7, "value"),
+        Edge(8, "value", 9, "address"), Edge(8, "value", 12, "address"),
+        Edge(9, "value", 11, "a"), Edge(10, "value", 11, "b"),
+        Edge(11, "value", 12, "value"), Edge(11, "value", 13, "address"),
+        Edge(13, "value", 15, "value"), Edge(14, "value", 15, "address"),
+        Edge(13, "value", 17, "value"), Edge(13, "value", 17, "condition"),
+        Edge(16, "value", 18, "address"), Edge(17, "value", 18, "value"),
     ]
-    return Genome(nodes, edges, activity_base=72)
+    return Genome(nodes, edges, activity_base=88)

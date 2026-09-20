@@ -8,11 +8,14 @@ Zusammenhängende Versuchsreihen werden zusätzlich ausgewertet:
 
 - [Tarifrunde 40–90: IG Amöbe gegen Lebenshaltungskosten](Tarifrunde_040_bis_090.md)
 - [Langzeitlauf mit Tarif 60](Langzeitlauf_Tarif_060.md)
+- [Dynamische Partnersuche und Alterskosten](Partnersuche_und_Alterung.md)
 
 ## Übersicht
 
 | Lauf | Ticks | Status | Nachkommen | Energiegewinn |
 | ---: | ---: | :--- | ---: | ---: |
+| [32](Lauf_032_b623e0f1.md) | 1000 | 32 lebend | 51 | 1.232.700,00 |
+| [31](Lauf_031_c61fd90c.md) | 300 | 52 lebend | 38 | 289.080,00 |
 | [30](Lauf_030_8f28241b.md) | 1000 | 179 lebend | 230 | 3.078.540,00 |
 | [29](Lauf_029_17abde73.md) | 200 | 146 lebend | 180 | 687.330,00 |
 | [28](Lauf_028_3a3366dc.md) | 200 | 142 lebend | 155 | 633.335,00 |

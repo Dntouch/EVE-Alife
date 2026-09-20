@@ -379,6 +379,7 @@ Zusammenhängende Versuchsreihen werden zusätzlich ausgewertet:
 
 - [Tarifrunde 40–90: IG Amöbe gegen Lebenshaltungskosten](Tarifrunde_040_bis_090.md)
 - [Langzeitlauf mit Tarif 60](Langzeitlauf_Tarif_060.md)
+- [Dynamische Partnersuche und Alterskosten](Partnersuche_und_Alterung.md)
 
 ## Übersicht
 
