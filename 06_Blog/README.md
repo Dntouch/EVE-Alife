@@ -35,6 +35,7 @@ Eine Kennzeichnung gilt für die unmittelbar zugehörige Passage. Der restliche 
 - [006 – sudo dnf remove laborkittel](006_Sudo_dnf_remove_laborkittel.md)
 - [007 – Unendlich schlau, aber zu doof es anzuwenden](007_Unendlich_schlau_aber_zu_doof.md)
 - [008 – Joa. Kennste jetzt.](008_Joa_Kennste_jetzt.md)
+- [009 – Das Viech kann einfach nicht anders](009_Das_Viech_kann_einfach_nicht_anders.md)
 
 ## Status
 

@@ -24,3 +24,5 @@ Einträge verweisen nach Möglichkeit auf ihre Quellen. Medien werden im Unterve
 - [29. August 2026 – Das Projekt bekommt ein Gedächtnis](2026-08-29_Das_Projekt_bekommt_ein_Gedaechtnis.md)
 - [29. August 2026 – Vom Prozess zum Hunger](2026-08-29_Vom_Prozess_zum_Hunger.md)
 - [6. September 2026 – Von der Frage „Was ist P?“ zur RAM-Suppe und zum Datenflussnetz](2026-09-06_Von_der_Frage_Was_ist_P_zur_RAM-Suppe.md)
+- [20. September 2026 – EVE-Alife, Isolation und Spam-Amöben](2026-09-20_EVE-Alife_Isolation_und_Spam-Amoeben.md)
+- [20. September 2026 – Vom Konzept zum ersten laufenden Prototyp](2026-09-20_Vom_Konzept_zum_ersten_Prototyp.md)
