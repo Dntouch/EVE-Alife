@@ -16,6 +16,10 @@ Dieses Verzeichnis ist das dauerhafte Arbeitsgedächtnis von **EVE-Alife** auf d
 - `05_Projektlog`: chronologische Entstehungsgeschichte mit technischen, konzeptionellen und persönlichen Notizen
 - `06_Blog`: lesbare Geschichten, Gedanken und Lab Notes aus dem Projekt
 
+## Aktueller Prototyp
+
+Der erste ausführbare Stand liegt unter [Prototyp v0.1](04_Prototypen/v0.1/README.md). Er enthält den eigenständigen EVE-Core, reproduzierbare und fortsetzbare Runs, eine persistierte read-only Beobachtungsschnittstelle sowie die erste schlichte Lupe.
+
 ## Arbeitsgrundsatz
 
 > Das Archiv bewahrt, Phase 0 denkt, das Konzept verdichtet, Experimente prüfen und Prototypen verkörpern.
