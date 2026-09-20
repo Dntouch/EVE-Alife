@@ -258,6 +258,10 @@ Die berechnete Nachbar-ID wurde durch ein echtes Such-und-Handshake-Fragment ers
 
 Das Startgenom enthält zusätzlich ein getrenntes neutrales Schreibfragment, das die eigene ID nach `RAM[eigene ID]` schreibt. Das Schreiben selbst wird nicht belohnt. Andere Amöben können den externen Wert jedoch nach der bestehenden RAM-Nahrungsregel entdecken. Zusammenhängende Netzkomponenten werden nun tatsächlich atomar vererbt und bei der Rekombination nicht mehr angeschnitten.
 
+### Unterlineare Genomkosten
+
+Das gewachsene P1-Genom zeigte einen unerwünschten linearen Kosteneffekt: Mehr Verhalten wurde fast automatisch mit kürzerem Leben bestraft. Neue Läufe berechnen den Lebensunterhalt deshalb als `1 + Alter × 0,01 + 0,5 × √N_f + 0,1 × √N_p`. Das Genom bleibt selektiv relevant, eine Verdoppelung seiner Größe verdoppelt die Kosten aber nicht. Die bisherigen linearen Standardkosten je ausgeführtem Funktionspunkt und übertragener Kante entfallen. Teure reale Wirkungen können später weiterhin gezielt am jeweiligen primitiven Funktionspunkt bepreist werden.
+
 Der erste 300-Tick-Lauf mit Tarif 60 wies 708 RAM-Schreibvorgänge, 172 neue Entitätsfunde, 9 erkannte Einladungen und erstmals einen Informationsproduzenten nach. Flüchtig überschriebene Vorschläge erzeugten jedoch keine stabile Gruppe. Nach der Korrektur blieben Vorschläge stehen; es entstanden 114 formale Geburtsprüfungen, die sämtlich an der Überschussbedingung scheiterten. Das neue vollständige Startgenom ist mit 100 Genombestandteilen deutlich teurer als sein Vorgänger; Tarif 60 ist deshalb nicht direkt vergleichbar.
 
 Ein ausdrücklich als Funktionskontrolle markierter 300-Tick-Lauf mit Tarif 160 ergab:
@@ -276,3 +280,16 @@ Run-IDs:
 - Funktionskontrolle bei Tarif 160: `760442a6-413f-4f6e-8e62-85233ebfe31e`.
 
 Die Kausalkette `finden → vorschlagen → Einladung erkennen → erwidern → Geburt` ist damit ausführbar. Der Tarif für das größere Sozial- und Schreibgenom sowie die noch stark auf frühe gefundene Amöben konzentrierte Partnerwahl bleiben neue Versuchsfragen.
+
+Der anschließende 1.000-Tick-Vergleich mit dem ausgehandelten Tarif 60 und den neuen unterlinearen Genomkosten ergab:
+
+- 29 Nachkommen und 49 Entitäten insgesamt,
+- 38 lebende Amöben bei Tick 1.000,
+- Generation 4 statt zuvor höchstens Generation 2,
+- 1.460 neue Entitätsfunde und 64 erkannte Einladungen,
+- 9.845 neutrale RAM-Schreibvorgänge,
+- 388.240 gewonnene Energieeinheiten.
+
+Run-ID: `157811c6-aee4-4418-8cb8-6eef05fd6c5a`.
+
+Damit war nicht der Tarif 60 allein das Hindernis. Die lineare Besteuerung des größeren Verhaltensgenoms hatte die Population wirtschaftlich abgeschnitten. Das unterlineare Modell erhält weiterhin Größenkosten und Altersdruck, erlaubt bei unveränderter Umwelt aber erstmals eine über vier Generationen fortbestehende Population mit echter Partnersuche.

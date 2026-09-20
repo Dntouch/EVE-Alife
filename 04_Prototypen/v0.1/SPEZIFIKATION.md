@@ -240,8 +240,10 @@ A_ist                    max(1, floor(A₀ * F(Nₚ))), durch S begrenzt
 
 Standby-Basiskosten     1,0 Energie je Heartbeat
 Alterungsrate           0,01 Energie je gelebtem Heartbeat
-Funktionsausführung     1,0 Energie
-Kantenübertragung       0,1 Energie je übertragener Kante
+Genom-Funktionsfaktor   0,5 × sqrt(N_f) Energie je Heartbeat
+Genom-Kantenfaktor      0,1 × sqrt(N_p) Energie je Heartbeat
+Funktionsausführung     0,0 Energie
+Kantenübertragung       0,0 Energie je übertragener Kante
 
 S_birth                 50,0 Energie
 Neuheitsbasis           10,0 Energie
@@ -249,6 +251,6 @@ reward(k)               10 / (1+k) je erneutem Wechsel zu (Adresse, Wert)
 p_mut                   0,001 je Kind
 ```
 
-Ein Heartbeat bucht zuerst den Standbyverbrauch ab. Für neue Läufe gilt `Standby = Standby-Basiskosten + Alter × Alterungsrate`; bei der Standardrate `0,01` kostet Alter 100 insgesamt 2, Alter 500 insgesamt 6 und Alter 1.000 insgesamt 11 Energie je Heartbeat. Es gibt kein festes Höchstalter. Eine alte Entität kann weiterleben, wenn sie ihren steigenden Erhaltungsaufwand erwirtschaftet. Entitäten, die den Standby nicht bezahlen können, sterben vor ihrer Ausführung. Die übrigen Entitäten werden in stabiler Entity-ID-Reihenfolge ausgeführt; die Auswahl bereiter Funktionspunkte erfolgt ausschließlich über den Seed-Zufallsstrom. Anschließend prüft der Supervisor reproduktive Konstellationen, führt mögliche Geburten aus und erzeugt Beobachtungsdaten. Reale Laufzeit hat keinen Einfluss auf diese Reihenfolge.
+Ein Heartbeat bucht zuerst den Lebensunterhalt ab. Für neue Läufe gilt `Lebensunterhalt = 1 + Alter × 0,01 + 0,5 × sqrt(N_f) + 0,1 × sqrt(N_p)`. Das Genom bleibt damit ein Kostenfaktor, wächst aber nicht mehr linear: Verdoppelung der Genomgröße verdoppelt die Genomkosten nicht. Funktionsausführungen und Kantenübertragungen werden nicht zusätzlich linear berechnet. Es gibt kein festes Höchstalter. Eine alte Entität kann weiterleben, wenn sie ihren steigenden Erhaltungsaufwand erwirtschaftet. Entitäten, die den Lebensunterhalt nicht bezahlen können, sterben vor ihrer Ausführung. Die übrigen Entitäten werden in stabiler Entity-ID-Reihenfolge ausgeführt; die Auswahl bereiter Funktionspunkte erfolgt ausschließlich über den Seed-Zufallsstrom. Anschließend prüft der Supervisor reproduktive Konstellationen, führt mögliche Geburten aus und erzeugt Beobachtungsdaten. Reale Laufzeit hat keinen Einfluss auf diese Reihenfolge.
 
 Population 0 des mitgelieferten Standardlaufs ist eine ausdrücklich gekennzeichnete technische Demonstrationspopulation. Sie dient dem Nachweis von Datenfluss, `Z-write`, Membranzugriff und Geburt und ist kein wissenschaftlicher Versuchsaufbau oder Ergebnis.

@@ -67,11 +67,11 @@ python3 run.py --ticks 100 --seed 42 --population 20 \
 
 Ist `--birth-energy-fraction` gesetzt, hat dieser Modus Vorrang vor `--birth-energy`. Bei `0.5` erhält das Kind die Hälfte der mittleren aktuellen Elternenergie; der Betrag wird weiterhin vollständig und zu gleichen Teilen von den Eltern bezahlt. Zulässig sind Werte größer `0` bis einschließlich `1`.
 
-`--birth-min-heartbeats 5` verlangt zusätzlich, dass diese angebotene Energie das konkrete Kindergenom für fünf volle Heartbeats finanzieren könnte. Der konservative Bedarf umfasst Standby, das Aktivitätsbudget des Kindes, Ausführungskosten und die höchste mögliche Zahl ausgehender Kanten einer ausgeführten Instanz; mögliche Z-Belohnungen werden nicht vorweggenommen. Reicht die angebotene Elternenergie nicht aus, findet keine Geburt statt, es wird nichts abgezogen und die Partnerslots bleiben gemäß der bestehenden P0-Regel belegt.
+`--birth-min-heartbeats 5` verlangt zusätzlich, dass diese angebotene Energie das konkrete Kindergenom für fünf volle Heartbeats finanzieren könnte. Der Bedarf umfasst Grund-, Alters- und unterlineare Genomkosten; mögliche Belohnungen werden nicht vorweggenommen. Reicht die angebotene Elternenergie nicht aus, findet keine Geburt statt, es wird nichts abgezogen und die Partnerslots bleiben gemäß der bestehenden P0-Regel belegt.
 
 Unabhängig vom gewählten Geburtsenergiemodell speichert jede Entität ihre eigene Geburtsenergie als `S₀`. Nach dem Elternbeitrag muss jeder Elternteil strikt mehr als sein eigenes `S₀` behalten. Die Startenergie ist damit ausschließlich Existenzvorschuss; Fortpflanzung kann nur aus selbst erwirtschaftetem Überschuss bezahlt werden.
 
-Neue Läufe verwenden standardmäßig eine progressive Altersbelastung von `0.01` Energie je bereits gelebtem Heartbeat. Der Standby eines Heartbeats beträgt damit `1 + Alter × 0.01`. Es existiert weiterhin kein festes Höchstalter; langlebige Amöben müssen ihren steigenden Erhaltungsaufwand finanzieren. Der Parameter kann für Kontrollläufe mit `--aging-cost-rate` verändert oder auf `0` gesetzt werden.
+Neue Läufe verwenden `Lebensunterhalt = 1 + Alter × 0.01 + 0.5 × √N_f + 0.1 × √N_p`. Die Genomkosten steigen damit unterlinear statt pro Ausführung und Kante linear. Die Faktoren lassen sich mit `--genome-node-cost` und `--genome-edge-cost` verändern. Es existiert weiterhin kein festes Höchstalter; langlebige Amöben müssen ihren steigenden Erhaltungsaufwand finanzieren.
 
 Die Lupe stellt die RAM-Suppe nicht mehr als abstraktes Farbfeld ihrer Rohwerte dar. Die Ansicht **Umweltkontakte** zeigt ausschließlich tatsächlich gelesene oder geschriebene Adressen, Zugriffshäufigkeiten, die letzten Kontakte und einen Filter je Amöbe.
 

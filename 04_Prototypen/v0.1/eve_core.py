@@ -152,8 +152,10 @@ class Config:
     mutation_probability: float = 0.001
     standby_cost: float = 1.0
     aging_cost_rate: float = 0.01
-    execution_cost: float = 1.0
-    edge_cost: float = 0.1
+    genome_node_cost: float = 0.5
+    genome_edge_cost: float = 0.1
+    execution_cost: float = 0.0
+    edge_cost: float = 0.0
     novelty_base: float = 10.0
     entity_discovery_base: float = 10.0
     invitation_discovery_base: float = 20.0
@@ -206,7 +208,11 @@ class Simulation:
                 continue
             age = self.tick - entity.born_at
             aging_cost = age * self.config.aging_cost_rate
-            standby_cost = self.config.standby_cost + aging_cost
+            genome_cost = (
+                self.config.genome_node_cost * sqrt(len(entity.genome.nodes))
+                + self.config.genome_edge_cost * sqrt(len(entity.genome.edges))
+            )
+            standby_cost = self.config.standby_cost + aging_cost + genome_cost
             if entity.energy < standby_cost:
                 self._kill(entity, "standby_unaffordable")
                 continue
@@ -214,7 +220,8 @@ class Simulation:
             entity.energy -= standby_cost
             self.emit(
                 "standby", entity_id=entity.id, cost=standby_cost,
-                base_cost=self.config.standby_cost, aging_cost=aging_cost, age=age,
+                base_cost=self.config.standby_cost, aging_cost=aging_cost,
+                genome_cost=genome_cost, age=age,
                 energy_before=energy_before, energy_after=entity.energy,
             )
             self._execute_entity(entity)
@@ -498,12 +505,17 @@ class Simulation:
         budget = max(1, floor(genome.activity_base / sqrt(max(1, genome.n_p))))
         outgoing = Counter(edge.source for edge in genome.edges)
         maximum_edges = max(outgoing.values(), default=0)
-        heartbeat_cost = (
-            self.config.standby_cost
-            + self.config.birth_min_heartbeats * self.config.aging_cost_rate
-            + budget * (self.config.execution_cost + self.config.edge_cost * maximum_edges)
+        genome_cost = (
+            self.config.genome_node_cost * sqrt(len(genome.nodes))
+            + self.config.genome_edge_cost * sqrt(len(genome.edges))
         )
-        return self.config.birth_min_heartbeats * heartbeat_cost
+        fixed_cost = self.config.standby_cost + genome_cost
+        execution_cost = budget * (
+            self.config.execution_cost + self.config.edge_cost * maximum_edges
+        )
+        heartbeats = self.config.birth_min_heartbeats
+        aging_cost = self.config.aging_cost_rate * heartbeats * (heartbeats + 1) / 2
+        return heartbeats * (fixed_cost + execution_cost) + aging_cost
 
     def _recombine(self, parents: list[Entity]) -> Genome:
         chosen_size_parent = self.rng.choice(parents)

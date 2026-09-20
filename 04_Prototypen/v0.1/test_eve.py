@@ -78,6 +78,7 @@ class EveCoreTests(unittest.TestCase):
     def test_aging_cost_increases_standby_without_fixed_expiry(self):
         sim = Simulation(Config(
             seed=1, ram_size=8, standby_cost=1, aging_cost_rate=0.25,
+            genome_node_cost=0, genome_edge_cost=0,
             execution_cost=0, edge_cost=0,
         ))
         entity = sim.add_entity(Genome([Node(1, "PAUSE")], [], 1), 20)
@@ -88,6 +89,23 @@ class EveCoreTests(unittest.TestCase):
         self.assertEqual(standby["aging_cost"], 0.25)
         self.assertEqual(standby["cost"], 1.25)
         self.assertTrue(entity.alive)
+
+    def test_genome_maintenance_cost_grows_with_square_root(self):
+        genome = Genome(
+            [Node(1, "CONST", 1), Node(2, "PAUSE"),
+             Node(3, "CONST", 3), Node(4, "CONST", 4)],
+            [Edge(1, "value", 2, "value")],
+            1,
+        )
+        sim = Simulation(Config(
+            seed=1, ram_size=8, standby_cost=1, aging_cost_rate=0,
+            genome_node_cost=0.5, genome_edge_cost=0.1,
+        ))
+        entity = sim.add_entity(genome, 20)
+        sim.heartbeat()
+        standby = next(event for event in sim.events if event["kind"] == "standby")
+        self.assertAlmostEqual(standby["genome_cost"], 1.1)
+        self.assertAlmostEqual(standby["cost"], 2.1)
 
     def test_k_overwrites_and_inputs_are_consumed(self):
         genome = Genome(
@@ -163,6 +181,7 @@ class EveCoreTests(unittest.TestCase):
         sim = Simulation(Config(
             seed=3, ram_size=8, birth_energy_fraction=0.5,
             birth_min_heartbeats=5, mutation_probability=0,
+            genome_node_cost=10,
         ))
         a = sim.add_entity(demo_genome(2), 100)
         b = sim.add_entity(demo_genome(1), 100)
@@ -316,7 +335,9 @@ class EveCoreTests(unittest.TestCase):
     def test_p1_dynamic_pairing_allows_children_to_have_children(self):
         sim = Simulation(Config(
             seed=42, ram_size=256, birth_energy=10, mutation_probability=0,
-            standby_cost=0, aging_cost_rate=0, execution_cost=0, edge_cost=0,
+            standby_cost=0, aging_cost_rate=0,
+            genome_node_cost=0, genome_edge_cost=0,
+            execution_cost=0, edge_cost=0,
         ))
         for _ in range(4):
             entity = sim.add_entity(p1_explorer_genome(), 100)
