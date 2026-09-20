@@ -301,6 +301,14 @@ Lauf 41 wiederholte Lauf 40 über 2.000 Ticks mit Seed 42 und identischen Umwelt
 
 Run-ID: `620fbb0a-7f33-447c-a2b5-06f0fe4c934f` (Lauf 41).
 
+## 10. Vorläufiger Ergebnisstand P1
+
+P1 wird mit Lauf 41 vorläufig eingefroren. Der Prototyp weist echte genomische RAM-Exploration, veränderungsabhängigen Energiegewinn, atomare Fragmentvererbung, gefundene Partnerschaften, Einladung und Erwiderung, beobachtbare Lebenszustände sowie genomische Freigabe eines nachweislich verstorbenen Partners nach. Die Lupe kann diese Vorgänge über frei wählbare Zeiträume und einzelne Lebensfilme nachvollziehen.
+
+Die jüngsten Läufe zeigen zugleich zwei unterschiedliche Sackgassen als reguläre Selektionsresultate. Amöben ohne ausführbares `MEM_WRITE` können wirtschaftlich dominieren und lange leben, ihre Linie aber nicht fortsetzen; sie erreichen höchstens Membranwert `9`. Amöben mit vollständigem Sozialfragment können einen ungeeigneten, nicht antwortfähigen Partner wählen und an ihrer gebundenen Wahl festhalten. Lokaler Suchbeginn beseitigt die einseitige Bevorzugung von Amöbe 1, löst aber noch keine Partnerstrategie.
+
+Für die Fortsetzung bleibt bewusst offen, ob ein einzelner Vorschlagsslot das gewünschte Modell ausreichend ausdrückt. Zu prüfen sind insbesondere mehrere gleichzeitig mögliche Kandidaten, die Bedeutung von ein oder zwei Partnerslots, ein genomisch erzeugter Wechsel nach ausbleibender Antwort sowie die Frage, welche dieser Fähigkeiten als eigenes vererbbares Fragment entstehen sollen. Bis zu dieser Entscheidung werden weder Slotzahl noch Partnerlogik weiter verändert.
+
 Der anschließende 1.000-Tick-Vergleich mit dem ausgehandelten Tarif 60 und den neuen unterlinearen Genomkosten ergab:
 
 - 29 Nachkommen und 49 Entitäten insgesamt,

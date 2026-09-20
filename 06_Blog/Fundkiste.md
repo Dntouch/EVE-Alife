@@ -38,6 +38,18 @@ Eine mögliche spätere Hardware-Nebenepisode: wissenschaftlicher Dauerläufer, 
 
 Quelle: „EVE Bestandsaufnahme“, 28. August 2026.
 
+### Reich, aber sozial absolut inkompetent
+
+In einem 2.000-Tick-Lauf erbten mehrere Kinder das profitable Explorationsgenom, aber kein funktionsfähiges `MEM_WRITE`. Uwe sammelte enorme Energie, konnte jedoch keinen Partner vorschlagen. Die gemeinsame Kurzfassung lautete:
+
+> Energie: 14.894. Partnersuche: nicht implementiert.
+
+Der Folgelauf verschob die Partnersuche in die lokale ID-Nachbarschaft. Xenia, Zeno und Cleo besaßen das vollständige Sozialfragment, wählten aber jeweils einen reichen Nachbarn ohne `MEM_WRITE` und warteten vergeblich auf Antwort. Individueller wirtschaftlicher Erfolg, strukturelle Sozialfähigkeit und evolutionärer Erfolg fielen damit erstmals sichtbar auseinander.
+
+Offene Anschlussfrage: Reicht ein Partnerslot, oder braucht eine Amöbe mehrere gleichzeitig mögliche Kandidaten?
+
+Quelle: Läufe 40 und 41, 20. September 2026.
+
 ### Nova zieht vom Browser in den Eimer
 
 Die Installation der Desktop-App auf Bazzite brachte Git gleich als Begleitung mit. Vor dem Neustart entstand das Bild, Stefan werde den Browser mit Nova darin schließen, EVE neu starten und Nova anschließend als lokale App wieder hineinholen – eine kleine Migration innerhalb desselben Rechners.

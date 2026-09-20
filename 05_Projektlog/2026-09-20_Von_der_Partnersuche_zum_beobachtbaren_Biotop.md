@@ -54,3 +54,15 @@ Auswahlbilanz, verständliche Ereignisse, Umweltkontakte und Amöbenkarten folge
 - **Keine Beobachtung:** Freie Partnerwahl im menschlichen Sinn, Absicht, Sympathie oder entwickelte Kommunikation.
 
 Der Prototyp ist damit nicht nur komplexer geworden. Er ist erstmals so beobachtbar, dass zeitliche Ursachenketten im gesamten Biotop untersucht werden können, ohne den Lauf zu verändern.
+
+## Nachtrag: reich, sozial unfähig – oder sozial, aber erfolglos
+
+Die 2.000-Tick-Läufe 40 und 41 machten die fragmentweise Vererbung unerwartet anschaulich. In Lauf 40 wurden mehrere Kinder mit dem vollständigen Sozialfragment auf Amöbe 1 fixiert, weil jede neue Suche bei niedrigen IDs begann. Andere Kinder erbten profitable Explorations- und Schreibfragmente ohne `MEM_WRITE`: Sie sammelten sehr viel Energie und lebten lange, konnten diese individuelle Dominanz aber nicht in Nachkommen übersetzen.
+
+Daraufhin wurde der Suchstart in die eigene ID-Nachbarschaft verlegt. Ein eigener Partnerslot darf außerdem genomisch freigegeben werden, wenn die Amöbe den Tod genau des eingetragenen Partners beobachtet. Lauf 41 bestätigte beide Pfade. Die sozial vollständigen Kinder Xenia, Zeno und Cleo schlugen nun tatsächlich ihre unmittelbaren Vorgänger vor. Diese waren jedoch ausgerechnet wohlhabende Kinder ohne `MEM_WRITE` und konnten nicht antworten. Sämtliche sieben Überlebenden von Lauf 41 gehörten zu dieser wirtschaftlich erfolgreichen, reproduktiv sterilen Gruppe.
+
+Die Membranskala berücksichtigt diesen Unterschied nun ausdrücklich: `10` setzt neben ausreichender Energie ein strukturell ausführbares `MEM_WRITE` voraus; ohne dieses Netz bleibt auch eine sehr reiche Amöbe bei höchstens `9`.
+
+P1 endet damit vorläufig nicht mit einer gelösten Partnerwahl, sondern mit einer sauber beobachteten offenen Frage: Reicht ein einzelner Partnerslot für das gewünschte Verhalten, oder braucht eine Amöbe mehrere gleichzeitig mögliche Kandidaten? Diese Frage wird vor der nächsten Änderung zunächst konzeptionell geklärt.
+
+Run-IDs: Lauf 40 `6fb3b537-5dc2-40b5-94f1-54487c15b8b0`, Lauf 41 `620fbb0a-7f33-447c-a2b5-06f0fe4c934f`.
