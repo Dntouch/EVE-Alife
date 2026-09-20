@@ -102,7 +102,9 @@ python3 lupe.py runs/DEINE-RUN-ID
 
 Danach ist die Lupe unter [http://127.0.0.1:8080](http://127.0.0.1:8080) erreichbar. Sie liest ausschließlich persistierte JSON-Dateien und besitzt keinen Zugriff auf veränderbare Core-Strukturen oder Control-Funktionen.
 
-Die Lupe erklärt `G`, `P`, `K`, `Z`, `S` und RAM direkt in der Oberfläche. Für jeden gespeicherten Snapshot zeigt sie pro Entität die konkreten Funktionspunkt-Instanzen, P-Kanten, belegten K-Ports und sämtliche Z-Adressen. Ältere Runs enthalten diese erweiterten Genom- und K-Daten noch nicht; dafür muss mit dem aktuellen Core ein neuer Lauf erzeugt werden.
+Die Lupe erklärt `G`, `P`, `K`, `Z`, `S` und RAM direkt in der Oberfläche. Für jeden gespeicherten Snapshot zeigt sie pro Amöbe die konkreten Funktionspunkt-Instanzen, P-Kanten, belegten K-Ports und sämtliche Z-Adressen. Ältere Runs enthalten diese erweiterten Genom- und K-Daten noch nicht; dafür muss mit dem aktuellen Core ein neuer Lauf erzeugt werden.
+
+Der Populationsgraph ist zugleich Zeitfilter. Ein Klick wählt einen gespeicherten Tick, Ziehen einen Zeitraum und **Gesamten Lauf zeigen** hebt die Auswahl wieder auf. Auswahlbilanz, verständliche Ereignisse, Umweltkontakte und Amöbenkarten darunter folgen gemeinsam diesem Filter. Für einen Zeitraum wird der Zustand am Ende der Auswahl gezeigt; berücksichtigt werden alle Amöben, deren Leben den Zeitraum berührt.
 
 Jede Amöbe erhält außerdem einen menschenlesbaren, innerhalb ihres Laufs eindeutigen Namen. Die Vergabe folgt ausschließlich der Entity-ID und verbraucht keinen Simulationszufall; Namen beeinflussen das Verhalten daher nicht. Alte Runs erhalten in der Lupe dieselben Namen nachträglich aus ihrer ID, neue Runs speichern sie auch in Snapshots, Checkpoints und Geburtsereignissen.
 
@@ -116,7 +118,7 @@ Nach jedem regulär abgeschlossenen Lauf aktualisiert `run.py` außerdem den mar
 python3 run_stats.py
 ```
 
-Über **Leben abspielen** öffnet die Lupe einen read-only Lebensfilm einer einzelnen Entität. Er lässt sich abspielen, pausieren, beschleunigen und bildweise vor- oder zurücksetzen. Zu jedem gespeicherten Tick zeigt er den damaligen Zustand von `S`, `K`, `Z`, Genom und Partnern sowie die seit dem vorherigen Bild aufgetretenen Ereignisse in lesbarer Form. Die zeitliche Auflösung entspricht `--snapshot-every`; für einen lückenlosen Lebensfilm sollte der Lauf mit `--snapshot-every 1` erzeugt werden.
+Über **Leben abspielen** öffnet die Lupe einen read-only Lebensfilm einer einzelnen Amöbe. Er lässt sich abspielen, pausieren, beschleunigen und bildweise vor- oder zurücksetzen. Zu jedem gespeicherten Tick zeigt er den damaligen Zustand von `S`, `K`, `Z`, Genom und Partnern sowie die seit dem vorherigen Bild aufgetretenen Ereignisse in lesbarer Form. Die zeitliche Auflösung entspricht `--snapshot-every`; für einen lückenlosen Lebensfilm sollte der Lauf mit `--snapshot-every 1` erzeugt werden.
 
 Replay-fähige neue Läufe protokollieren zusätzlich Standby-Buchungen, ausgeführte Funktionspunkte, RAM-Lesevorgänge und Reproduktionsbeiträge. Diese Ereignisse sind reine Beobachtungsdaten und verändern weder Scheduling noch Zustand oder Zufallsstrom. Ältere Runs können mit den damals vorhandenen Ereignissen abgespielt werden, enthalten aber entsprechend weniger Erklärungen.
 
