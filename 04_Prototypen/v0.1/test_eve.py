@@ -1,6 +1,6 @@
 import unittest
 
-from eve_core import Config, Edge, Genome, Node, Signal, Simulation, demo_genome
+from eve_core import Config, Edge, Genome, Node, Signal, Simulation, demo_genome, p1_explorer_genome
 
 
 class EveCoreTests(unittest.TestCase):
@@ -69,6 +69,53 @@ class EveCoreTests(unittest.TestCase):
         self.assertEqual(sim._decode_membrane_address(base)[0].id, b.id)
         self.assertEqual(sim._mem_read(b, 0, 0), b.id)
         self.assertEqual(sim._mem_read(b, 1, 0), a.id)
+
+    def test_observation_exposes_read_only_entity_internals_for_lupe(self):
+        sim = Simulation(Config(seed=1, ram_size=8))
+        entity = sim.add_entity(demo_genome(2), 100)
+        entity.k["6:address"] = Signal(3, ("G",))
+        entity.z[0] = Signal(17, ("RAM[3]",))
+        observation = sim.observation()["entities"][0]
+        self.assertEqual(observation["genome"]["nodes"][0]["kind"], "CONST")
+        self.assertEqual(observation["genome"]["edges"][0]["source"], 1)
+        self.assertEqual(observation["k"]["6:address"]["value"], 3)
+        self.assertEqual(observation["z"][0]["sources"], ["RAM[3]"])
+
+    def test_replay_events_describe_energy_and_node_execution(self):
+        sim = Simulation(Config(seed=1, ram_size=8))
+        sim.add_entity(demo_genome(2), 100)
+        sim.heartbeat()
+        kinds = {event["kind"] for event in sim.events if event.get("entity_id") == 1}
+        self.assertIn("standby", kinds)
+        self.assertIn("node_fire", kinds)
+        firing = next(event for event in sim.events if event["kind"] == "node_fire")
+        self.assertIn("energy_before", firing)
+        self.assertIn("energy_after", firing)
+        self.assertIn("outputs", firing)
+
+    def test_gate_only_forwards_on_nonzero_condition(self):
+        sim = Simulation(Config(seed=1, ram_size=8))
+        entity = sim.add_entity(Genome([Node(1, "GATE")], [], 1), 10)
+        node = entity.genome.nodes[0]
+        for condition, expected in ((0, set()), (1, {"value"})):
+            entity.k["1:value"] = Signal(23, ("RAM[2]",))
+            entity.k["1:condition"] = Signal(condition, ("G",))
+            self.assertEqual(set(sim._fire(entity, node)), expected)
+        self.assertEqual([e["opened"] for e in sim.events if e["kind"] == "gate"], [False, True])
+
+    def test_p1_explorer_reaches_multiple_ram_addresses(self):
+        sim = Simulation(Config(seed=42, ram_size=256))
+        sim.add_entity(p1_explorer_genome(2), 500)
+        sim.add_entity(p1_explorer_genome(1), 500)
+        for _ in range(10):
+            sim.heartbeat()
+        reads = {
+            event["address"] for event in sim.events
+            if event["kind"] == "ram_read" and event["entity_id"] == 1 and not event["virtual"]
+        }
+        self.assertGreater(len(reads), 1)
+        self.assertIsNotNone(sim.entities[1].z[0])
+        self.assertIsNotNone(sim.entities[1].z[1])
 
 
 if __name__ == "__main__":

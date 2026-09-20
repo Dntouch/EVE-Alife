@@ -36,6 +36,7 @@ Eine Kennzeichnung gilt für die unmittelbar zugehörige Passage. Der restliche 
 - [007 – Unendlich schlau, aber zu doof es anzuwenden](007_Unendlich_schlau_aber_zu_doof.md)
 - [008 – Joa. Kennste jetzt.](008_Joa_Kennste_jetzt.md)
 - [009 – Das Viech kann einfach nicht anders](009_Das_Viech_kann_einfach_nicht_anders.md)
+- [010 – Mehr Energie macht das Viech nur länger tot](010_Mehr_Energie_macht_das_Viech_nur_laenger_tot.md)
 
 ## Status
 

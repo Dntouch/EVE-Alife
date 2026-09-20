@@ -40,6 +40,7 @@ PORTS: dict[str, tuple[tuple[str, ...], tuple[str, ...]]] = {
     "SUB": (("a", "b"), ("value",)),
     "XOR": (("a", "b"), ("value",)),
     "EQ": (("a", "b"), ("value",)),
+    "GATE": (("value", "condition"), ("value",)),
     "PAUSE": (("value",), ()),
 }
 
@@ -169,7 +170,12 @@ class Simulation:
             if entity.energy < self.config.standby_cost:
                 self._kill(entity, "standby_unaffordable")
                 continue
+            energy_before = entity.energy
             entity.energy -= self.config.standby_cost
+            self.emit(
+                "standby", entity_id=entity.id, cost=self.config.standby_cost,
+                energy_before=energy_before, energy_after=entity.energy,
+            )
             self._execute_entity(entity)
         self._reproduce()
         self.emit("heartbeat", population=sum(e.alive for e in self.entities.values()))
@@ -195,8 +201,20 @@ class Simulation:
                 break
             node = self.rng.choice(affordable)
             edges = outgoing.get(node.id, [])
-            entity.energy -= self.config.execution_cost + self.config.edge_cost * len(edges)
+            inputs = {
+                port: self._signal_state(entity.k[Entity.key(node.id, port)])
+                for port in PORTS[node.kind][0]
+            }
+            energy_before = entity.energy
+            cost = self.config.execution_cost + self.config.edge_cost * len(edges)
+            entity.energy -= cost
             outputs = self._fire(entity, node)
+            self.emit(
+                "node_fire", entity_id=entity.id, node_id=node.id, node_kind=node.kind,
+                inputs=inputs,
+                outputs={port: self._signal_state(signal) for port, signal in outputs.items()},
+                cost=cost, energy_before=energy_before, energy_after=entity.energy,
+            )
             for edge in edges:
                 signal = outputs.get(edge.source_port)
                 if signal is not None:
@@ -218,6 +236,17 @@ class Simulation:
             return {"value": Signal(i64(round(entity.energy)), ("S",))}
         if kind == "PAUSE":
             return {}
+        if kind == "GATE":
+            signal = inputs["value"]
+            condition = inputs["condition"]
+            opened = condition.value != 0
+            self.emit(
+                "gate", entity_id=entity.id, node_id=node.id, opened=opened,
+                condition=condition.value, value=signal.value,
+            )
+            if not opened:
+                return {}
+            return {"value": Signal(signal.value, provenance(signal, condition))}
         if kind in {"ADD", "SUB", "XOR", "EQ"}:
             a, b = inputs["a"].value, inputs["b"].value
             value = {"ADD": a + b, "SUB": a - b, "XOR": a ^ b, "EQ": int(a == b)}[kind]
@@ -227,11 +256,14 @@ class Simulation:
             if raw_address >= self.config.membrane_base:
                 membrane = self._decode_membrane_address(raw_address)
                 if membrane is None:
+                    self.emit("ram_read", entity_id=entity.id, address=raw_address, value=0, virtual=True)
                     return {"value": Signal(0, (f"MEM_VOID[{raw_address}]",))}
                 target, offset, slot = membrane
                 value = self._mem_read(target, offset, slot)
+                self.emit("ram_read", entity_id=entity.id, address=raw_address, value=value, virtual=True)
                 return {"value": Signal(value, (f"MEM[{target.id},{offset},{slot}]",))}
             address = raw_address % len(self.ram)
+            self.emit("ram_read", entity_id=entity.id, address=address, value=self.ram[address], virtual=False)
             return {"value": Signal(self.ram[address], (f"RAM[{address}]",))}
         if kind == "RAM_WRITE":
             raw_address = inputs["address"].value
@@ -321,8 +353,13 @@ class Simulation:
                 continue
             genome = self._recombine(parents)
             for parent in parents:
+                energy_before = parent.energy
                 parent.energy -= contribution
                 parent.partner_ids[:] = [None, None]
+                self.emit(
+                    "reproduction_cost", entity_id=parent.id, child_id=self.next_entity_id,
+                    cost=contribution, energy_before=energy_before, energy_after=parent.energy,
+                )
             self.add_entity(genome, self.config.birth_energy, group)
 
     def _recombine(self, parents: list[Entity]) -> Genome:
@@ -426,7 +463,17 @@ class Simulation:
                     "activity_base": e.genome.activity_base,
                     "k_slots": len(e.k),
                     "z_used": sum(value is not None for value in e.z),
+                    "genome": {
+                        "nodes": [asdict(node) for node in e.genome.nodes],
+                        "edges": [asdict(edge) for edge in e.genome.edges],
+                    },
+                    "k": {
+                        key: self._signal_state(signal)
+                        for key, signal in sorted(e.k.items())
+                    },
                     "z": [None if value is None else {"value": value.value, "sources": list(value.sources)} for value in e.z],
+                    "value_history": dict(sorted(e.value_history.items())),
+                    "source_history": dict(sorted(e.source_history.items())),
                 }
                 for e in sorted(self.entities.values(), key=lambda item: item.id)
             ],
@@ -505,13 +552,56 @@ class Simulation:
         return sim
 
 
-def demo_genome(partner_id: int) -> Genome:
+def demo_genome(partner_id: int, ram_start: int = 0) -> Genome:
     nodes = [
         Node(1, "CONST", 1), Node(2, "CONST", 0), Node(3, "CONST", partner_id), Node(4, "MEM_WRITE"),
-        Node(5, "CONST", 0), Node(6, "RAM_READ"), Node(7, "CONST", 0), Node(8, "Z_WRITE"),
+        Node(5, "CONST", ram_start), Node(6, "RAM_READ"), Node(7, "CONST", 0), Node(8, "Z_WRITE"),
     ]
     edges = [
         Edge(1, "value", 4, "offset"), Edge(2, "value", 4, "slot"), Edge(3, "value", 4, "value"),
         Edge(5, "value", 6, "address"), Edge(6, "value", 8, "value"), Edge(7, "value", 8, "address"),
     ]
     return Genome(nodes, edges, activity_base=32)
+
+
+def explorer_demo_genome(partner_id: int, ram_start: int = 0) -> Genome:
+    """Technisches Testgenom: Partnersignal plus rückgekoppelter RAM-Adresszähler."""
+    nodes = [
+        Node(1, "CONST", 1), Node(2, "CONST", 0), Node(3, "CONST", partner_id), Node(4, "MEM_WRITE"),
+        Node(5, "CONST", ram_start), Node(6, "CONST", 1), Node(7, "ADD"), Node(8, "RAM_READ"),
+        Node(9, "CONST", 0), Node(10, "Z_WRITE"),
+    ]
+    edges = [
+        Edge(1, "value", 4, "offset"), Edge(2, "value", 4, "slot"), Edge(3, "value", 4, "value"),
+        Edge(5, "value", 7, "a"), Edge(6, "value", 7, "b"),
+        Edge(7, "value", 7, "a"), Edge(7, "value", 8, "address"), Edge(7, "value", 10, "address"),
+        Edge(8, "value", 10, "value"), Edge(9, "value", 10, "address"),
+    ]
+    return Genome(nodes, edges, activity_base=48)
+
+
+def p1_explorer_genome(partner_id: int) -> Genome:
+    """P1: Partnersignal plus persistenter RAM-Suchstand und konditionale Reaktion."""
+    nodes = [
+        # Technische P0-Reproduktion als getrenntes Kontrollfragment.
+        Node(1, "CONST", 1), Node(2, "CONST", 0), Node(3, "CONST", partner_id),
+        Node(4, "MEM_WRITE"),
+        # Z[0] enthält den Suchstand; leerer Z-Zustand startet definitionsgemäß bei 0.
+        Node(5, "CONST", 0), Node(6, "Z_READ"), Node(7, "CONST", 1),
+        Node(8, "ADD"), Node(9, "Z_WRITE"), Node(10, "RAM_READ"),
+        # Jeder gelesene Umweltwert wird in Z[1] abgelegt.
+        Node(11, "CONST", 1), Node(12, "Z_WRITE"),
+        # Nichtnull-Werte öffnen GATE und erreichen zusätzlich Z[2].
+        Node(13, "CONST", 2), Node(14, "GATE"), Node(15, "Z_WRITE"),
+    ]
+    edges = [
+        Edge(1, "value", 4, "offset"), Edge(2, "value", 4, "slot"),
+        Edge(3, "value", 4, "value"),
+        Edge(5, "value", 6, "address"), Edge(5, "value", 9, "address"),
+        Edge(6, "value", 8, "a"), Edge(7, "value", 8, "b"),
+        Edge(8, "value", 9, "value"), Edge(8, "value", 10, "address"),
+        Edge(10, "value", 12, "value"), Edge(11, "value", 12, "address"),
+        Edge(10, "value", 14, "value"), Edge(10, "value", 14, "condition"),
+        Edge(13, "value", 15, "address"), Edge(14, "value", 15, "value"),
+    ]
+    return Genome(nodes, edges, activity_base=72)

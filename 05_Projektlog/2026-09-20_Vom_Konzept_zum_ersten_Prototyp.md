@@ -95,3 +95,14 @@ Der Stand wurde als Commit `a5d660d` (`Build EVE-Alife prototype v0.1`) nach `or
 
 Tja. Das erste digitale Einzellerlein bekam ein Kind. Dann waren alle tot. Für einen ersten Arbeitstag ist das erstaunlich biologisch und noch kein bisschen aussagekräftig.
 
+## Nachtrag: Abschluss von P0
+
+Ein kontrollierter Folgelauf mit 20 Startentitäten verglich ausschließlich zwei Startenergien. Seed, zufällige RAM-Suppe und P0-Demogenome blieben identisch. Mit Energie 100 entstanden 20 Nachkommen und die letzte Entität starb in Tick 9. Mit Energie 500 entstanden 93 Nachkommen und die letzte Entität starb in Tick 24.
+
+Die zusätzliche Energie machte den Ablauf größer und länger, aber nicht anders. Alle 397 Z-Schreibvorgänge des energiereicheren Laufs trafen dieselbe Adresse. Die Amöben waren technisch aktiv, erkundeten die Umwelt jedoch nicht sinnvoll. P0 wird daher als erfolgreicher Nachweis der Maschine und ausdrücklich nicht als Nachweis interessanten Verhaltens abgeschlossen. Die vollständige Auswertung steht in `04_Prototypen/P0_ERGEBNISSE.md`; daraus folgt der P1-Genomentwurf in `04_Prototypen/P1_GENOMENTWURF.md`.
+
+## Nachtrag: Population 1 beginnt zu suchen
+
+Das erste P1-Genom hält nun selbst einen Suchstand in Z, erhöht ihn durch sein Datenflussnetz, liest die daraus entstandene RAM-Adresse und speichert den Fund getrennt vom Suchstand. Der neue primitive Funktionspunkt `GATE` kann einen Wert abhängig von einer Null-/Nichtnull-Bedingung weiterleiten oder unterdrücken.
+
+Unter denselben kontrollierten Rahmenbedingungen des energiereichen P0-Laufs erreichten die 20 Startamöben jeweils mehrere RAM-Adressen, ohne dass die Suppe dafür präpariert wurde. Das ist noch keine offene oder intelligente Exploration. Erstmals ist die Veränderung der besuchten Umweltadressen aber eine Wirkung des ausgeführten Genoms und nicht bloß eine vorab festgelegte Liste im Supervisor.

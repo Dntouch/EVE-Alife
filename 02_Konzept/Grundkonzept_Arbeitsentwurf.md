@@ -115,7 +115,7 @@ N_G = |F| + |P| genetische Gesamtgröße
 Derzeitiger Kandidatensatz:
 
 ```text
-CONST, Z-read, Z-write, S-read, RAM-read, RAM-write, ADD, SUB, XOR, EQ, PAUSE
+CONST, Z-read, Z-write, S-read, RAM-read, RAM-write, ADD, SUB, XOR, EQ, GATE, PAUSE
 ```
 
 `CONST` ist ein primitiver Funktionspunkt ohne Eingangsport und mit einem Ausgangsport:
@@ -136,6 +136,15 @@ RAMWRITE(address, value) -> value
 Der Seiteneffekt verändert den jeweiligen Speicher; der Rückgabewert erlaubt weitere Verschaltung ohne zusätzlichen Kopierbefehl.
 
 `PAUSE` ist ein primitiver Funktionspunkt, kein besonderer Typ von `P`. Ein `P` kann den Ausgang eines anderen Punkts mit `PAUSE.in` verbinden. Wird `PAUSE` aktiviert, konsumiert es den eingehenden Wert und beendet diesen Datenfluss ohne Rückgabewert und ohne Veränderung von `Z`, RAM oder Membran. Die Aktivierung beansprucht dennoch einen Teil des Ausführungsbudgets und kann Ausführungskosten verursachen; der Grundumsatz des Heartbeats läuft unverändert weiter. Ein Netz kann dadurch genetisch bedingt wirkungslos bleiben oder seine wirksame Aktivität ausdünnen, ohne die obligatorische Ausführung selbst abzuschalten.
+
+P1 erprobt zusätzlich einen neutralen konditionalen Funktionspunkt:
+
+```text
+GATE(value, condition) -> value, falls condition != 0
+GATE(value, condition) -> keine Ausgabe, falls condition == 0
+```
+
+`GATE` legt weder die Bedeutung der Bedingung noch die Reaktion fest. Beides muss aus erblichen Instanzen, Konstanten und P-Kanten des konkreten Genoms entstehen. Der Punkt ermöglicht lediglich, dass ein berechneter Wert einen Datenfluss freigibt oder unterdrückt. Seine Aufnahme in den allgemeinen Operationssatz ist eine **P1-Arbeitshypothese**, noch keine entschiedene Grundregel.
 
 `CONST` und `PAUSE` als primitive Funktionspunkte sind **entschieden**. Wertebreite und Ausführungskosten von `CONST` sowie die genaue Signatur und die Kosten von `PAUSE` sind **prototypspezifisch**. Der übrige Operationssatz und die genauen Signaturen der Punkte sind **Arbeitshypothesen**, keine abschließend festgelegten Opcodes. Insbesondere ist offen, wie mehrstellige Eingänge synchronisiert und Werte getaktet werden.
 
@@ -301,7 +310,7 @@ Status: technische Anschlussfähigkeit **entschieden**; Mechanismus **später/in
 | Funktionspunkt-Instanzen | entschieden | `G` enthält konkrete, innerhalb des Genoms unterscheidbare Instanzen primitiver Typen |
 | `P` | entschieden | Gerichtete Datenflusskante zwischen Ports konkreter Funktionspunkt-Instanzen |
 | Genomgrößen | entschieden | `Nₚ = |P|` für den Aktivitätsfaktor; `N_G = |F| + |P|` für Rekombination und Größenlimits |
-| primitive Funktionspunkte | entschieden + Arbeitshypothese | `CONST` als erbliche Wertquelle und `PAUSE` als wirkungsloser Endpunkt entschieden; `Z-read/write`, `S-read`, `RAM-read/write`, `ADD`, `SUB`, `XOR`, `EQ` als Kandidaten |
+| primitive Funktionspunkte | entschieden + Arbeitshypothese | `CONST` als erbliche Wertquelle und `PAUSE` als wirkungsloser Endpunkt entschieden; `Z-read/write`, `S-read`, `RAM-read/write`, `ADD`, `SUB`, `XOR`, `EQ` als Kandidaten; `GATE` wird in P1 als konditionaler Datenflusspunkt erprobt |
 | Membranoffset 0 | Arbeitshypothese | Lesbare Entity-ID |
 | weitere Membranoffsets | offen | Primitive Lese-/Schreibpunkte und ihre Rechte |
 | `K` | entschieden | Nicht vererbter, nicht belohnter Signalzustand; je Eingangsport ein Slot, neuer Wert überschreibt alten, verwendete Werte werden bei Ausführung verbraucht |
