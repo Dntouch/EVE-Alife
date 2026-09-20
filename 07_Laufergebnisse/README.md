@@ -7,11 +7,13 @@ Die vollständigen Rohdaten bleiben lokal unter `04_Prototypen/v0.1/runs/`: Ein 
 Zusammenhängende Versuchsreihen werden zusätzlich ausgewertet:
 
 - [Tarifrunde 40–90: IG Amöbe gegen Lebenshaltungskosten](Tarifrunde_040_bis_090.md)
+- [Langzeitlauf mit Tarif 60](Langzeitlauf_Tarif_060.md)
 
 ## Übersicht
 
 | Lauf | Ticks | Status | Nachkommen | Energiegewinn |
 | ---: | ---: | :--- | ---: | ---: |
+| [30](Lauf_030_8f28241b.md) | 1000 | 179 lebend | 230 | 3.078.540,00 |
 | [29](Lauf_029_17abde73.md) | 200 | 146 lebend | 180 | 687.330,00 |
 | [28](Lauf_028_3a3366dc.md) | 200 | 142 lebend | 155 | 633.335,00 |
 | [27](Lauf_027_7fda6f10.md) | 200 | 128 lebend | 141 | 564.800,00 |
