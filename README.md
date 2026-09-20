@@ -11,10 +11,10 @@ Dieses Verzeichnis ist das dauerhafte Arbeitsgedächtnis von **EVE-Alife** auf d
 
 | Massenaussterben | Nachkommen | Gewonnene Energie | Gespeicherte Läufe |
 | ---: | ---: | ---: | ---: |
-| **17** | **2451** | **13.136.989,83** | **39** |
+| **17** | **2468** | **13.678.279,67** | **40** |
 
 - Kürzestes abgeschlossenes Leben: **Cleo 2** (Amöbe #62), 2 Ticks in Lauf 10
-- Längstes abgeschlossenes Leben: **Juri** (Amöbe #12), 1000 Ticks in Lauf 36
+- Längstes abgeschlossenes Leben: **Enno** (Amöbe #32), 1336 Ticks in Lauf 40
 
 | Rekord | Amöbe | Wert | Lauf |
 | :--- | :--- | ---: | ---: |
@@ -23,21 +23,21 @@ Dieses Verzeichnis ist das dauerhafte Arbeitsgedächtnis von **EVE-Alife** auf d
 | Meiste direkte Kinder | **Karla** (#13) | 47 | 18 |
 | Größte Nachkommenschaft | **Karla** (#13) | 47 | 18 |
 | Tiefste Generation | **Juri 2** (#44) | 4 | 36 |
-| Älteste Amöbe | **Tom** (#1) | 1000 Ticks | 30 |
-| Meiste RAM-Adressen | **Yara** (#26) | 627 | 32 |
-| Meiste RAM-Energie | **Yara** (#26) | 37.620,00 | 32 |
+| Älteste Amöbe | **Uwe** (#22) | 1926 Ticks | 40 |
+| Meiste RAM-Adressen | **Uwe** (#22) | 676 | 40 |
+| Meiste RAM-Energie | **Uwe** (#22) | 40.560,00 | 40 |
 | Bester Informationsproduzent | **Tom** (#1) | 4.160,00 | 35 |
 | Meiste Amöbenfunde | **Dora** (#31) | 45 | 36 |
 | Meiste erkannte Einladungen | **Tom** (#1) | 31 | 36 |
-| Meiste RAM-Schreibvorgänge | **Uwe** (#22) | 750 | 39 |
+| Meiste RAM-Schreibvorgänge | **Uwe** (#22) | 1530 | 40 |
 
 | Lauf | Ticks | Status | Nachkommen | Energiegewinn |
 | ---: | ---: | :--- | ---: | ---: |
+| 40 | 2000 | 7 lebend | 17 | 541.289,83 |
 | 39 | 1000 | 26 lebend | 17 | 342.314,83 |
 | 38 | 1000 | 28 lebend | 20 | 354.840,00 |
 | 37 | 1000 | 17 lebend | 14 | 278.035,00 |
 | 36 | 1000 | 38 lebend | 29 | 388.240,00 |
-| 35 | 300 | 27 lebend | 9 | 218.080,00 |
 
 _Automatisch aus den lokal gespeicherten Runs erzeugt. Der veröffentlichte Stand entspricht dem letzten Git-Push. [Definitionen und Dashboard](04_Prototypen/v0.1/README.md)_
 <!-- EVE_STATS_END -->
