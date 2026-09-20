@@ -6,7 +6,7 @@ Der Arbeitgeber EVE-Alife Industries hält einen Energieertrag von 90 für zu te
 
 ## Versuchsaufbau
 
-- [Lauf 30](Lauf_030_8f28241b.md)
+- [Lauf 30](Lauf_030.md)
 - Seed: 42
 - 20 P1-Explorer
 - 1.000 Ticks

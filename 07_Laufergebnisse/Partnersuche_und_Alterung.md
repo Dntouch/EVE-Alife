@@ -12,7 +12,7 @@ Die bisherigen Tarifläufe erzeugten viele Nachkommen, aber keine Enkel. Die fes
 
 ## Generationstest
 
-[Lauf 31](Lauf_031_c61fd90c.md) über 300 Ticks:
+[Lauf 31](Lauf_031.md) über 300 Ticks:
 
 - 58 Entitäten insgesamt,
 - 52 am Ende lebend,
@@ -24,7 +24,7 @@ Damit ist die vollständige Sterilität der Nachkommen beseitigt.
 
 ## Langzeitvergleich bei Tarif 60
 
-[Lauf 32](Lauf_032_b623e0f1.md) über 1.000 Ticks:
+[Lauf 32](Lauf_032.md) über 1.000 Ticks:
 
 | Tick | Lebend | Insgesamt geboren |
 | ---: | ---: | ---: |

@@ -61,7 +61,7 @@ class EveCoreTests(unittest.TestCase):
             reports = Path(temporary) / "results"
             written = publish_run_reports(Path(temporary), reports)
             self.assertEqual(len(written), 2)
-            self.assertIn("[1](Lauf_001_run-a.md)", (reports / "README.md").read_text(encoding="utf-8"))
+            self.assertIn("[1](Lauf_001.md)", (reports / "README.md").read_text(encoding="utf-8"))
             report = next(reports.glob("Lauf_*.md")).read_text(encoding="utf-8")
             self.assertIn("`run-a`", report)
             self.assertIn("12,50", report)

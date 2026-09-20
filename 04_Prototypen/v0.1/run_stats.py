@@ -338,7 +338,7 @@ def publish_run_reports(runs_root: Path, results_root: Path) -> list[Path]:
     for run in reversed(stats["history"]):
         run_dir = runs_root / run["run_id"]
         metadata = _read_json(run_dir / "metadata.json", {})
-        filename = f"Lauf_{run['run_number']:03d}_{run['run_id'][:8]}.md"
+        filename = f"Lauf_{run['run_number']:03d}.md"
         path = results_root / filename
         status = "Massenaussterben" if run["mass_extinction"] else f"{run['population_alive']} lebend"
         config = metadata.get("configuration", {})

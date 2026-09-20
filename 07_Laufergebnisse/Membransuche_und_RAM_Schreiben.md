@@ -19,9 +19,9 @@ Die mathematisch festgelegte Nachbarpaarung wurde verworfen. Eine Amöbe soll ei
 
 | Lauf | Tarif | Ergebnis |
 | ---: | ---: | :--- |
-| [33](Lauf_033_f5a9e883.md) | 60 | 708 RAM-Writes und 9 Einladungen, aber flüchtige Vorschläge; keine Kinder, ausgestorben |
-| [34](Lauf_034_c0390378.md) | 60 | stabile Vorschläge und 114 Geburtsprüfungen; alle an fehlendem Überschuss gescheitert |
-| [35](Lauf_035_760442a6.md) | 160 | 9 Kinder, 27 von 29 Amöben lebend bei Tick 300 |
+| [33](Lauf_033.md) | 60 | 708 RAM-Writes und 9 Einladungen, aber flüchtige Vorschläge; keine Kinder, ausgestorben |
+| [34](Lauf_034.md) | 60 | stabile Vorschläge und 114 Geburtsprüfungen; alle an fehlendem Überschuss gescheitert |
+| [35](Lauf_035.md) | 160 | 9 Kinder, 27 von 29 Amöben lebend bei Tick 300 |
 
 ## Funktionsnachweis aus Lauf 35
 
