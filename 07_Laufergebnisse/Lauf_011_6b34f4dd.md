@@ -18,6 +18,9 @@
 
 - Kürzestes abgeschlossenes Leben: Emmi 2, 7 Ticks
 - Längstes abgeschlossenes Leben: Sam, 24 Ticks
+- Neue fremde Amöben gefunden: 0
+- Einladungen an die eigene ID erkannt: 0
+- RAM-Schreibvorgänge: 0
 
 ## Konfiguration
 

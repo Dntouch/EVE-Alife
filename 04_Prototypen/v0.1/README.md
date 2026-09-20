@@ -45,7 +45,7 @@ python3 run.py --ticks 100 --seed 42 --population 20 \
 
 Auch der Adresszähler ist nur eine Testvorrichtung. Im Inselmodus liegt zusätzlich je Startentität eine kleine Wertinsel in unmittelbarer Nähe ihrer genetischen Startadresse, damit der Datenpfad im kurzen Demonstrationslauf tatsächlich auf nichtleere Umweltwerte treffen kann. Beobachtetes Scannen oder Finden darf daher nicht als emergente Exploration interpretiert werden.
 
-Die implementierte Population 1 arbeitet dagegen mit der unveränderten zufälligen RAM-Suppe. Ihr Genom hält den Suchstand in `Z[0]`, speichert gelesene Werte in `Z[1]` und leitet Nichtnull-Werte über `GATE` nach `Z[2]` weiter. Die Partner-ID ist nicht mehr als konkrete fremde ID fest verdrahtet: Das Genom liest die eigene Membran-ID, berechnet mit `((ID - 1) XOR 1) + 1` die benachbarte Laufzeit-ID und schreibt sie selbst in den Partnerslot. Dadurch können auch passende Nachkommenpaare eigene Kinder erzeugen.
+Die implementierte Population 1 arbeitet dagegen mit der unveränderten zufälligen RAM-Suppe. Ihr Genom hält den Suchstand in `Z[0]`, speichert gelesene Werte in `Z[1]` und leitet Nichtnull-Werte über `GATE` nach `Z[2]` weiter. Ein getrenntes Such-und-Handshake-Fragment durchläuft virtuelle Membranen, schlägt eine tatsächlich gefundene lebende Amöbe vor und kann eine im fremden Partnerslot erkannte Einladung an die eigene ID erwidern. Eine errechnete oder konstante ID ohne passende Fundherkunft wird beim `MEM_WRITE` abgewiesen. Ein drittes Fragment schreibt die eigene ID neutral nach `RAM[eigene ID]`; Schreiben selbst erzeugt keine Energie.
 
 ```bash
 python3 run.py --ticks 30 --seed 42 --population 20 \
@@ -78,6 +78,8 @@ Die Lupe stellt die RAM-Suppe nicht mehr als abstraktes Farbfeld ihrer Rohwerte 
 In der aktuellen Minimalökonomie entsteht Energie unmittelbar beim Lesen eines gegenüber dem letzten eigenen Lesen veränderten externen RAM-Werts. Ein unveränderter Wert sowie ein Wert mit eigener Entity-ID in seiner Urheberkette liefern nichts. Kehrt nach einem zwischenzeitlichen anderen Wert ein früherer Wert zurück, ist er erneut belohnbar, jedoch mit abnehmendem Ertrag. `Z-write` dient nur noch der dauerhaften Speicherung und erzeugt keine Energie.
 
 Der Ertrag des ersten belohnten Wechsels ist über `--novelty-base` ein Versuchsparameter. Die erste Tarifreihe verwendete bei sonst identischen Bedingungen die Werte `10`, `20`, `40`, `80` und `160`.
+
+Membranfunde bilden eine zweite, getrennt parametrisierte Informationsquelle. Der erste neue Fund einer lebenden fremden Amöbe liefert standardmäßig 10 Energie (`--entity-discovery-base`), eine neu erkannte Einladung an die eigene ID 20 (`--invitation-discovery-base`). Unveränderte Wiederholungen liefern nichts; wiederkehrende Informationen werden wie RAM-Futter abnehmend vergütet.
 
 Die Ausgabe nennt das erzeugte Run-Verzeichnis. Darin liegen:
 

@@ -18,6 +18,9 @@
 
 - Kürzestes abgeschlossenes Leben: Lino, 77 Ticks
 - Längstes abgeschlossenes Leben: Dario, 193 Ticks
+- Neue fremde Amöben gefunden: 0
+- Einladungen an die eigene ID erkannt: 0
+- RAM-Schreibvorgänge: 0
 
 ## Konfiguration
 

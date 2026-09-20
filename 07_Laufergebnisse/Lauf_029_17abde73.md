@@ -18,6 +18,9 @@
 
 - Kürzestes abgeschlossenes Leben: Ben 4, 15 Ticks
 - Längstes abgeschlossenes Leben: Vera 5, 29 Ticks
+- Neue fremde Amöben gefunden: 0
+- Einladungen an die eigene ID erkannt: 0
+- RAM-Schreibvorgänge: 0
 
 ## Konfiguration
 

@@ -18,6 +18,9 @@
 
 - Kürzestes abgeschlossenes Leben: Fritz, 17 Ticks
 - Längstes abgeschlossenes Leben: Vera, 37 Ticks
+- Neue fremde Amöben gefunden: 0
+- Einladungen an die eigene ID erkannt: 0
+- RAM-Schreibvorgänge: 0
 
 ## Konfiguration
 

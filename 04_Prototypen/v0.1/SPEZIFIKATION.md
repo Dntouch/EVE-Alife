@@ -97,6 +97,8 @@ MEM-write(offset, slot, value) -> value
 
 `MEM-read` liest ausschließlich aus der Membran der ausführenden Entität. `MEM-write` schreibt ausschließlich in deren eigene, für sie schreibbare Membranstellen. Die Operationen können weder eine fremde Membran verändern noch auf `G`, `K`, `Z` oder `S` zugreifen.
 
+Eine fremde Entity-ID darf nur dann in einen eigenen Partnerslot geschrieben werden, wenn das Wertsignal die exakte Provenienz der zuvor gelesenen lebenden fremden ID-Zelle `MEM[Entity-ID,0,0]` enthält. Konstanten, bloße Berechnungen, tote Ziele, die eigene ID und aus einer anderen Membran-ID abgeleitete Zahlen werden abgewiesen. Die Provenienz darf über `K`, `Z` und normale Verarbeitung erhalten bleiben; der Fund muss nicht im selben Heartbeat erfolgt sein.
+
 Für die Partnerliste gilt logisch:
 
 ```text
@@ -116,6 +118,8 @@ membrane_base + (Entity-ID - 1) * 3 + 2 -> Offset 1, Partnerslot 1
 ```
 
 `RAM-read` darf diese Zellen lesen. Eine Adresse im virtuellen Membranbereich, für die noch keine Entität existiert, liefert in P0.1 den Wert `0` mit einer stabilen, sättigbaren `MEM_VOID`-Provenienz. `RAM-write` darf keine Adresse dieses Bereichs verändern; Schreibzugriff auf die eigene Partnerliste erfolgt ausschließlich über `MEM-write`. Der virtuelle Membranbereich verkleinert oder verschiebt die RAM-Suppe nicht. Ob und wie eine Entität solche Adressen findet und welche IDs sie in ihre eigene Partnerliste schreibt, ergibt sich aus ihrem P-Netz und der gemeinsamen Umwelt. Der Supervisor liefert keine Partnerauswahl.
+
+Der erste neue Fund einer lebenden fremden ID-Zelle kann Energie liefern. Ebenso kann das Lesen der eigenen ID in einem fremden Partnerslot als erkannte Einladung Energie liefern. Unveränderte Wiederholungen liefern nichts; wiederkehrende identische Informationen werden pro beobachtender Entität und Membranzelle abnehmend vergütet. Schreiben in den eigenen Partnerslot erzeugt keine Energie.
 
 `MEM-read` und `MEM-write` sind keine Reproduktionsbefehle. Sie stellen lediglich einen allgemeinen primitiven Zugriff auf die eigene kontrollierte Außenschnittstelle bereit. Erst die vollständig wechselseitige Belegung gemäß Abschnitt 3.2 bildet eine reproduktive Konstellation.
 
@@ -191,11 +195,9 @@ Bei unterschiedlich großen Eltern entstehen dadurch mehrere elterliche Attrakto
 
 ### 4.4 Fragmentziehung
 
-Die realen Genome aller beteiligten Eltern bilden für diese Geburt einen gemeinsamen Pool. Für ein Fragment wird eine darin noch nicht gezogene Funktionspunkt-Instanz als Startpunkt gewählt. Von dort wächst der Instanzensatz semantikfrei zufällig entlang real vorhandener ein- oder ausgehender Kanten zu ebenfalls noch nicht gezogenen Instanzen. Er bleibt zu jedem Zeitpunkt zusammenhängend.
+Die realen Genome aller beteiligten Eltern bilden für diese Geburt einen gemeinsamen Pool. Jede schwach zusammenhängende Netzkomponente eines Elterngenoms ist dabei ein unteilbares Fragment. Richtung und Bedeutung der Kanten spielen für die Bestimmung der Zusammengehörigkeit keine Rolle; sämtliche Instanzen und internen Kanten der Komponente gehören zur erblichen Einheit.
 
-Zu einem Fragment gehören anschließend alle elterlichen `P`-Kanten, deren beide Endpunkte im gezogenen Instanzensatz liegen. Dadurch bleibt die intern tatsächlich vorhandene Teilstruktur vollständig erhalten; der Supervisor wählt keine vermeintlich nützlichen Einzelkanten aus.
-
-Nach Übernahme eines Fragments werden seine Instanzen und internen Kanten für diese Geburt aus dem Elternpool entfernt. Die Ziehung erfolgt damit ohne Zurücklegen. Weitere Fragmente werden gezogen, solange mindestens ein Fragment in die noch freie genetische Zielgröße passt. Ein Fragment, dessen `N_G` die verbleibende Zielgröße überschreitet, wird nicht zerschnitten, sondern verworfen und neu gezogen. Kann kein zulässiges Fragment mehr gebildet werden, darf das Kind unter seiner Zielgröße bleiben.
+Fragmente werden semantikfrei zufällig und ohne Zurücklegen gewählt. Weitere Fragmente werden übernommen, solange mindestens eines vollständig in die noch freie genetische Zielgröße passt. Ein Fragment, dessen `N_G` die verbleibende Zielgröße überschreitet, wird niemals zerschnitten. Passt bei einem noch leeren Kind kein Fragment in die gezogene Zielgröße, wird das kleinste verfügbare Fragment vollständig übernommen und die Zielgröße ausnahmsweise überschritten. Atomare Vererbung hat Vorrang vor der Größenstichprobe.
 
 Jede Ziehung beginnt an einer realen Instanz. Mehrfach vorhandene Netzstrukturen besitzen dadurch entsprechend mehr mögliche Startpunkte und Wachstumspfade; ihre reale Kopienzahl wirkt ohne gesondertes Gewichtungsfeld auf die Vererbungswahrscheinlichkeit.
 

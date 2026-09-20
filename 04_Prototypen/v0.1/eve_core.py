@@ -155,6 +155,8 @@ class Config:
     execution_cost: float = 1.0
     edge_cost: float = 0.1
     novelty_base: float = 10.0
+    entity_discovery_base: float = 10.0
+    invitation_discovery_base: float = 20.0
     membrane_base: int = 1_000_000
 
 
@@ -301,11 +303,39 @@ class Simulation:
             if raw_address >= self.config.membrane_base:
                 membrane = self._decode_membrane_address(raw_address)
                 if membrane is None:
-                    self.emit("ram_read", entity_id=entity.id, address=raw_address, value=0, virtual=True)
+                    self.emit(
+                        "ram_read", entity_id=entity.id, address=raw_address,
+                        value=0, virtual=True, reward=0.0, discovery_type=None,
+                    )
                     return {"value": Signal(0, (f"MEM_VOID[{raw_address}]",))}
                 target, offset, slot = membrane
                 value = self._mem_read(target, offset, slot)
-                self.emit("ram_read", entity_id=entity.id, address=raw_address, value=value, virtual=True)
+                source = f"MEM[{target.id},{offset},{slot}]"
+                previous = entity.value_history.get(source)
+                changed = previous is None or previous != value
+                reward = 0.0
+                discovery_type = None
+                alive_foreign = target.alive and target.id != entity.id
+                if alive_foreign and offset == 0 and slot == 0 and changed:
+                    discovery_type = "entity"
+                    count_key = f"{source}:{value}"
+                    count = entity.source_history.get(count_key, 0)
+                    reward = self.config.entity_discovery_base / (1 + count)
+                    entity.source_history[count_key] = count + 1
+                elif alive_foreign and offset == 1 and value == entity.id and changed:
+                    discovery_type = "invitation"
+                    count_key = f"{source}:{value}"
+                    count = entity.source_history.get(count_key, 0)
+                    reward = self.config.invitation_discovery_base / (1 + count)
+                    entity.source_history[count_key] = count + 1
+                entity.value_history[source] = value
+                entity.energy += reward
+                self.emit(
+                    "ram_read", entity_id=entity.id, address=raw_address, value=value,
+                    virtual=True, target_id=target.id, membrane_offset=offset,
+                    membrane_slot=slot, previous=previous, changed=changed,
+                    discovery_type=discovery_type, reward=reward,
+                )
                 return {"value": Signal(value, (f"MEM[{target.id},{offset},{slot}]",))}
             address = raw_address % len(self.ram)
             value = self.ram[address]
@@ -363,8 +393,21 @@ class Simulation:
         if kind == "MEM_WRITE":
             offset, slot, signal = inputs["offset"].value, inputs["slot"].value, inputs["value"]
             if offset == 1 and slot in (0, 1):
-                entity.partner_ids[slot] = signal.value
-                self.emit("mem_write", entity_id=entity.id, offset=offset, slot=slot, value=signal.value)
+                target = self.entities.get(signal.value)
+                required_source = f"MEM[{signal.value},0,0]"
+                discovered = required_source in signal.sources
+                if target is not None and target.alive and target.id != entity.id and discovered:
+                    entity.partner_ids[slot] = signal.value
+                    self.emit(
+                        "mem_write", entity_id=entity.id, offset=offset,
+                        slot=slot, value=signal.value, discovered=True,
+                    )
+                else:
+                    self.emit(
+                        "mem_write_rejected", entity_id=entity.id, offset=offset,
+                        slot=slot, value=signal.value, discovered=discovered,
+                        target_alive=bool(target and target.alive),
+                    )
             return {"value": signal}
         raise AssertionError(kind)
 
@@ -467,42 +510,56 @@ class Simulation:
         target = round(self.rng.gauss(chosen_size_parent.genome.n_g, self.config.genome_size_sigma))
         target = max(1, min(target, sum(p.genome.n_g for p in parents)))
         activity_base = self.rng.choice(parents).genome.activity_base
-        pool: dict[tuple[int, int], Node] = {(p.id, n.id): n for p in parents for n in p.genome.nodes}
-        parent_edges: dict[int, list[Edge]] = {p.id: list(p.genome.edges) for p in parents}
+        fragments: list[tuple[list[Node], list[Edge]]] = []
+        for parent in parents:
+            nodes = {node.id: node for node in parent.genome.nodes}
+            neighbors: dict[int, set[int]] = {node_id: set() for node_id in nodes}
+            for edge in parent.genome.edges:
+                neighbors[edge.source].add(edge.target)
+                neighbors[edge.target].add(edge.source)
+            remaining = set(nodes)
+            while remaining:
+                seed = min(remaining)
+                component = {seed}
+                frontier = [seed]
+                while frontier:
+                    current = frontier.pop()
+                    for neighbor in neighbors[current]:
+                        if neighbor not in component:
+                            component.add(neighbor)
+                            frontier.append(neighbor)
+                remaining -= component
+                component_edges = [
+                    edge for edge in parent.genome.edges
+                    if edge.source in component and edge.target in component
+                ]
+                fragments.append(([nodes[node_id] for node_id in sorted(component)], component_edges))
         child_nodes: list[Node] = []
         child_edges: list[Edge] = []
         next_id = 1
-        attempts = 0
-        while pool and len(child_nodes) + len(child_edges) < target and attempts < 1000:
-            attempts += 1
-            seed = self.rng.choice(list(pool))
-            parent_id, _ = seed
-            selected = {seed}
-            desired_nodes = self.rng.randint(1, max(1, target - len(child_nodes) - len(child_edges)))
-            while len(selected) < desired_nodes:
-                frontier: list[tuple[int, int]] = []
-                selected_ids = {nid for pid, nid in selected if pid == parent_id}
-                for edge in parent_edges[parent_id]:
-                    if edge.source in selected_ids and (parent_id, edge.target) in pool and (parent_id, edge.target) not in selected:
-                        frontier.append((parent_id, edge.target))
-                    if edge.target in selected_ids and (parent_id, edge.source) in pool and (parent_id, edge.source) not in selected:
-                        frontier.append((parent_id, edge.source))
-                if not frontier:
+        while fragments:
+            remaining_size = target - len(child_nodes) - len(child_edges)
+            fitting = [
+                index for index, (nodes, edges) in enumerate(fragments)
+                if len(nodes) + len(edges) <= remaining_size
+            ]
+            if not fitting:
+                if child_nodes:
                     break
-                selected.add(self.rng.choice(frontier))
-            selected_ids = {nid for _, nid in selected}
-            internal = [e for e in parent_edges[parent_id] if e.source in selected_ids and e.target in selected_ids]
-            fragment_size = len(selected) + len(internal)
-            remaining = target - len(child_nodes) - len(child_edges)
-            if fragment_size > remaining:
-                continue
+                # Ein Fragment bleibt unteilbar, auch wenn die gezogene Zielgroesse
+                # kleiner ist. Atomare Vererbung hat Vorrang vor der Zielgroesse.
+                fitting = [min(
+                    range(len(fragments)),
+                    key=lambda index: len(fragments[index][0]) + len(fragments[index][1]),
+                )]
+            fragment_index = self.rng.choice(fitting)
+            selected_nodes, selected_edges = fragments.pop(fragment_index)
             mapping: dict[int, int] = {}
-            for key in sorted(selected):
-                original = pool.pop(key)
+            for original in selected_nodes:
                 mapping[original.id] = next_id
                 child_nodes.append(Node(next_id, original.kind, original.constant))
                 next_id += 1
-            for edge in internal:
+            for edge in selected_edges:
                 child_edges.append(Edge(mapping[edge.source], edge.source_port, mapping[edge.target], edge.target_port))
         genome = Genome(child_nodes, child_edges, activity_base)
         self._mutate(genome)
@@ -708,33 +765,57 @@ def explorer_demo_genome(partner_id: int, ram_start: int = 0) -> Genome:
 
 
 def p1_explorer_genome(partner_id: int | None = None) -> Genome:
-    """P1: dynamisches ID-Paar, persistenter RAM-Suchstand und GATE-Reaktion."""
+    """P1: Membransuche/Handshake, RAM-Exploration und neutrales Schreiben."""
     nodes = [
-        # Die Partner-ID wird aus der eigenen ID berechnet: ((ID-1) XOR 1)+1.
-        # Damit bilden aufeinanderfolgende, zur Laufzeit entdeckbare IDs Paare,
-        # ohne dass konkrete fremde IDs im Genom fest verdrahtet sind.
-        Node(1, "CONST", 0), Node(2, "MEM_READ"), Node(3, "CONST", 1),
-        Node(4, "SUB"), Node(5, "XOR"), Node(6, "ADD"), Node(7, "MEM_WRITE"),
-        # Z[0] enthält den Suchstand; leerer Z-Zustand startet definitionsgemäß bei 0.
-        Node(8, "CONST", 0), Node(9, "Z_READ"), Node(10, "CONST", 1),
-        Node(11, "ADD"), Node(12, "Z_WRITE"), Node(13, "RAM_READ"),
-        # Jeder gelesene Umweltwert wird in Z[1] abgelegt.
-        Node(14, "CONST", 1), Node(15, "Z_WRITE"),
-        # Nichtnull-Werte öffnen GATE und erreichen zusätzlich Z[2].
-        Node(16, "CONST", 2), Node(17, "GATE"), Node(18, "Z_WRITE"),
+        # Fragment A: Z[3] durchlaeuft Membran-IDs. Eine reale fremde ID wird
+        # vorgeschlagen; eine gelesene Einladung an die eigene ID wird erwidert.
+        Node(1, "CONST", 0), Node(2, "CONST", 1), Node(3, "CONST", 3),
+        Node(4, "CONST", 999_997), Node(5, "Z_READ"), Node(6, "ADD"),
+        Node(7, "ADD"), Node(8, "ADD"), Node(9, "ADD"), Node(10, "RAM_READ"),
+        Node(11, "EQ"), Node(12, "EQ"), Node(13, "GATE"), Node(14, "GATE"),
+        Node(15, "Z_WRITE"), Node(16, "GATE"), Node(17, "MEM_WRITE"),
+        Node(18, "ADD"), Node(19, "RAM_READ"), Node(20, "MEM_READ"),
+        Node(21, "EQ"), Node(22, "GATE"), Node(23, "MEM_WRITE"),
+        # Fragment B: persistente Exploration der normalen RAM-Suppe.
+        Node(24, "CONST", 0), Node(25, "Z_READ"), Node(26, "CONST", 1),
+        Node(27, "ADD"), Node(28, "Z_WRITE"), Node(29, "RAM_READ"),
+        Node(30, "CONST", 1), Node(31, "Z_WRITE"), Node(32, "CONST", 2),
+        Node(33, "GATE"), Node(34, "Z_WRITE"),
+        # Fragment C: neutrale Markierung RAM[eigene ID] = eigene ID.
+        Node(35, "CONST", 0), Node(36, "MEM_READ"), Node(37, "RAM_WRITE"),
+        # Der erste Vorschlag bleibt stehen, solange der eigene Slot belegt ist.
+        Node(38, "MEM_READ"), Node(39, "EQ"), Node(40, "GATE"),
     ]
     edges = [
-        Edge(1, "value", 2, "offset"), Edge(1, "value", 2, "slot"),
-        Edge(2, "value", 4, "a"), Edge(3, "value", 4, "b"),
-        Edge(4, "value", 5, "a"), Edge(3, "value", 5, "b"),
-        Edge(5, "value", 6, "a"), Edge(3, "value", 6, "b"),
-        Edge(3, "value", 7, "offset"), Edge(1, "value", 7, "slot"),
-        Edge(6, "value", 7, "value"),
-        Edge(8, "value", 9, "address"), Edge(8, "value", 12, "address"),
-        Edge(9, "value", 11, "a"), Edge(10, "value", 11, "b"),
-        Edge(11, "value", 12, "value"), Edge(11, "value", 13, "address"),
-        Edge(13, "value", 15, "value"), Edge(14, "value", 15, "address"),
-        Edge(13, "value", 17, "value"), Edge(13, "value", 17, "condition"),
-        Edge(16, "value", 18, "address"), Edge(17, "value", 18, "value"),
+        Edge(3, "value", 5, "address"), Edge(5, "value", 6, "a"),
+        Edge(2, "value", 6, "b"), Edge(6, "value", 7, "a"),
+        Edge(6, "value", 7, "b"), Edge(7, "value", 8, "a"),
+        Edge(6, "value", 8, "b"), Edge(8, "value", 9, "a"),
+        Edge(4, "value", 9, "b"), Edge(9, "value", 10, "address"),
+        Edge(10, "value", 11, "a"), Edge(1, "value", 11, "b"),
+        Edge(11, "value", 12, "a"), Edge(1, "value", 12, "b"),
+        Edge(6, "value", 13, "value"), Edge(12, "value", 13, "condition"),
+        Edge(1, "value", 14, "value"), Edge(11, "value", 14, "condition"),
+        Edge(13, "value", 15, "value"), Edge(14, "value", 15, "value"),
+        Edge(3, "value", 15, "address"), Edge(10, "value", 16, "value"),
+        Edge(12, "value", 16, "condition"), Edge(16, "value", 40, "value"),
+        Edge(2, "value", 17, "offset"), Edge(1, "value", 17, "slot"),
+        Edge(9, "value", 18, "a"), Edge(2, "value", 18, "b"),
+        Edge(18, "value", 19, "address"), Edge(1, "value", 20, "offset"),
+        Edge(1, "value", 20, "slot"), Edge(19, "value", 21, "a"),
+        Edge(20, "value", 21, "b"), Edge(10, "value", 22, "value"),
+        Edge(21, "value", 22, "condition"), Edge(22, "value", 23, "value"),
+        Edge(2, "value", 23, "offset"), Edge(1, "value", 23, "slot"),
+        Edge(24, "value", 25, "address"), Edge(24, "value", 28, "address"),
+        Edge(25, "value", 27, "a"), Edge(26, "value", 27, "b"),
+        Edge(27, "value", 28, "value"), Edge(27, "value", 29, "address"),
+        Edge(29, "value", 31, "value"), Edge(30, "value", 31, "address"),
+        Edge(29, "value", 33, "value"), Edge(29, "value", 33, "condition"),
+        Edge(32, "value", 34, "address"), Edge(33, "value", 34, "value"),
+        Edge(35, "value", 36, "offset"), Edge(35, "value", 36, "slot"),
+        Edge(36, "value", 37, "address"), Edge(36, "value", 37, "value"),
+        Edge(2, "value", 38, "offset"), Edge(1, "value", 38, "slot"),
+        Edge(38, "value", 39, "a"), Edge(1, "value", 39, "b"),
+        Edge(39, "value", 40, "condition"), Edge(40, "value", 17, "value"),
     ]
-    return Genome(nodes, edges, activity_base=88)
+    return Genome(nodes, edges, activity_base=100)

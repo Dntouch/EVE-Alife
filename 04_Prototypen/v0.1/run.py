@@ -43,6 +43,8 @@ def main() -> None:
     parser.add_argument("--birth-min-heartbeats", type=int, default=0, help="Mindestzahl vollständig finanzierbarer Heartbeats des Kindergenoms")
     parser.add_argument("--novelty-base", type=float, default=10.0, help="Energie für den ersten belohnten Wechsel zu einem RAM-Adress-Wert-Paar")
     parser.add_argument("--aging-cost-rate", type=float, default=0.01, help="Zusätzliche Standby-Kosten je bereits gelebtem Heartbeat")
+    parser.add_argument("--entity-discovery-base", type=float, default=10.0, help="Energie für den neuen Fund einer lebenden fremden Amöbe")
+    parser.add_argument("--invitation-discovery-base", type=float, default=20.0, help="Energie für eine neu erkannte Einladung im fremden Partnerslot")
     parser.add_argument("--ram-world", choices=("random", "islands"), default="random")
     parser.add_argument("--explorers", action="store_true", help="Technische Population mit rückgekoppeltem RAM-Adresszähler")
     parser.add_argument("--p1-explorers", action="store_true", help="Population 1 mit persistentem Suchstand und GATE-Reaktion")
@@ -65,8 +67,8 @@ def main() -> None:
             parser.error("--birth-energy-fraction muss größer 0 und höchstens 1 sein")
         if args.birth_min_heartbeats < 0:
             parser.error("--birth-min-heartbeats darf nicht negativ sein")
-        if args.novelty_base < 0:
-            parser.error("--novelty-base darf nicht negativ sein")
+        if min(args.novelty_base, args.entity_discovery_base, args.invitation_discovery_base) < 0:
+            parser.error("Energieerträge dürfen nicht negativ sein")
         if args.aging_cost_rate < 0:
             parser.error("--aging-cost-rate darf nicht negativ sein")
         if args.explorers and args.p1_explorers:
@@ -77,6 +79,8 @@ def main() -> None:
             birth_min_heartbeats=args.birth_min_heartbeats,
             novelty_base=args.novelty_base,
             aging_cost_rate=args.aging_cost_rate,
+            entity_discovery_base=args.entity_discovery_base,
+            invitation_discovery_base=args.invitation_discovery_base,
         )
         ram = None
         if args.ram_world == "islands":

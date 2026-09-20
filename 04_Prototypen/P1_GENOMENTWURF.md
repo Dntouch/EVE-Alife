@@ -38,7 +38,7 @@ Das Startgenom besteht aus nachvollziehbaren Netzfragmenten, nicht aus einem Sup
 2. **Umweltzugriff:** Derselbe Adresswert fließt zu `RAM_READ`.
 3. **Fundspeicher:** Der gelesene RAM-Wert wird über einen eigenen `Z_WRITE` in Z abgelegt. Suchstand und Umweltinhalt verwenden getrennte Z-Adressen.
 4. **Reaktion:** `EQ` und `GATE` können einen Pfad abhängig von einem gelesenen Wert öffnen. Die erste P1-Fixture darf eine einfache, ausdrücklich dokumentierte Bedingung verwenden; sie ist Teststruktur, keine behauptete biologische Bedeutung.
-5. **Reproduktion:** Die frühere fest verdrahtete Partner-ID bleibt nur in den P0-Kontrollgenomen erhalten. Das aktuelle P1-Startgenom liest seine eigene Membran-ID und berechnet durch `((ID - 1) XOR 1) + 1` die benachbarte Laufzeit-ID. Es schreibt dieses Ergebnis selbst in seinen Partnerslot. So bilden aufeinanderfolgende IDs wechselseitige Paare, ohne konkrete fremde IDs erblich festzuschreiben.
+5. **Reproduktion:** Die frühere fest verdrahtete Partner-ID bleibt nur in den P0-Kontrollgenomen erhalten. Das aktuelle P1-Startgenom durchsucht virtuelle Membranen. Nur eine als lebend gelesene fremde ID mit passender Membranprovenienz darf in den eigenen Partnerslot gelangen. Eine im fremden Slot erkannte Einladung an die eigene ID kann genomisch erwidert werden.
 
 Z beginnt weiterhin leer. Der leere Lesezustand liefert wie in P0 den Wert `0`; damit kann das Netz ohne versteckte Initialisierung aus dem Supervisor anlaufen.
 
@@ -220,7 +220,7 @@ Run-IDs:
 
 Die Tarifläufe zeigten trotz vieler Kinder ausschließlich Generation 1. Ursache war kein biologischer Befund, sondern die fest verdrahtete Partner-ID der technischen Startpopulation: Gründer schrieben nach jeder Geburt erneut ihre ursprünglichen Partner in die geleerten Slots, während Kinder geerbte, für sie unpassende IDs besaßen.
 
-Das aktuelle P1-Genom berechnet deshalb sein Partnerpaar selbst aus der eigenen Membran-ID. Die Abbildung `((ID - 1) XOR 1) + 1` verbindet `1 ↔ 2`, `3 ↔ 4` und so weiter. Der Supervisor prüft weiterhin nur die wechselseitige Konstellation; sämtliche Lese-, Rechen- und Schreiboperationen werden vom Genom ausgeführt.
+Als erste Zwischenlösung berechnete das P1-Genom sein Partnerpaar selbst aus der eigenen Membran-ID. Die Abbildung `((ID - 1) XOR 1) + 1` verband `1 ↔ 2`, `3 ↔ 4` und so weiter. Der Supervisor prüfte weiterhin nur die wechselseitige Konstellation; sämtliche Lese-, Rechen- und Schreiboperationen wurden vom Genom ausgeführt. Diese Variante erzeugte Generation 2, wurde anschließend jedoch verworfen: Sie war eine mathematisch versteckte Zwangspaarung und keine gefundene Partnerschaft.
 
 Der erste 300-Tick-Test mit Tarif 60 und Altersrate 0,01 ergab:
 
@@ -251,3 +251,28 @@ Der 1.000-Tick-Lauf mit dynamischer Partnersuche, Tarif 60 und Altersrate 0,01 e
 Insgesamt entstanden 51 Nachkommen und Generation 2, aber keine Generation 3. Die Population erreichte um Tick 500 ihr beobachtetes Maximum und schrumpfte danach. 19 der 20 Gründer starben; eine Gründerin erreichte weiterhin Tick 1.000. Tarif 60 trägt unter den neuen Bedingungen also eine langfristig überlebende Population, aber kein dauerhaftes Wachstum wie im früheren Lauf ohne Alterskosten und mit kleinerem, fest verdrahtetem Partnerfragment.
 
 Run-ID: `b623e0f1-eccb-41d1-9311-81288617b37d`.
+
+### Gefundene Partner, Einladungen und RAM-Schreiben
+
+Die berechnete Nachbar-ID wurde durch ein echtes Such-und-Handshake-Fragment ersetzt. Ein Suchzeiger in `Z[3]` durchläuft den virtuellen Membranraum. Nur der gelesene Wert einer lebenden fremden ID-Zelle trägt die Provenienz, die ein Schreiben in den eigenen Partnerslot erlaubt. Ein fremder Partnerslot mit der eigenen ID ist eine erkennbare Einladung und kann genomisch erwidert werden. Der erste neue Entitätsfund liefert im Test 10, eine neu erkannte Einladung 20 Energie; unveränderte Wiederholungen liefern nichts.
+
+Das Startgenom enthält zusätzlich ein getrenntes neutrales Schreibfragment, das die eigene ID nach `RAM[eigene ID]` schreibt. Das Schreiben selbst wird nicht belohnt. Andere Amöben können den externen Wert jedoch nach der bestehenden RAM-Nahrungsregel entdecken. Zusammenhängende Netzkomponenten werden nun tatsächlich atomar vererbt und bei der Rekombination nicht mehr angeschnitten.
+
+Der erste 300-Tick-Lauf mit Tarif 60 wies 708 RAM-Schreibvorgänge, 172 neue Entitätsfunde, 9 erkannte Einladungen und erstmals einen Informationsproduzenten nach. Flüchtig überschriebene Vorschläge erzeugten jedoch keine stabile Gruppe. Nach der Korrektur blieben Vorschläge stehen; es entstanden 114 formale Geburtsprüfungen, die sämtlich an der Überschussbedingung scheiterten. Das neue vollständige Startgenom ist mit 100 Genombestandteilen deutlich teurer als sein Vorgänger; Tarif 60 ist deshalb nicht direkt vergleichbar.
+
+Ein ausdrücklich als Funktionskontrolle markierter 300-Tick-Lauf mit Tarif 160 ergab:
+
+- 424 neue Entitätsfunde,
+- 20 erkannte Einladungen,
+- 2.546 RAM-Schreibvorgänge,
+- 9 Kinder,
+- 29 Entitäten insgesamt und 27 lebend bei Tick 300,
+- erstmals einen realen Informationsproduzenten mit 4.160 für andere erzeugten Energieeinheiten.
+
+Run-IDs:
+
+- erster flüchtiger Handshake bei Tarif 60: `f5a9e883-6a9b-44f6-9bd7-2c40b93ce7e9`,
+- stabiler Handshake bei Tarif 60: `c0390378-e93b-4329-bfea-b304cfecf58b`,
+- Funktionskontrolle bei Tarif 160: `760442a6-413f-4f6e-8e62-85233ebfe31e`.
+
+Die Kausalkette `finden → vorschlagen → Einladung erkennen → erwidern → Geburt` ist damit ausführbar. Der Tarif für das größere Sozial- und Schreibgenom sowie die noch stark auf frühe gefundene Amöben konzentrierte Partnerwahl bleiben neue Versuchsfragen.

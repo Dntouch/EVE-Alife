@@ -41,6 +41,9 @@ def summarize_run(run_dir: Path, run_number: int) -> dict[str, Any]:
     ram_addresses: dict[int, set[int]] = {}
     personal_ram_energy: dict[int, float] = {}
     producer_energy: dict[int, float] = {}
+    entity_discoveries = 0
+    invitation_discoveries = 0
+    ram_writes = 0
 
     def note_energy(entity_id: int, *values: Any) -> None:
         numeric = [float(value) for value in values if isinstance(value, (int, float))]
@@ -83,7 +86,8 @@ def summarize_run(run_dir: Path, run_number: int) -> dict[str, Any]:
                 elif kind == "ram_read" and isinstance(entity_id, int):
                     reward = float(event.get("reward", 0) or 0)
                     energy_gained += reward
-                    personal_ram_energy[entity_id] = personal_ram_energy.get(entity_id, 0.0) + reward
+                    if not event.get("virtual"):
+                        personal_ram_energy[entity_id] = personal_ram_energy.get(entity_id, 0.0) + reward
                     if not event.get("virtual") and isinstance(event.get("address"), int):
                         ram_addresses.setdefault(entity_id, set()).add(event["address"])
                     originators = [item for item in event.get("originators", []) if isinstance(item, int)]
@@ -91,6 +95,12 @@ def summarize_run(run_dir: Path, run_number: int) -> dict[str, Any]:
                         share = reward / len(originators)
                         for originator in originators:
                             producer_energy[originator] = producer_energy.get(originator, 0.0) + share
+                    if event.get("discovery_type") == "entity":
+                        entity_discoveries += 1
+                    elif event.get("discovery_type") == "invitation":
+                        invitation_discoveries += 1
+                elif kind == "ram_write":
+                    ram_writes += 1
 
     # Sehr alte Ereignisstroeme enthalten eventuell keine Geburtsereignisse fuer
     # fortgesetzte Entitaeten. Die Checkpoint-Abstammung schliesst diese Luecke.
@@ -134,7 +144,7 @@ def summarize_run(run_dir: Path, run_number: int) -> dict[str, Any]:
     }
     alive_flags = {entity["id"]: bool(entity.get("alive")) for entity in entities}
     summary = {
-        "schema": 2,
+        "schema": 3,
         "run_id": metadata.get("run_id", run_dir.name),
         "run_number": run_number,
         "created_at": metadata.get("created_at"),
@@ -144,6 +154,9 @@ def summarize_run(run_dir: Path, run_number: int) -> dict[str, Any]:
         "population_alive": alive,
         "offspring": offspring,
         "energy_gained": energy_gained,
+        "entity_discoveries": entity_discoveries,
+        "invitation_discoveries": invitation_discoveries,
+        "ram_writes": ram_writes,
         "mass_extinction": extinct,
         "shortest_life": min(deaths, key=lambda item: item["lifespan"], default=None),
         "longest_life": max(deaths, key=lambda item: item["lifespan"], default=None),
@@ -186,7 +199,7 @@ def dashboard_data(runs_root: Path) -> dict[str, Any]:
         # Alte oder weitergelaufene Runs werden automatisch neu bilanziert.
         if (
             not summary
-            or summary.get("schema") != 2
+            or summary.get("schema") != 3
             or summary.get("run_number") != number
             or (event_path.exists() and event_path.stat().st_mtime > summary_path.stat().st_mtime)
         ):
@@ -354,6 +367,9 @@ def publish_run_reports(runs_root: Path, results_root: Path) -> list[Path]:
 
 - Kürzestes abgeschlossenes Leben: {shortest['name'] + ', ' + str(shortest['lifespan']) + ' Ticks' if shortest else '—'}
 - Längstes abgeschlossenes Leben: {longest['name'] + ', ' + str(longest['lifespan']) + ' Ticks' if longest else '—'}
+- Neue fremde Amöben gefunden: {run.get('entity_discoveries', 0)}
+- Einladungen an die eigene ID erkannt: {run.get('invitation_discoveries', 0)}
+- RAM-Schreibvorgänge: {run.get('ram_writes', 0)}
 
 ## Konfiguration
 
@@ -380,6 +396,7 @@ Zusammenhängende Versuchsreihen werden zusätzlich ausgewertet:
 - [Tarifrunde 40–90: IG Amöbe gegen Lebenshaltungskosten](Tarifrunde_040_bis_090.md)
 - [Langzeitlauf mit Tarif 60](Langzeitlauf_Tarif_060.md)
 - [Dynamische Partnersuche und Alterskosten](Partnersuche_und_Alterung.md)
+- [Membransuche, Einladung und RAM-Schreiben](Membransuche_und_RAM_Schreiben.md)
 
 ## Übersicht
 

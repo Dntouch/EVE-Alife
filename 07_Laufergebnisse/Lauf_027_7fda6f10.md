@@ -18,6 +18,9 @@
 
 - Kürzestes abgeschlossenes Leben: Vera 3, 15 Ticks
 - Längstes abgeschlossenes Leben: Dora 4, 26 Ticks
+- Neue fremde Amöben gefunden: 0
+- Einladungen an die eigene ID erkannt: 0
+- RAM-Schreibvorgänge: 0
 
 ## Konfiguration
 

@@ -205,6 +205,67 @@ class EveCoreTests(unittest.TestCase):
         self.assertEqual(sim._mem_read(b, 0, 0), b.id)
         self.assertEqual(sim._mem_read(b, 1, 0), a.id)
 
+    def test_partner_id_must_come_from_a_living_foreign_membrane(self):
+        sim = Simulation(Config(seed=1, ram_size=8))
+        finder = sim.add_entity(Genome([Node(1, "MEM_WRITE")], [], 1), 100)
+        target = sim.add_entity(Genome([Node(1, "PAUSE")], [], 1), 100)
+        write = finder.genome.nodes[0]
+        finder.k.update({
+            "1:offset": Signal(1, ("G",)), "1:slot": Signal(0, ("G",)),
+            "1:value": Signal(target.id, ("G",)),
+        })
+        sim._fire(finder, write)
+        self.assertEqual(finder.partner_ids, [None, None])
+        finder.k.update({
+            "1:offset": Signal(1, ("G",)), "1:slot": Signal(0, ("G",)),
+            "1:value": Signal(target.id, (f"MEM[{target.id},0,0]",)),
+        })
+        sim._fire(finder, write)
+        self.assertEqual(finder.partner_ids, [target.id, None])
+
+    def test_entity_and_invitation_discovery_reward_only_new_information(self):
+        sim = Simulation(Config(
+            seed=1, ram_size=8, entity_discovery_base=7,
+            invitation_discovery_base=13,
+        ))
+        finder = sim.add_entity(Genome([Node(1, "RAM_READ")], [], 1), 0)
+        target = sim.add_entity(Genome([Node(1, "PAUSE")], [], 1), 0)
+        read = finder.genome.nodes[0]
+        identity_address = sim.config.membrane_base + (target.id - 1) * 3
+        rewards = []
+        for _ in range(2):
+            before = finder.energy
+            finder.k["1:address"] = Signal(identity_address, ("G",))
+            sim._fire(finder, read)
+            rewards.append(finder.energy - before)
+        target.partner_ids[0] = finder.id
+        invitation_address = identity_address + 1
+        for _ in range(2):
+            before = finder.energy
+            finder.k["1:address"] = Signal(invitation_address, ("G",))
+            sim._fire(finder, read)
+            rewards.append(finder.energy - before)
+        self.assertEqual(rewards, [7, 0, 13, 0])
+
+    def test_recombination_keeps_connected_fragments_atomic(self):
+        genome = Genome(
+            [Node(1, "CONST", 111), Node(2, "PAUSE"), Node(3, "CONST", 222), Node(4, "PAUSE")],
+            [Edge(1, "value", 2, "value"), Edge(3, "value", 4, "value")], 10,
+        )
+        sim = Simulation(Config(seed=9, ram_size=8, mutation_probability=0, genome_size_sigma=20))
+        parents = [sim.add_entity(genome, 100), sim.add_entity(genome, 100)]
+        for _ in range(25):
+            child = sim._recombine(parents)
+            by_id = {node.id: node for node in child.nodes}
+            outgoing = {edge.source for edge in child.edges}
+            for node in child.nodes:
+                if node.kind == "CONST" and node.constant in {111, 222}:
+                    self.assertIn(node.id, outgoing)
+                    self.assertTrue(any(
+                        edge.source == node.id and by_id[edge.target].kind == "PAUSE"
+                        for edge in child.edges
+                    ))
+
     def test_observation_exposes_read_only_entity_internals_for_lupe(self):
         sim = Simulation(Config(seed=1, ram_size=8))
         entity = sim.add_entity(demo_genome(2), 100)
@@ -242,7 +303,7 @@ class EveCoreTests(unittest.TestCase):
         sim = Simulation(Config(seed=42, ram_size=256))
         sim.add_entity(p1_explorer_genome(2), 500)
         sim.add_entity(p1_explorer_genome(1), 500)
-        for _ in range(10):
+        for _ in range(60):
             sim.heartbeat()
         reads = {
             event["address"] for event in sim.events
@@ -260,7 +321,7 @@ class EveCoreTests(unittest.TestCase):
         for _ in range(4):
             entity = sim.add_entity(p1_explorer_genome(), 100)
             entity.energy = 200
-        for _ in range(100):
+        for _ in range(500):
             sim.heartbeat()
             if any(entity.parents == (3, 4) for entity in sim.entities.values()):
                 break
