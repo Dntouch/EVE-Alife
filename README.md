@@ -11,33 +11,33 @@ Dieses Verzeichnis ist das dauerhafte Arbeitsgedächtnis von **EVE-Alife** auf d
 
 | Massenaussterben | Nachkommen | Gewonnene Energie | Gespeicherte Läufe |
 | ---: | ---: | ---: | ---: |
-| **17** | **2468** | **13.678.279,67** | **40** |
+| **17** | **2478** | **14.070.529,67** | **41** |
 
 - Kürzestes abgeschlossenes Leben: **Cleo 2** (Amöbe #62), 2 Ticks in Lauf 10
 - Längstes abgeschlossenes Leben: **Enno** (Amöbe #32), 1336 Ticks in Lauf 40
 
 | Rekord | Amöbe | Wert | Lauf |
 | :--- | :--- | ---: | ---: |
-| Größtes Genom | **Tom** (#1) | 108 G | 38 |
+| Größtes Genom | **Tom** (#1) | 134 G | 41 |
 | Höchste Energie | **Cleo 2** (#62) | 22.343,53 | 18 |
 | Meiste direkte Kinder | **Karla** (#13) | 47 | 18 |
 | Größte Nachkommenschaft | **Karla** (#13) | 47 | 18 |
 | Tiefste Generation | **Juri 2** (#44) | 4 | 36 |
-| Älteste Amöbe | **Uwe** (#22) | 1926 Ticks | 40 |
-| Meiste RAM-Adressen | **Uwe** (#22) | 676 | 40 |
-| Meiste RAM-Energie | **Uwe** (#22) | 40.560,00 | 40 |
+| Älteste Amöbe | **Tilda** (#21) | 1931 Ticks | 41 |
+| Meiste RAM-Adressen | **Uwe** (#22) | 680 | 41 |
+| Meiste RAM-Energie | **Uwe** (#22) | 40.740,00 | 41 |
 | Bester Informationsproduzent | **Tom** (#1) | 4.160,00 | 35 |
 | Meiste Amöbenfunde | **Dora** (#31) | 45 | 36 |
 | Meiste erkannte Einladungen | **Tom** (#1) | 31 | 36 |
-| Meiste RAM-Schreibvorgänge | **Uwe** (#22) | 1530 | 40 |
+| Meiste RAM-Schreibvorgänge | **Tilda** (#21) | 1540 | 41 |
 
 | Lauf | Ticks | Status | Nachkommen | Energiegewinn |
 | ---: | ---: | :--- | ---: | ---: |
+| 41 | 2000 | 7 lebend | 10 | 392.250,00 |
 | 40 | 2000 | 7 lebend | 17 | 541.289,83 |
 | 39 | 1000 | 26 lebend | 17 | 342.314,83 |
 | 38 | 1000 | 28 lebend | 20 | 354.840,00 |
 | 37 | 1000 | 17 lebend | 14 | 278.035,00 |
-| 36 | 1000 | 38 lebend | 29 | 388.240,00 |
 
 _Automatisch aus den lokal gespeicherten Runs erzeugt. Der veröffentlichte Stand entspricht dem letzten Git-Push. [Definitionen und Dashboard](04_Prototypen/v0.1/README.md)_
 <!-- EVE_STATS_END -->

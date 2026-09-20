@@ -297,6 +297,10 @@ Dieser Befund wird nicht rückwirkend aus Lauf 40 entfernt. Für folgende Läufe
 
 Run-ID: `6fb3b537-5dc2-40b5-94f1-54487c15b8b0` (Lauf 40).
 
+Lauf 41 wiederholte Lauf 40 über 2.000 Ticks mit Seed 42 und identischen Umwelt- und Energieparametern, nun aber mit lokaler Partnersuche, genomischer Freigabe nach beobachtetem Partnertod und der strukturellen Schranke für Membranwert `10`. Es entstanden 10 Nachkommen; 7 von insgesamt 30 Amöben lebten am Ende. Eine zweite Generation entstand noch nicht. Die neue Suche beseitigte den Tom-Stern: Die sozial vollständigen Kinder Xenia, Zeno und Cleo schlugen jeweils ihren unmittelbaren Vorgänger vor (`25 → 24`, `27 → 26`, `30 → 29`). Diese drei Vorgänger hatten jedoch das profitable Explorations-/Markierungsgenom ohne `MEM_WRITE` geerbt und konnten nicht antworten. Die drei sozialen Kinder starben später; sämtliche sieben Überlebenden waren energiereiche Kinder mit 28 Funktionspunkten, 32 Kanten und ohne `MEM_WRITE`. Sie blieben folgerichtig auf Membranwert `9` begrenzt. Vier belegte Slots wurden nach dem beobachteten Tod des eingetragenen Partners genomisch freigegeben; auch dieser neue Pfad war damit im realen Lauf aktiv.
+
+Run-ID: `620fbb0a-7f33-447c-a2b5-06f0fe4c934f` (Lauf 41).
+
 Der anschließende 1.000-Tick-Vergleich mit dem ausgehandelten Tarif 60 und den neuen unterlinearen Genomkosten ergab:
 
 - 29 Nachkommen und 49 Entitäten insgesamt,
