@@ -256,6 +256,10 @@ Dieser Bereich enthält die kompakten, versionierten Berichte der tatsächlich a
 
 Die vollständigen Rohdaten bleiben lokal unter `04_Prototypen/v0.1/runs/`: Ein einzelner Lauf kann hunderte Megabyte an Snapshots, RAM-Zuständen, Checkpoints und Ereignissen enthalten. Sie werden deshalb nicht ungeprüft in Git aufgenommen. Die Berichte hier sind aus diesen Rohdaten reproduzierbar.
 
+Zusammenhängende Versuchsreihen werden zusätzlich ausgewertet:
+
+- [Tarifrunde 40–90: IG Amöbe gegen Lebenshaltungskosten](Tarifrunde_040_bis_090.md)
+
 ## Übersicht
 
 | Lauf | Ticks | Status | Nachkommen | Energiegewinn |
