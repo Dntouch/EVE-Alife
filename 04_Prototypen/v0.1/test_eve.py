@@ -232,7 +232,7 @@ class EveCoreTests(unittest.TestCase):
         self.assertEqual(sim._decode_membrane_address(base)[0].id, b.id)
         self.assertEqual(sim._mem_read(b, 0, 0), b.id)
         self.assertEqual(sim._mem_read(b, 1, 0), a.id)
-        self.assertEqual(sim._mem_read(b, 2, 0), 1)
+        self.assertEqual(sim._mem_read(b, 2, 0), 8)
         b.alive = False
         self.assertEqual(sim._mem_read(b, 2, 0), 0)
 
@@ -299,6 +299,21 @@ class EveCoreTests(unittest.TestCase):
             if event.get("discovery_type") == "life_state"
         ]
         self.assertEqual([event["value"] for event in discoveries], [1, 0])
+
+    def test_membrane_vitality_reaches_ten_only_above_reproductive_threshold(self):
+        sim = Simulation(Config(
+            seed=1, ram_size=8, birth_energy_fraction=0.5,
+            birth_min_heartbeats=0,
+        ))
+        entity = sim.add_entity(Genome([Node(1, "PAUSE")], [], 1), 500)
+        self.assertAlmostEqual(sim._reproductive_energy_threshold(entity), 500 / 0.75)
+        self.assertEqual(sim._mem_read(entity, 2, 0), 7)
+        entity.energy = 500 / 0.75
+        self.assertEqual(sim._mem_read(entity, 2, 0), 9)
+        entity.energy += 0.01
+        self.assertEqual(sim._mem_read(entity, 2, 0), 10)
+        entity.alive = False
+        self.assertEqual(sim._mem_read(entity, 2, 0), 0)
 
     def test_recombination_keeps_connected_fragments_atomic(self):
         genome = Genome(

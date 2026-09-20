@@ -105,7 +105,7 @@ Für die Partnerliste gilt logisch:
 MEM-read(0, 0)             -> eigene Entity-ID
 MEM-write(1, 0, partnerID) -> erster Partnerslot
 MEM-write(1, 1, partnerID) -> zweiter Partnerslot
-MEM-read(2, 0)             -> Lebenszustand, 1 lebend / 0 tot
+MEM-read(2, 0)             -> energetischer Membranwert 0 bis 10
 ```
 
 Ein Schreibversuch auf Offset 0 oder einen nicht vorhandenen beziehungsweise nicht schreibbaren Slot verändert keinen Zustand. Die genaue Fehler- und Kostenbehandlung ist Teil der noch festzulegenden P0.1-Ausführungsparameter.
@@ -121,7 +121,7 @@ membrane_base + (Entity-ID - 1) * 4 + 3 -> Offset 2, Lebenszustand
 
 `RAM-read` darf diese Zellen lesen. Eine Adresse im virtuellen Membranbereich, für die noch keine Entität existiert, liefert in P0.1 den Wert `0` mit einer stabilen, sättigbaren `MEM_VOID`-Provenienz. `RAM-write` darf keine Adresse dieses Bereichs verändern; Schreibzugriff auf die eigene Partnerliste erfolgt ausschließlich über `MEM-write`. Der virtuelle Membranbereich verkleinert oder verschiebt die RAM-Suppe nicht. Ob und wie eine Entität solche Adressen findet und welche IDs sie in ihre eigene Partnerliste schreibt, ergibt sich aus ihrem P-Netz und der gemeinsamen Umwelt. Der Supervisor liefert keine Partnerauswahl.
 
-Der erste neue Fund einer lebenden fremden ID-Zelle kann Energie liefern. Ebenso können das Lesen der eigenen ID in einem fremden Partnerslot und ein neu beobachteter Lebenszustand Energie liefern. Dadurch ist insbesondere der Wechsel einer zuvor lebend gesehenen Amöbe zu `tot` neue Erkenntnis. Unveränderte Wiederholungen liefern nichts; wiederkehrende identische Informationen werden pro beobachtender Entität und Membranzelle abnehmend vergütet. Tote Amöben bleiben als lesbare ehemalige Bewohner im Membranraum erhalten, sind aber keine gültigen Partner. Schreiben in den eigenen Partnerslot erzeugt keine Energie.
+Der erste neue Fund einer lebenden fremden ID-Zelle kann Energie liefern. Ebenso können das Lesen der eigenen ID in einem fremden Partnerslot und ein neu beobachteter Membranwert Energie liefern. Wert `0` bedeutet tot. Die Werte `1` bis `9` sind bewusst unbenannte Quantisierungen des Verhältnisses von aktueller Energie zur Fortpflanzungsschwelle. `10` wird ausschließlich oberhalb der Energieschwelle einer symmetrischen Zweierpaarung gleicher Stärke ausgegeben. Bei relativer Geburtsenergie `f` gilt `T = max(S₀ / (1 - f/2), Mindestenergie_des_eigenen_Genoms / f)`. Die `10` bezeichnet nur energetische Bereitschaft; Partner und vollständige Konstellation bleiben gesonderte Bedingungen. Unveränderte Wiederholungen liefern nichts; wiederkehrende identische Informationen werden pro beobachtender Entität und Membranzelle abnehmend vergütet. Tote Amöben bleiben als lesbare ehemalige Bewohner im Membranraum erhalten, sind aber keine gültigen Partner. Schreiben in den eigenen Partnerslot erzeugt keine Energie.
 
 `MEM-read` und `MEM-write` sind keine Reproduktionsbefehle. Sie stellen lediglich einen allgemeinen primitiven Zugriff auf die eigene kontrollierte Außenschnittstelle bereit. Erst die vollständig wechselseitige Belegung gemäß Abschnitt 3.2 bildet eine reproduktive Konstellation.
 

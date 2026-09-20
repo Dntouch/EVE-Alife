@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from collections import Counter
 from dataclasses import asdict, dataclass, field
-from math import floor, sqrt
+from math import ceil, floor, inf, sqrt
 from random import Random
 from typing import Any, Iterable
 
@@ -425,16 +425,34 @@ class Simulation:
             return {"value": signal}
         raise AssertionError(kind)
 
-    @staticmethod
-    def _mem_read(entity: Entity, offset: int, slot: int) -> int:
+    def _mem_read(self, entity: Entity, offset: int, slot: int) -> int:
         if offset == 0 and slot == 0:
             return entity.id
         if offset == 1 and slot in (0, 1):
             value = entity.partner_ids[slot]
             return 0 if value is None else value
         if offset == 2 and slot == 0:
-            return int(entity.alive)
+            if not entity.alive:
+                return 0
+            threshold = self._reproductive_energy_threshold(entity)
+            if entity.energy > threshold:
+                return 10
+            if threshold == inf:
+                return 9
+            return max(1, min(9, ceil(9 * max(0.0, entity.energy) / threshold)))
         return 0
+
+    def _reproductive_energy_threshold(self, entity: Entity) -> float:
+        """Energetische 10 fuer ein symmetrisches Zweierpaar gleicher Staerke."""
+        fraction = self.config.birth_energy_fraction
+        minimum = self._minimum_birth_energy(entity.genome)
+        if fraction is not None:
+            surplus_threshold = entity.start_energy / (1 - fraction / 2)
+            child_threshold = minimum / fraction if fraction else inf
+            return max(surplus_threshold, child_threshold)
+        if self.config.birth_energy < minimum:
+            return inf
+        return entity.start_energy + self.config.birth_energy / 2
 
     def _decode_membrane_address(self, address: int) -> tuple[Entity, int, int] | None:
         relative = address - self.config.membrane_base

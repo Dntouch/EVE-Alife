@@ -11,7 +11,7 @@ Dieses Verzeichnis ist das dauerhafte Arbeitsgedächtnis von **EVE-Alife** auf d
 
 | Massenaussterben | Nachkommen | Gewonnene Energie | Gespeicherte Läufe |
 | ---: | ---: | ---: | ---: |
-| **17** | **2434** | **12.794.675,00** | **38** |
+| **17** | **2451** | **13.136.989,83** | **39** |
 
 - Kürzestes abgeschlossenes Leben: **Cleo 2** (Amöbe #62), 2 Ticks in Lauf 10
 - Längstes abgeschlossenes Leben: **Juri** (Amöbe #12), 1000 Ticks in Lauf 36
@@ -29,15 +29,15 @@ Dieses Verzeichnis ist das dauerhafte Arbeitsgedächtnis von **EVE-Alife** auf d
 | Bester Informationsproduzent | **Tom** (#1) | 4.160,00 | 35 |
 | Meiste Amöbenfunde | **Dora** (#31) | 45 | 36 |
 | Meiste erkannte Einladungen | **Tom** (#1) | 31 | 36 |
-| Meiste RAM-Schreibvorgänge | **Uwe** (#22) | 744 | 36 |
+| Meiste RAM-Schreibvorgänge | **Uwe** (#22) | 750 | 39 |
 
 | Lauf | Ticks | Status | Nachkommen | Energiegewinn |
 | ---: | ---: | :--- | ---: | ---: |
+| 39 | 1000 | 26 lebend | 17 | 342.314,83 |
 | 38 | 1000 | 28 lebend | 20 | 354.840,00 |
 | 37 | 1000 | 17 lebend | 14 | 278.035,00 |
 | 36 | 1000 | 38 lebend | 29 | 388.240,00 |
 | 35 | 300 | 27 lebend | 9 | 218.080,00 |
-| 34 | 300 | ausgestorben | 0 | 17.380,00 |
 
 _Automatisch aus den lokal gespeicherten Runs erzeugt. Der veröffentlichte Stand entspricht dem letzten Git-Push. [Definitionen und Dashboard](04_Prototypen/v0.1/README.md)_
 <!-- EVE_STATS_END -->

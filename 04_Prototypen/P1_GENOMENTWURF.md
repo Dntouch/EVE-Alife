@@ -281,11 +281,15 @@ Run-IDs:
 
 Die Kausalkette `finden → vorschlagen → Einladung erkennen → erwidern → Geburt` ist damit ausführbar. Der Tarif für das größere Sozial- und Schreibgenom sowie die noch stark auf frühe gefundene Amöben konzentrierte Partnerwahl bleiben neue Versuchsfragen.
 
-Die Membran stellt zusätzlich unter Offset 2 den Lebenszustand bereit. Das Suchfragment liest zu jeder gefundenen ID auch diesen Wert. `1 → 0` bedeutet, dass eine zuvor lebend beobachtete Amöbe inzwischen tot ist, und kann wie jede neue externe Erkenntnis Energie liefern. Der tote Membraneintrag bleibt beobachtbar, darf aber nicht mehr als Partner verwendet werden.
+Die Membran stellt zusätzlich unter Offset 2 einen Wert von `0` bis `10` bereit. Das Suchfragment liest zu jeder gefundenen ID auch diesen Wert. `0` bedeutet tot, `10` energetisch fortpflanzungsfähig; `1` bis `9` bleiben absichtlich ohne semantische Etiketten. Sie quantisieren lediglich die aktuelle Energie relativ zur Schwelle einer symmetrischen Zweierpaarung gleicher Stärke. Jede Veränderung, insbesondere der Wechsel auf `0`, kann neue Erkenntnis liefern. Der tote Membraneintrag bleibt beobachtbar, darf aber nicht mehr als Partner verwendet werden.
 
-Der erste 1.000-Tick-Lauf dieser Erweiterung bei Tarif 60 beobachtete 798 lebende und 90 tote Lebenszustände als neue Information. Daraus entstanden 8.880 Energieeinheiten, davon 900 durch das Auffinden Verstorbener. Der Lauf endete mit 28 lebenden von insgesamt 40 Amöben, 20 Nachkommen und Generation 2. Gegenüber dem vorherigen Tarif-60-Lauf ist dies kein isolierter Wirkungsvergleich, weil das vergrößerte Genom den Zufalls- und Ausführungspfad verändert; nachgewiesen ist jedoch, dass die neue Wahrnehmung im laufenden P1-Netz tatsächlich erreicht und energetisch abgerechnet wird.
+Der erste 1.000-Tick-Lauf der zunächst binären Erweiterung bei Tarif 60 beobachtete 798 lebende und 90 tote Lebenszustände als neue Information. Daraus entstanden 8.880 Energieeinheiten, davon 900 durch das Auffinden Verstorbener. Der Lauf endete mit 28 lebenden von insgesamt 40 Amöben, 20 Nachkommen und Generation 2. Dieser Lauf wies den Datenpfad nach; anschließend wurde das binäre Signal durch die Skala `0` bis `10` ersetzt. Gegenüber dem vorherigen Tarif-60-Lauf ist dies kein isolierter Wirkungsvergleich, weil das vergrößerte Genom den Zufalls- und Ausführungspfad verändert.
 
 Run-ID: `b037b33f-89fc-4dd1-bd25-0fe4ffb6baef` (Lauf 38).
+
+Der anschließende Lauf mit der unbenannten Skala `0` bis `10` beobachtete sämtliche elf möglichen Werte. Von 1.091 neuen Membranwerten entfielen 83 auf `0` und 614 auf `10`; zusammen lieferten die Zustandsänderungen 10.471,5 Energieeinheiten. Nach 1.000 Ticks lebten 26 von insgesamt 37 Amöben, 17 Nachkommen waren entstanden. Die Skala ist damit nicht nur rechnerisch definiert, sondern wird vom unveränderten Suchfragment in beide Richtungen tatsächlich durchlaufen. Die auffällig häufige `10` ist zunächst eine Beobachtung dieses Laufs und keine Aussage über Fitness im weiteren Sinn.
+
+Run-ID: `a77b7062-e55f-452d-8a5d-af2320b0690d` (Lauf 39).
 
 Der anschließende 1.000-Tick-Vergleich mit dem ausgehandelten Tarif 60 und den neuen unterlinearen Genomkosten ergab:
 
