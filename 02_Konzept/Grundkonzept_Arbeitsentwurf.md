@@ -184,40 +184,42 @@ Innerhalb eines Heartbeats gilt:
 
 Die Zufallsauswahl ist innerhalb eines Versuchs durch dessen Seed reproduzierbar. Es gibt keinen Instruction Pointer und keine semantische Priorität für bestimmte Typen oder Netzstrukturen. Besitzt ein Ausgangsport keine ausgehende Kante, verfällt sein Wert. Zyklen sind zulässig; ihre Ausführung innerhalb eines Heartbeats wird durch Budget und Energie begrenzt. Ob eine Funktionspunktausführung und ihre einzelnen Kantenübertragungen jeweils getrennte Budget- und Energiekosten verursachen, ist **prototypspezifisch**.
 
-## 7. `Z`, individuelle Neuheit und Energiegewinn
+## 7. RAM-Veränderung, individuelle Neuheit und Energiegewinn
 
 `Z` ist bei jeder Geburt leer. Die erste Wirkung geht ausschließlich aus `G` hervor. Nur ein ausdrückliches `Z-write` kann einen Wert in `Z` ablegen. Damit beschreibt `Z` den dauerhaft erworbenen internen Zustand beziehungsweise die konkrete gespeicherte Lebens- und Erfahrungsgeschichte der Entität, nicht semantisch bereits „Wissen“. Bloß durch `K` fließende Werte gehören nicht zu `Z`.
 
-Für die erste Minimalökonomie ist Neuheit der höchstwertige Erstfall einer allgemeinen Schreibbelohnung, kein binäres Zugangskriterium. Jeder erfolgreiche `Z-write` kann einen vom Supervisor gebuchten Energiegewinn `ΔS` erzeugen. Wurde derselbe Wert im bisherigen Leben der Entität bereits in `Z` geschrieben, sinkt der Ertrag mit jedem weiteren Vorkommen. Auch wiederholt aus derselben Quelle gewonnene Inhalte unterliegen einer davon unabhängigen Sättigung. Der Supervisor bewertet dabei weder Bedeutung noch Wahrheit noch Nützlichkeit des Werts oder der Quelle.
+In der gegenwärtigen Minimalökonomie entsteht Energie beim Lesen einer individuell wahrgenommenen Veränderung in der RAM-Suppe, nicht beim Schreiben nach `Z`. Für jede Entität und RAM-Adresse merkt der Supervisor unsichtbar den zuletzt gelesenen Wert. Liefert ein späteres `RAM-read` dort denselben Wert, entsteht keine Energie. Liefert es einen anderen Wert, kann Energie entstehen – auch wenn dieser Wert an derselben Adresse früher bereits vorkam.
 
-Der Supervisor führt dafür eine nicht durch die Entität lesbare Lebenszeithistorie erfolgreicher `Z-write`-Ereignisse. Ein späteres Überschreiben oder Entfernen eines Werts aus dem aktuellen `Z` setzt dessen Wiederholungszähler nicht zurück.
+Wiederkehrende Werte liefern abnehmenden Ertrag. Der Supervisor zählt dafür je Entität, Adresse und Wert, wie oft genau dieser Wert nach einer wahrgenommenen Veränderung bereits belohnt wurde. Die Folge `17 -> 42 -> 17 -> 17` an derselben Adresse ist damit dreimal eine Veränderung, wobei das zweite `17` weniger Energie als das erste liefert; das unmittelbar wiederholte letzte `17` liefert keine Energie.
+
+Jede RAM-Zelle trägt zusätzlich eine für Entitäten unsichtbare Menge ihrer bisherigen Urheber. `RAM-write` ergänzt die schreibende Entity-ID und bewahrt die bereits am Signal haftende Urheberkette. Enthält die Kette die lesende Entität selbst, entsteht für sie kein Energiegewinn. Eine andere, noch nicht beteiligte Entität darf denselben Inhalt dagegen als externe Veränderung erschließen. Dadurch kann eine Entität schreiben und kommunizieren, sich aber nicht durch Lesen eigener Erzeugnisse ernähren.
 
 Als noch nicht festgelegter Funktionsrahmen:
 
 ```text
-k_e(v, t) = Anzahl früherer erfolgreicher Z-write-Ereignisse mit Wert v
-r_e(q, t) = Anzahl früherer erfolgreicher Z-write-Ereignisse aus Quelle q
-ΔS        = reward(k_e(v, t), r_e(q, t))
+last_e(a) = zuletzt von e an Adresse a gelesener Wert
+k_e(a,v)  = Anzahl früherer belohnter Wechsel zu Wert v an Adresse a
 
-reward(0, 0) > 0
-reward(k + 1, r) <= reward(k, r)
-reward(k, r + 1) <= reward(k, r)
+v == last_e(a)       -> ΔS = 0
+e in originators(a)  -> ΔS = 0
+sonst                -> ΔS = reward(k_e(a,v)) und last_e(a) = v
+
+reward(0) > 0
+reward(k + 1) <= reward(k)
 ```
 
-Ob `reward(k, r)` gegen null geht, eine Untergrenze besitzt oder Wiederholungen ab einem Punkt gar nicht mehr belohnt, ist **prototypspezifisch**. Offen bleibt die stabile, semantikfreie Identität einer Quelle, insbesondere nach Verarbeitung eines Werts durch mehrere Funktionspunkte.
-
-Die Lebenszeithistorie, der abnehmende Energiegewinn wiederholter Inhalte, die Quellensättigung und die semantische Neutralität des Supervisors sind **entschieden**. Die konkrete Belohnungsfunktion ist **prototypspezifisch**; Quellenidentität und genaue Buchungsdetails sind **offen**. Diese Minimalökonomie ist eine operative Näherung; sie behauptet nicht, Erkenntnis im anspruchsvollen Sinn von Wahrheit, Vorhersage, Bestätigung oder Reproduzierbarkeit bereits definiert zu haben.
+Auch ein nicht belohnter Lesevorgang aktualisiert `last_e(a)`, weil die Entität den Zustand tatsächlich wahrgenommen hat. `Z-write` bleibt ein freiwilliger dauerhafter Speichervorgang, erzeugt aber keinen unmittelbaren Energiegewinn. Die konkrete Belohnungsfunktion und die Behandlung sehr langer Urheberketten sind **prototypspezifisch**. Diese Minimalökonomie behauptet nicht, Erkenntnis im anspruchsvollen Sinn bereits definiert zu haben.
 
 ## 8. Energie `S`, Aktivität und Tod
 
-Nur der Supervisor verändert `S`. Mögliche Ursachen einer Buchung sind Standby, ausgeführte primitive Operationen, Speicherzugriffe, neue beziehungsweise wiederholte `Z`-Einträge und Reproduktion.
+Nur der Supervisor verändert `S`. Mögliche Ursachen einer Buchung sind Standby, ausgeführte primitive Operationen, Speicherzugriffe, individuell wahrgenommene externe RAM-Veränderungen und Reproduktion.
 
 ```text
 S_e(t+1) = S_e(t)
            - C_standby(e,t)
            - C_execution(e,t)
            - C_reproduction(e,t)
-           + ΔS_Z(e,t)
+           + ΔS_RAM(e,t)
 ```
 
 Eine lebende Entität entscheidet nicht, ob sie handelt. In jedem Heartbeat aktiviert der Supervisor die durch `G` gebildete Struktur gemäß der universellen Ausführungssemantik. Diese obligatorische Aktivierung ist Teil der unveränderlichen Weltphysik. Energie oder Hunger erzeugen daher keinen gesonderten Handlungsimpuls; sie beeinflussen die finanzierbare Ausführung und ihre evolutionären Folgen.
@@ -250,8 +252,8 @@ flowchart LR
     SUP -->|kontrolliert Adressen und Offsets| MEM
     MEM -. kein Zugriff .-> X[G / K / Z / S geschützt]
     S -->|nur lesen: S-read| NET
-    Z -->|erfolgreicher Z-write mit Inhalt und Quelle| REWARD[Schreibereignis]
-    REWARD -->|Lebenszeithistorie, Inhalts- und Quellensättigung; Supervisor bucht ΔS| S
+    RAM -->|RAM-read: individuell veränderter externer Wert| REWARD[Entdeckungsereignis]
+    REWARD -->|Adress-/Werthistorie und Wiederholungsrabatt; Supervisor bucht ΔS| S
     S -->|finanziert Existenz, Ausführung, Geburt| PHYS[Supervisor-Physik]
     PHYS -->|Rekombination und Mutation| CHILD[Nachkomme: G', leeres Z', bilanziertes S']
     CHILD --> G
@@ -267,6 +269,7 @@ Weiterhin gesetzt sind:
 
 - kein künstlicher Energiebonus durch Reproduktion,
 - Startenergie des Kindes aus bilanzierten Quellen, grundsätzlich Elternbeiträgen,
+- Fortpflanzung ausschließlich aus selbst erwirtschaftetem Überschuss: Nach Abzug ihres Beitrags muss jede beteiligte Entität strikt mehr Energie als bei ihrer eigenen Geburt besitzen,
 - mindestens zwei aktiv beteiligte kompatible Eltern als gegenwärtiger Grundansatz,
 - gemeinsamer realer Elternpool aus zusammenhängenden Netzfragmenten,
 - Ziehen ohne Zurücklegen entsprechend realer Häufigkeit,
@@ -315,9 +318,9 @@ Status: technische Anschlussfähigkeit **entschieden**; Mechanismus **später/in
 | weitere Membranoffsets | offen | Primitive Lese-/Schreibpunkte und ihre Rechte |
 | `K` | entschieden | Nicht vererbter, nicht belohnter Signalzustand; je Eingangsport ein Slot, neuer Wert überschreibt alten, verwendete Werte werden bei Ausführung verbraucht |
 | `Z` bei Geburt | entschieden | Leer; dauerhafter Aufbau ausschließlich durch ausdrückliche `Z-write`-Operationen |
-| individuelle Neuheit | entschieden | Erster erfolgreicher `Z-write` eines Werts ist der höchstwertige Erstfall; Lebenszeithistorie bleibt auch nach Überschreiben bestehen |
-| Wiederholungsrabatt | entschieden + prototypspezifisch | Wiederholte Werte bleiben belohnbar, liefern aber abnehmenden Ertrag; konkrete Funktion versuchsspezifisch |
-| Quellensättigung | entschieden/offen | Abnehmender Ertrag neuer Inhalte aus derselben Quelle; Funktion und Quellenidentität offen |
+| individuelle Neuheit | entschieden | Ein gegenüber dem letzten eigenen Lesen veränderter externer RAM-Wert kann Energie liefern; unveränderte und selbst erzeugte Werte nicht |
+| Wiederholungsrabatt | entschieden + prototypspezifisch | Ein erneut auftretender früherer Wert an derselben Adresse bleibt nach einem Wechsel belohnbar, liefert aber abnehmenden Ertrag |
+| Urheberkette | entschieden + prototypspezifisch | RAM-Schreibvorgänge bewahren bisherige Urheber und ergänzen die schreibende Entity-ID; eigene Beteiligung schließt Energiegewinn aus |
 | Taktung und Ausführung | entschieden + prototypspezifisch | Seed-reproduzierbare Zufallsauswahl aus bereiten Instanzen; alle Ausgangskanten senden; konkrete Kosten offen |
 | obligatorische Aktivität | entschieden | Jede lebende Entität wird pro Heartbeat gemäß ihrem Genom aktiviert; sie entscheidet nicht über das Ob |
 | Basisaktivität `A₀` | entschieden + offen | Genau einmal vorhandenes erbliches Genom-Metadatum; konkrete Codierung, Mutation und Formel offen |
@@ -355,8 +358,8 @@ Status: technische Anschlussfähigkeit **entschieden**; Mechanismus **später/in
 
 1. Wie werden Ausführung eines Funktionspunkts und Übertragung über seine ausgehenden Kanten auf Aktivitätsbudget und Energiekosten angerechnet?
 2. Wie ist `Z` adressiert, wie breit sind Adresse und Wert, und was bewirken ungültige Zugriffe?
-3. Wann genau wird `ΔS` für einen erfolgreichen `Z-write` gebucht?
-4. Wie wird eine Quelle nach Verarbeitung durch mehrere Funktionspunkte semantikfrei identifiziert und für die Quellensättigung verfolgt?
+3. Welche konkrete Belohnungsfunktion für wiederkehrende RAM-Werte erzeugt tragfähigen, aber nicht trivial ausnutzbaren Energiegewinn?
+4. Wie werden sehr lange Urheberketten begrenzt, ohne Selbstfütterung durch Kopieren oder Verarbeitung wieder zu ermöglichen?
 5. Welche Membranoffsets existieren außer der Entity-ID, und wie können daraus Interaktion und Reproduktion entstehen?
 6. Wie werden Ausführungs-, RAM-, Standby- und Reproduktionskosten bilanziert?
 7. Wie wird ein reproduktiver Zustand aus dem P-Netz ausgedrückt, ohne einen fertigen Verhaltensbefehl einzubauen?

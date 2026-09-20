@@ -116,3 +116,80 @@ Die Control-Schicht erhielt deshalb den ausdrücklichen Parameter `--birth-energ
 Der korrigierte Lauf erzeugte erheblich weniger Kinder, aber diese Kinder konnten ihr Genom wesentlich länger ausführen und trugen deutlich stärker zur Exploration bei. Vollständiges Aussterben blieb bestehen.
 
 Maßgebliche korrigierte Run-ID: `9a0f25fc-5cfd-43eb-bb50-1f30baeaa008`.
+
+## Versuch: Geburtsenergie als Anteil der Elternenergie
+
+Der feste Wert 500 erschien anschließend als zu hoher Preis für eine einzelne Geburt. Deshalb wurde ein vollständig energieerhaltender relativer Modus ergänzt. Das Kind erhielt die Hälfte der mittleren aktuellen Elternenergie; alle Eltern bezahlten davon gleiche Anteile.
+
+| Messgröße | fest 50 | fest 500 | 50 % des Elternmittels |
+|---|---:|---:|---:|
+| Nachkommen | 91 | 10 | 57 |
+| mittlere Geburtsenergie | 50 | 500 | 109,84 |
+| RAM-Lesevorgänge | 312 | 357 | 316 |
+| unterschiedliche RAM-Adressen | 12 | 22 | 12 |
+| RAM-Lesevorgänge der Kinder | 116 | 183 | 187 |
+| letzter Tod | Tick 23 | Tick 39 | Tick 21 |
+
+Die relative Regel verteilte Energie weniger extrem, stabilisierte die Population jedoch nicht. Weil jede Generation mit der bereits gesunkenen aktuellen Elternenergie rechnete, reichten die Geburtsenergien schließlich bis auf 9,39 hinunter. Das erzeugte erneut viele sehr schwache Kinder und ein früheres vollständiges Aussterben.
+
+Der Modus bleibt als reproduzierbarer Versuchsparameter implementiert. Der Befund spricht aber dagegen, `0,5 * Mittelwert(S_eltern)` ohne weitere Bedingung bereits als neue allgemeine Reproduktionsregel festzulegen.
+
+## Mindestlaufzeit statt Energiegeschenk
+
+Als nächste Hypothese wurde die relative Geburtsenergie beibehalten, eine Geburt aber nur zugelassen, wenn das konkrete Kindergenom mit dieser Energie fünf volle Heartbeats finanzieren könnte. Die Schwelle erzeugt keine Energie: Unterschreitet das Angebot den berechneten Bedarf, gibt es kein Kind und keinen Energieabzug.
+
+Der Bedarf wird konservativ aus Standby, Aktivitätsbudget, Ausführungskosten und maximaler Kantenzahl einer Kindinstanz berechnet. Mögliche spätere Belohnungen zählen nicht als garantierte Energie.
+
+| Messgröße | 50 % ohne Schwelle | 50 % + 5 Heartbeats |
+|---|---:|---:|
+| Nachkommen | 57 | 21 |
+| kleinste Geburtsenergie | 9,39 | 119,16 |
+| mittlere Geburtsenergie | 109,84 | 195,15 |
+| RAM-Lesevorgänge | 316 | 345 |
+| unterschiedliche RAM-Adressen | 12 | 13 |
+| letzter Tod | Tick 21 | Tick 24 |
+
+Die Mindestlaufzeit beseitigte die extrem schwachen Geburten. 149 Gruppengeburtsversuche wurden ohne Energieverlust abgelehnt. Diese hohe Zahl entsteht, weil eine gescheiterte Geburt gemäß der gesetzten P0-Regel die Partnerslots nicht leert und die Gruppe im nächsten Heartbeat erneut geprüft wird. Der Mechanismus ist damit energetisch sauber, zeigt aber eine neue offene Frage zur Behandlung wiederholt nicht finanzierbarer Konstellationen.
+
+Run-ID: `6b34f4dd-5961-4d24-8bcd-084e64cf5e55`.
+
+## Startenergie ist kein Fortpflanzungskapital
+
+Die Versuche mit festen und relativen Geburtsenergien hatten eine frühere Grundidee verdeckt: Eine Amöbe sollte sich mit ihrer bloßen Startenergie überhaupt nicht fortpflanzen können. Für jede Entität wird deshalb der eigene Geburtswert `S₀` festgehalten. Nach einer Geburt muss jeder Elternteil seinen Beitrag bezahlt haben und trotzdem strikt über `S₀` liegen.
+
+Im ersten Lauf unter dieser wiederhergestellten Regel entstanden keine Kinder. Keine der 20 Startamöben überschritt jemals ihre Geburtsenergie 500; der höchste beobachtete Wert nach einer Buchung war 499. Trotzdem führten sie 367 RAM-Lesevorgänge auf 20 unterschiedlichen Adressen aus und starben bis Tick 38 vollständig aus.
+
+Der Befund trennt zwei Fähigkeiten:
+
+- Das P1-Genom kann die RAM-Suppe fortschreitend untersuchen.
+- Die gegenwärtige Umweltökonomie liefert dabei keinen reproduktiven Energieüberschuss.
+
+Damit verschiebt sich die nächste Aufgabe folgerichtig von der Geburtsmechanik zur Umwelt: In der Suppe muss bilanziertes „Futter“ existieren, das eine Entität durch Umweltkontakt erschließen kann. Eine Geburt bleibt energieerhaltend und setzt einen real erwirtschafteten Überschuss voraus.
+
+Run-ID: `36776956-b72a-4652-992c-8b0ee9869817`.
+
+## Die Suppe selbst wird zum Futter
+
+Futter wurde anschließend präzisiert: Es ist keine zweite unsichtbare Ressourcenschicht, sondern die von einer Amöbe sequenziell wahrgenommene Veränderung eines RAM-Werts. Liest sie an derselben Adresse beispielsweise `17 -> 42 -> 17 -> 17`, sind die ersten drei Lesezustände belohnbar; das zweite `17` liefert weniger als das erste und die unmittelbare Wiederholung liefert nichts.
+
+RAM-Zellen tragen dafür eine unsichtbare Urheberkette. Eine Amöbe darf RAM weiterhin überschreiben, erhält aber keine Energie aus einem Wert, an dessen Erzeugung sie selbst beteiligt war. Andere, noch nicht beteiligte Amöben können die Veränderung erschließen. Die Energie entsteht beim `RAM-read`; `Z-write` bleibt dauerhafter Speicher ohne direkte Belohnung.
+
+Der erste Lauf dieser Ökonomie erzeugte 270 belohnte Veränderungen und insgesamt 2.700 Energieeinheiten bei 322 RAM-Lesevorgängen. Dennoch überschritt keine Amöbe ihre Geburtsenergie 500, es entstanden keine Kinder und die Population starb bis Tick 34 aus. Die Suppe bietet nun Nahrung im definierten Sinn; Menge beziehungsweise Ertrag stehen aber noch nicht in einem tragfähigen Verhältnis zu den Ausführungskosten.
+
+Run-ID: `1830d15a-b674-48c9-8bb1-d22993df8a0e`.
+
+## Tarifverhandlungen mit der Suppe
+
+Da die Amöben Nahrung fanden, aber die Lebenshaltungskosten den Ertrag überstiegen, wurde ausschließlich die Neuheitsbasis variiert. Alle übrigen Bedingungen blieben unverändert.
+
+| Neuheitsbasis | Nachkommen | lebend bei Tick 200 | RAM-Lesevorgänge | belohnte Veränderungen | ausgezahlte Energie |
+|---:|---:|---:|---:|---:|---:|
+| 10 | 0 | 0 | 322 | 270 | 2.700 |
+| 20 | 0 | 0 | 454 | 382 | 7.640 |
+| 40 | 0 | 5 | 1.738 | 1.413 | 56.520 |
+| 80 | 141 | 128 | 8.715 | 7.060 | 564.800 |
+| 160 | 399 | 324 | 21.036 | 17.001 | 2.720.160 |
+
+Die Versuchsreihe zeigt einen deutlichen Übergang zwischen 40 und 80. Bei 40 überleben einzelne Gründer bis zum Ende des Beobachtungsfensters, erwirtschaften aber keine erfolgreiche Geburt. Bei 80 entsteht erstmals eine wachsende Population. Bei 160 nimmt das Wachstum bis Tick 200 stark zu.
+
+Damit ist die Umweltökonomie nun experimentell kalibrierbar. Die gewählte Neuheitsbasis ist keine Naturkonstante; sie bestimmt gemeinsam mit Ausführungs- und Lebenshaltungskosten, ob Exploration energetisch defizitär, gerade bestandserhaltend oder stark wachstumsfördernd ist.

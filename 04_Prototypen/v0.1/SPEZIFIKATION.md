@@ -10,11 +10,11 @@ Maßgebliche fachliche Grundlage ist ausschließlich das fortlaufende EVE-Alife-
 
 Dieses Dokument legt austauschbare technische und prototypspezifische Regeln für v0.1 fest. Es erweitert das Grundkonzept nicht um allgemeine Naturgesetze. Bei einem Widerspruch hat das Grundkonzept Vorrang.
 
-## 2. Provenienz und Quellensättigung
+## 2. RAM-Neuheit und Urheberkette
 
 ### 2.1 Unsichtbare Metadaten
 
-Jeder im P-Netz fließende Wert trägt zusätzlich eine supervisorseitige Provenienzmenge. Diese Metadaten sind für die Entität weder lesbar noch schreibbar und fließen nicht als Wert in `K`, `Z`, RAM oder Membran ein. Sie dienen ausschließlich der im Grundkonzept festgelegten Quellensättigung und der Beobachtung.
+Jeder im P-Netz fließende Wert trägt zusätzlich supervisorseitige Quellen- und Urhebermetadaten. Sie sind für die Entität weder lesbar noch schreibbar und dienen ausschließlich Energiebuchung und Beobachtung.
 
 ### 2.2 Primitive Quellen
 
@@ -36,13 +36,17 @@ Jede RAM-Adresse ist eine eigene Umweltquelle. Wiederholte Lesevorgänge derselb
 
 `Z-write` speichert neben dem sichtbaren Wert dessen unsichtbare Provenienz. `Z-read` gibt den gespeicherten Wert mit genau dieser Provenienz wieder aus. Wiederholtes Speichern, Lesen oder Kopieren erzeugt dadurch keine neue Quelle.
 
-`RAM-write` schreibt ausschließlich den sichtbaren Wert in die RAM-Suppe. Für die spätere Provenienz eines `RAM-read(a)` ist allein die gelesene Adresse `RAM[a]` maßgeblich, nicht die Provenienz des zuvor dorthin geschriebenen Werts.
+`RAM-write` schreibt den sichtbaren Wert und ergänzt die eigene Entity-ID zur bereits am Signal vorhandenen Urhebermenge. `RAM-read(a)` übernimmt diese Menge. Verarbeitung vereinigt Urhebermengen ebenso wie Quellenmengen und entfernt keine Einträge.
 
-### 2.4 Quellenidentität eines Schreibereignisses
+### 2.4 Energiebuchung eines Leseereignisses
 
-Für die Quellensättigung eines erfolgreichen `Z-write` wird die vollständige, sortierte Provenienzmenge als semantikfreier Quellenschlüssel verwendet. Gleiche Mengen gelten unabhängig von ihrer Entstehungsreihenfolge als dieselbe Quelle.
+Der Supervisor hält je Entität und RAM-Adresse den zuletzt gelesenen Wert sowie einen Zähler je Adress-Wert-Paar. Ein unveränderter Wert liefert `0`. Ein gegenüber dem letzten Lesen veränderter externer Wert liefert in v0.1:
 
-Ein Wert ohne Provenienz ist in v0.1 nicht vorgesehen. Sollte er aufgrund eines Implementierungsfehlers auftreten, wird der Lauf mit einem diagnostischen Fehler beendet; es wird nicht stillschweigend eine neue fachliche Quelle erfunden.
+```text
+reward(k) = novelty_base / (1 + k)
+```
+
+Dabei ist `k` die Zahl früherer belohnter Wechsel derselben Entität zu demselben Wert an derselben Adresse. Enthält die Urhebermenge die lesende Entity-ID, ist der Ertrag ebenfalls `0`. Jeder Lesevorgang aktualisiert den zuletzt gesehenen Wert. `Z-write` speichert weiterhin Wert und Metadaten, erzeugt aber keine Energie.
 
 ## 3. Membran und reproduktive Konstellation
 
@@ -131,7 +135,15 @@ Beitrag je Elternteil = S_birth / Anzahl der Eltern
 
 Bei zwei Eltern trägt jeder Elternteil die Hälfte, bei drei Eltern jeder ein Drittel. Eine Geburt findet nur statt, wenn jedes Mitglied der gültigen Gruppe seinen vollständigen Anteil bezahlen kann. Teilzahlungen, Ausgleichszahlungen eines anderen Elternteils und ein Energiezuschuss des Supervisors sind ausgeschlossen.
 
-Bei erfolgreicher Geburt zieht der Supervisor die Beiträge ab und weist dem Kind exakt deren Summe als Startenergie zu. Die Energiebilanz der Reproduktion ist damit nullsummig. Die Eltern erhalten keinen Schutz vor den Folgen ihrer Investition; ein nach der Zahlung zu niedriger Restwert kann beim nächsten Heartbeat zum Tod führen.
+Bei erfolgreicher Geburt zieht der Supervisor die Beiträge ab und weist dem Kind exakt deren Summe als Startenergie zu. Die Energiebilanz der Reproduktion ist damit nullsummig.
+
+Jede Entität bewahrt zusätzlich den Energiewert `S₀`, mit dem sie selbst geboren wurde. Eine Geburt ist nur zulässig, wenn für jeden einzelnen Elternteil strikt gilt:
+
+```text
+S_nach_Beitrag > S₀
+```
+
+Die bloße Startenergie kann damit keine Fortpflanzung finanzieren. Nur ein während des eigenen Lebens erwirtschafteter Überschuss darf an ein Kind übertragen werden. Scheitert diese Prüfung, wird keine Energie abgezogen, kein Kind erzeugt und keine Partnerliste geleert.
 
 Scheitert die Energieprüfung, wird keine Energie abgezogen, kein Kind erzeugt und keine Partnerliste geleert. `S_birth` ist in P0.1 ein austauschbarer Versuchsparameter und kein erbliches Merkmal oder allgemeines Naturgesetz.
 
@@ -230,7 +242,7 @@ Kantenübertragung       0,1 Energie je übertragener Kante
 
 S_birth                 50,0 Energie
 Neuheitsbasis           10,0 Energie
-reward(k,r)             10 / ((1+k) * (1+r))
+reward(k)               10 / (1+k) je erneutem Wechsel zu (Adresse, Wert)
 p_mut                   0,001 je Kind
 ```
 

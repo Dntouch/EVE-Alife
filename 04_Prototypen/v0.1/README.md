@@ -56,6 +56,26 @@ python3 run.py --ticks 30 --seed 42 --population 20 \
 
 Startenergie und Geburtsenergie sind getrennte Versuchsparameter. `--start-energy` betrifft nur die künstlich eingesetzte Startpopulation. `--birth-energy` bestimmt die vollständig von den Eltern bezahlte Energie jedes Kindes. Für den kontrollierten P1-Vergleich werden beide auf `500` gesetzt, damit Nachkommen nicht allein aufgrund der alten P0-Geburtsenergie von `50` nur ein Zehntel des anfänglichen Energievorrats besitzen.
 
+Alternativ kann die Geburtsenergie relativ zur aktuellen mittleren Elternenergie berechnet werden:
+
+```bash
+python3 run.py --ticks 100 --seed 42 --population 20 \
+  --start-energy 500 --birth-energy-fraction 0.5 \
+  --birth-min-heartbeats 5 --snapshot-every 1 --p1-explorers
+```
+
+Ist `--birth-energy-fraction` gesetzt, hat dieser Modus Vorrang vor `--birth-energy`. Bei `0.5` erhält das Kind die Hälfte der mittleren aktuellen Elternenergie; der Betrag wird weiterhin vollständig und zu gleichen Teilen von den Eltern bezahlt. Zulässig sind Werte größer `0` bis einschließlich `1`.
+
+`--birth-min-heartbeats 5` verlangt zusätzlich, dass diese angebotene Energie das konkrete Kindergenom für fünf volle Heartbeats finanzieren könnte. Der konservative Bedarf umfasst Standby, das Aktivitätsbudget des Kindes, Ausführungskosten und die höchste mögliche Zahl ausgehender Kanten einer ausgeführten Instanz; mögliche Z-Belohnungen werden nicht vorweggenommen. Reicht die angebotene Elternenergie nicht aus, findet keine Geburt statt, es wird nichts abgezogen und die Partnerslots bleiben gemäß der bestehenden P0-Regel belegt.
+
+Unabhängig vom gewählten Geburtsenergiemodell speichert jede Entität ihre eigene Geburtsenergie als `S₀`. Nach dem Elternbeitrag muss jeder Elternteil strikt mehr als sein eigenes `S₀` behalten. Die Startenergie ist damit ausschließlich Existenzvorschuss; Fortpflanzung kann nur aus selbst erwirtschaftetem Überschuss bezahlt werden.
+
+Die Lupe stellt die RAM-Suppe nicht mehr als abstraktes Farbfeld ihrer Rohwerte dar. Die Ansicht **Umweltkontakte** zeigt ausschließlich tatsächlich gelesene oder geschriebene Adressen, Zugriffshäufigkeiten, die letzten Kontakte und einen Filter je Amöbe.
+
+In der aktuellen Minimalökonomie entsteht Energie unmittelbar beim Lesen eines gegenüber dem letzten eigenen Lesen veränderten externen RAM-Werts. Ein unveränderter Wert sowie ein Wert mit eigener Entity-ID in seiner Urheberkette liefern nichts. Kehrt nach einem zwischenzeitlichen anderen Wert ein früherer Wert zurück, ist er erneut belohnbar, jedoch mit abnehmendem Ertrag. `Z-write` dient nur noch der dauerhaften Speicherung und erzeugt keine Energie.
+
+Der Ertrag des ersten belohnten Wechsels ist über `--novelty-base` ein Versuchsparameter. Die erste Tarifreihe verwendete bei sonst identischen Bedingungen die Werte `10`, `20`, `40`, `80` und `160`.
+
 Die Ausgabe nennt das erzeugte Run-Verzeichnis. Darin liegen:
 
 - `metadata.json`: Run-ID, Seed, Konfiguration, EVE- und Git-Version

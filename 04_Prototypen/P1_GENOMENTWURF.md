@@ -116,3 +116,102 @@ Ein korrigierter Lauf mit ansonsten identischen Bedingungen und `S_birth = 500` 
 Run-ID: `9a0f25fc-5cfd-43eb-bb50-1f30baeaa008`.
 
 Die höhere Geburtsenergie erzeugte weniger Geburten, gab jedem Kind aber genügend Energie für eine längere eigene Ausführung. Die Kinder erreichten im korrigierten Lauf alle 22 populationsweit besuchten Adressen; bei Geburtsenergie 50 hatten sie nur vier unterschiedliche Adressen erreicht. Dieser korrigierte Lauf ist die maßgebliche P1-Referenz. `--start-energy` und `--birth-energy` bleiben getrennt sichtbar, weil ihre Gleichsetzung eine dokumentierte Versuchsentscheidung und kein allgemeines Naturgesetz ist.
+
+### Versuch mit relativer Geburtsenergie
+
+Als energieerhaltender Mittelweg wurde anschließend folgende Regel erprobt:
+
+```text
+S_kind = 0,5 * Mittelwert(S_eltern)
+Beitrag je Elternteil = S_kind / Anzahl der Eltern
+```
+
+Die Energie wird damit weiterhin ausschließlich von den Eltern übertragen. Der Lauf mit sonst identischen P1-Bedingungen ergab:
+
+- 57 Nachkommen,
+- Geburtsenergien zwischen 9,39 und 240,27,
+- mittlere Geburtsenergie 109,84,
+- 316 RAM-Lesevorgänge und 12 unterschiedliche Adressen,
+- 187 RAM-Lesevorgänge der Kinder,
+- vollständiges Aussterben bis Tick 21.
+
+Run-ID: `ef3637b0-c9af-4869-9aa3-99d91b1ac2f1`.
+
+Die Regel liegt bei der Kinderzahl zwischen den festen Werten 50 und 500, erzeugt aber eine generationenübergreifende Abwärtsspirale: Sinkende Elternenergie senkt die Geburtsenergie; schwache Kinder erzeugen wiederum noch schwächere Kinder. Der Versuch ist implementiert und reproduzierbar, wird aufgrund dieses Befunds aber noch nicht zur maßgeblichen P1-Regel erklärt.
+
+### Relative Energie mit genomabhängiger Mindestlaufzeit
+
+Der relative Modus wurde daraufhin um eine energieerhaltende Geburtsbedingung ergänzt. Eine Geburt findet nur statt, wenn die angebotene Energie das konkrete, bereits rekombinierte Kindergenom für fünf volle Heartbeats konservativ finanzieren könnte. Reicht sie nicht, wird keine Energie abgezogen und kein Kind erzeugt.
+
+Der Bedarf ergibt sich aus Standbykosten, Aktivitätsbudget, Ausführungskosten und der höchsten Zahl ausgehender Kanten einer Kindinstanz. Künftige Z-Belohnungen werden nicht als sichere Einnahme angerechnet.
+
+Der Lauf mit `birth_energy_fraction = 0,5` und `birth_min_heartbeats = 5` ergab:
+
+- 21 Nachkommen,
+- Geburtsenergien zwischen 119,16 und 240,27,
+- mittlere Geburtsenergie 195,15,
+- 149 abgelehnte Gruppengeburtsversuche ohne Energieabzug,
+- 345 RAM-Lesevorgänge und 13 unterschiedliche Adressen,
+- 135 RAM-Lesevorgänge der Kinder,
+- vollständiges Aussterben bis Tick 24.
+
+Run-ID: `6b34f4dd-5961-4d24-8bcd-084e64cf5e55`.
+
+Die Schranke verhinderte extrem schwache Geburten, ohne Energie zu erzeugen. Sie führte jedoch zu vielen wiederholten Ablehnungen, weil nach einer nicht finanzierbaren Geburt die Partnerslots gemäß der bestehenden Regel belegt bleiben. Ob diese Wiederholungen lediglich beobachtbarer Selektionsdruck oder unnötige Reproduktionsschleifen sind, bleibt vor einer Festlegung zu klären.
+
+### Rückkehr zur Überschussbedingung
+
+Aus dem frühen Entwurf wurde anschließend die strengere Rahmenbedingung wiederhergestellt: Eine Amöbe darf sich nicht aus ihrer bloßen Startenergie fortpflanzen. Nach Abzug ihres Elternbeitrags muss ihre Energie strikt über ihrem individuellen Geburtswert `S₀` liegen.
+
+Der P1-Lauf mit relativer Geburtsenergie, Fünf-Heartbeat-Schwelle und dieser Überschussbedingung ergab:
+
+- keine Nachkommen,
+- kein beobachteter Energiewert oberhalb des `S₀ = 500` der Startpopulation,
+- höchster beobachteter Energiewert nach einer Buchung: 499,
+- 367 RAM-Lesevorgänge,
+- 20 unterschiedliche RAM-Adressen,
+- vollständiges Aussterben bis Tick 38.
+
+Run-ID: `36776956-b72a-4652-992c-8b0ee9869817`.
+
+Dies ist kein Defekt der Reproduktion. Der Lauf zeigt, dass Exploration unter der aktuellen Kosten- und Belohnungsstruktur keinen Fortpflanzungsüberschuss erwirtschaftet. Die nächste Umweltstufe benötigt daher eine bilanziert zugängliche Energiequelle in der RAM-Suppe – „Futter“ – statt einer Lockerung der Geburtsbedingung.
+
+### RAM-Veränderung als Futter
+
+„Futter“ wurde anschließend nicht als zusätzliche Ressourcenschicht, sondern als individuell wahrgenommene Veränderung eines RAM-Werts präzisiert. Ein erster oder gegenüber dem letzten Lesen veränderter externer Wert liefert beim `RAM-read` Energie. Ein unmittelbar unveränderter oder selbst erzeugter Wert liefert nichts. Kehrt ein früherer Wert nach einem anderen Wert zurück, entsteht erneut Energie, deren Höhe mit jeder früheren Belohnung desselben Adress-Wert-Paars sinkt.
+
+Im ersten Lauf mit dieser Regel wurden beobachtet:
+
+- 322 RAM-Lesevorgänge,
+- 270 belohnte Veränderungen,
+- insgesamt 2.700 Energieeinheiten aus RAM-Leseereignissen,
+- 19 unterschiedliche RAM-Adressen,
+- weiterhin keine Nachkommen,
+- kein beobachteter Energiewert oberhalb des `S₀ = 500`,
+- vollständiges Aussterben bis Tick 34.
+
+Run-ID: `1830d15a-b674-48c9-8bb1-d22993df8a0e`.
+
+Die Suppe enthält damit erstmals das definierte Futter, die Belohnungsbasis 10 reicht unter den gegenwärtigen Ausführungskosten und dem P1-Genom jedoch noch nicht für einen reproduktiven Überschuss. Das ist nun eine messbare Umwelt- und Kostenfrage.
+
+### Tarifrunde der IG Amöbe
+
+Bei unverändertem Seed, Genom, RAM, Startenergie, relativer Geburtsenergie, Fünf-Heartbeat-Schwelle und Überschussbedingung wurde ausschließlich `novelty_base` variiert. Jeder Lauf dauerte 200 Ticks.
+
+| Neuheitsbasis | Nachkommen | lebend bei Tick 200 | maximale Population | RAM-Lesevorgänge | letzter Tod |
+|---:|---:|---:|---:|---:|---:|
+| 10 | 0 | 0 | 20 | 322 | Tick 34 |
+| 20 | 0 | 0 | 20 | 454 | Tick 48 |
+| 40 | 0 | 5 | 20 | 1.738 | Tick 193 |
+| 80 | 141 | 128 | 128 | 8.715 | Tick 192 |
+| 160 | 399 | 324 | 324 | 21.036 | Tick 196 |
+
+Bei 40 reicht der Ertrag erstmals für das Fortbestehen einzelner Gründer über 200 Ticks, aber noch nicht für eine erfolgreiche Geburt. Zwischen 40 und 80 liegt in dieser Staffel die erste reproduktive Tarifgrenze. Bei 80 wächst die Population; bei 160 ist das Wachstum bereits deutlich stärker. Diese Grenze ist ein Ergebnis genau dieser Kosten, Genome und Umwelt und kein allgemeiner EVE-Konstantwert.
+
+Run-IDs:
+
+- 10: `a37a384c-ce36-48de-a87e-1421cd57d5cc`
+- 20: `5a980744-6b15-40d5-8c1b-a609d27620c6`
+- 40: `d992ad6c-1e67-4ca5-b38e-ac640dc973bb`
+- 80: `1cb45901-3595-4fa9-94aa-082e430ddfa9`
+- 160: `491d086f-1249-44d7-801f-6ddcbd4944f6`

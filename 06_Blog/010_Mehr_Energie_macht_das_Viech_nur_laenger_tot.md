@@ -100,4 +100,18 @@ Zwanzig Amöben stapfen nacheinander ins gleiche Gebüsch, finden unterschiedlic
 
 Tja. Forschungsexpedition ist vielleicht noch etwas hoch gegriffen. Aber immerhin haben sie diesmal den Kreisverkehr verlassen.
 
+## Nachtrag: Die IG Amöbe verhandelt
+
+Nachdem die Suppe veränderte RAM-Werte endlich als Futter bezahlte, blieb ein Problem: Der Tarif lag bei zehn Energieeinheiten, die Lebenshaltungskosten aber offenbar in einer anderen Gehaltsklasse.
+
+**Stefan:** Das heißt, dass die Lebenshaltungskosten zu hoch sind im Verhältnis zum Energieertrag. Erschreckend nah an der Wirklichkeit.
+
+**Stefan:** Die IG Amöbe muss aktiv werden und etwas Realistisches aushandeln.
+
+Also testeten wir fünf Tarifstufen. Bei 10 und 20 starben alle ohne Nachwuchs. Bei 40 hielten fünf Gründer bis Tick 200 durch, bekamen aber noch immer kein Kind finanziert. Bei 80 kippte das System: 141 Kinder, 128 lebende Amöben am Ende des Beobachtungsfensters. Bei 160 waren bereits 324 von insgesamt 419 Entitäten am Leben.
+
+> **Redaktionelle Einordnung – Beobachtung:** Unter den konkret getesteten P1-Bedingungen liegt die erste reproduktive Tarifgrenze zwischen einer Neuheitsbasis von 40 und 80. Das ist keine allgemeine biologische Konstante, sondern das Ergebnis dieser Kosten, Genome und Umwelt.
+
+Die Tarifverhandlung war erfolgreich. Ob der Abschluss bei 80 nachhaltig oder nur inflationär ist, muss die nächste Betriebsversammlung klären.
+
 Interne Quellen: Gespräch und Implementierung „EVE-Alife“, 20. September 2026; Projektlog „Von P0 zur ersten genomischen Exploration“; P0-Ergebnisse und P1-Genomentwurf unter `04_Prototypen/`.

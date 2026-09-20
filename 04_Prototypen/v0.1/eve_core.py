@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections import Counter
 from dataclasses import asdict, dataclass, field
 from math import floor, sqrt
 from random import Random
@@ -21,10 +22,15 @@ def provenance(*signals: "Signal") -> tuple[str, ...]:
     return tuple(sorted({source for signal in signals for source in signal.sources}))
 
 
+def originators(*signals: "Signal") -> tuple[int, ...]:
+    return tuple(sorted({origin for signal in signals for origin in signal.originators}))
+
+
 @dataclass(frozen=True)
 class Signal:
     value: int
     sources: tuple[str, ...]
+    originators: tuple[int, ...] = ()
 
 
 PORTS: dict[str, tuple[tuple[str, ...], tuple[str, ...]]] = {
@@ -100,6 +106,7 @@ class Entity:
     id: int
     genome: Genome
     energy: float
+    start_energy: float
     born_at: int
     parents: tuple[int, ...] = ()
     k: dict[str, Signal] = field(default_factory=dict)
@@ -107,6 +114,8 @@ class Entity:
     partner_ids: list[int | None] = field(default_factory=lambda: [None, None])
     value_history: dict[str, int] = field(default_factory=dict)
     source_history: dict[str, int] = field(default_factory=dict)
+    ram_last_seen: dict[int, int] = field(default_factory=dict)
+    ram_seen_count: dict[str, int] = field(default_factory=dict)
     alive: bool = True
 
     @staticmethod
@@ -120,6 +129,8 @@ class Config:
     ram_size: int = 65_536
     z_size: int = 64
     birth_energy: float = 50.0
+    birth_energy_fraction: float | None = None
+    birth_min_heartbeats: int = 0
     genome_size_sigma: float = 2.0
     mutation_probability: float = 0.001
     standby_cost: float = 1.0
@@ -137,6 +148,7 @@ class Simulation:
         self.rng = Random(config.seed)
         self.tick = 0
         self.ram = ram if ram is not None else [self.rng.randint(-(1 << 15), (1 << 15) - 1) for _ in range(config.ram_size)]
+        self.ram_originators: list[tuple[int, ...]] = [()] * config.ram_size
         if len(self.ram) != config.ram_size:
             raise ValueError("RAM-Größe stimmt nicht mit der Konfiguration überein")
         self.entities: dict[int, Entity] = {}
@@ -152,6 +164,7 @@ class Simulation:
             id=self.next_entity_id,
             genome=genome,
             energy=energy,
+            start_energy=energy,
             born_at=self.tick,
             parents=parents,
             z=[None] * self.config.z_size,
@@ -246,11 +259,17 @@ class Simulation:
             )
             if not opened:
                 return {}
-            return {"value": Signal(signal.value, provenance(signal, condition))}
+            return {"value": Signal(
+                signal.value, provenance(signal, condition),
+                originators(signal, condition),
+            )}
         if kind in {"ADD", "SUB", "XOR", "EQ"}:
             a, b = inputs["a"].value, inputs["b"].value
             value = {"ADD": a + b, "SUB": a - b, "XOR": a ^ b, "EQ": int(a == b)}[kind]
-            return {"value": Signal(i64(value), provenance(inputs["a"], inputs["b"]))}
+            return {"value": Signal(
+                i64(value), provenance(inputs["a"], inputs["b"]),
+                originators(inputs["a"], inputs["b"]),
+            )}
         if kind == "RAM_READ":
             raw_address = inputs["address"].value
             if raw_address >= self.config.membrane_base:
@@ -263,8 +282,25 @@ class Simulation:
                 self.emit("ram_read", entity_id=entity.id, address=raw_address, value=value, virtual=True)
                 return {"value": Signal(value, (f"MEM[{target.id},{offset},{slot}]",))}
             address = raw_address % len(self.ram)
-            self.emit("ram_read", entity_id=entity.id, address=address, value=self.ram[address], virtual=False)
-            return {"value": Signal(self.ram[address], (f"RAM[{address}]",))}
+            value = self.ram[address]
+            writers = self.ram_originators[address]
+            previous = entity.ram_last_seen.get(address)
+            changed = previous is None or previous != value
+            self_origin = entity.id in writers
+            reward = 0.0
+            if changed and not self_origin:
+                history_key = f"{address}:{value}"
+                count = entity.ram_seen_count.get(history_key, 0)
+                reward = self.config.novelty_base / (1 + count)
+                entity.ram_seen_count[history_key] = count + 1
+                entity.energy += reward
+            entity.ram_last_seen[address] = value
+            self.emit(
+                "ram_read", entity_id=entity.id, address=address, value=value,
+                virtual=False, previous=previous, changed=changed,
+                self_origin=self_origin, originators=list(writers), reward=reward,
+            )
+            return {"value": Signal(value, (f"RAM[{address}]",), writers)}
         if kind == "RAM_WRITE":
             raw_address = inputs["address"].value
             signal = inputs["value"]
@@ -272,7 +308,12 @@ class Simulation:
                 return {"value": signal}
             address = raw_address % len(self.ram)
             self.ram[address] = signal.value
-            self.emit("ram_write", entity_id=entity.id, address=address, value=signal.value)
+            writers = tuple(sorted({*signal.originators, entity.id}))
+            self.ram_originators[address] = writers
+            self.emit(
+                "ram_write", entity_id=entity.id, address=address, value=signal.value,
+                originators=list(writers),
+            )
             return {"value": signal}
         if kind == "Z_READ":
             address = inputs["address"].value % len(entity.z)
@@ -284,15 +325,10 @@ class Simulation:
             if not signal.sources:
                 raise RuntimeError("Wert ohne Provenienz")
             entity.z[address] = signal
-            value_key = str(signal.value)
-            source_key = "|".join(signal.sources)
-            k = entity.value_history.get(value_key, 0)
-            r = entity.source_history.get(source_key, 0)
-            reward = self.config.novelty_base / ((1 + k) * (1 + r))
-            entity.value_history[value_key] = k + 1
-            entity.source_history[source_key] = r + 1
-            entity.energy += reward
-            self.emit("z_write", entity_id=entity.id, address=address, value=signal.value, sources=list(signal.sources), reward=reward)
+            self.emit(
+                "z_write", entity_id=entity.id, address=address, value=signal.value,
+                sources=list(signal.sources), reward=0.0,
+            )
             return {"value": signal}
         if kind == "MEM_READ":
             offset, slot = inputs["offset"].value, inputs["slot"].value
@@ -348,10 +384,34 @@ class Simulation:
     def _reproduce(self) -> None:
         for group in self._valid_groups():
             parents = [self.entities[eid] for eid in group]
-            contribution = self.config.birth_energy / len(parents)
+            if self.config.birth_energy_fraction is None:
+                child_energy = self.config.birth_energy
+            else:
+                mean_parent_energy = sum(parent.energy for parent in parents) / len(parents)
+                child_energy = self.config.birth_energy_fraction * mean_parent_energy
+            contribution = child_energy / len(parents)
             if any(parent.energy < contribution for parent in parents):
                 continue
             genome = self._recombine(parents)
+            minimum = self._minimum_birth_energy(genome)
+            if child_energy < minimum:
+                for parent in parents:
+                    self.emit(
+                        "birth_rejected", entity_id=parent.id, group=list(group),
+                        offered_energy=child_energy, required_energy=minimum,
+                        reason="minimum_heartbeats_unaffordable",
+                    )
+                continue
+            if any(parent.energy - contribution <= parent.start_energy for parent in parents):
+                for parent in parents:
+                    self.emit(
+                        "birth_rejected", entity_id=parent.id, group=list(group),
+                        offered_energy=child_energy, required_energy=minimum,
+                        contribution=contribution, energy=parent.energy,
+                        start_energy=parent.start_energy,
+                        reason="parent_surplus_required",
+                    )
+                continue
             for parent in parents:
                 energy_before = parent.energy
                 parent.energy -= contribution
@@ -360,7 +420,20 @@ class Simulation:
                     "reproduction_cost", entity_id=parent.id, child_id=self.next_entity_id,
                     cost=contribution, energy_before=energy_before, energy_after=parent.energy,
                 )
-            self.add_entity(genome, self.config.birth_energy, group)
+            self.add_entity(genome, child_energy, group)
+
+    def _minimum_birth_energy(self, genome: Genome) -> float:
+        """Konservative Energie für konfigurierte volle Heartbeats ohne Belohnungen."""
+        if self.config.birth_min_heartbeats <= 0:
+            return 0.0
+        budget = max(1, floor(genome.activity_base / sqrt(max(1, genome.n_p))))
+        outgoing = Counter(edge.source for edge in genome.edges)
+        maximum_edges = max(outgoing.values(), default=0)
+        heartbeat_cost = (
+            self.config.standby_cost
+            + budget * (self.config.execution_cost + self.config.edge_cost * maximum_edges)
+        )
+        return self.config.birth_min_heartbeats * heartbeat_cost
 
     def _recombine(self, parents: list[Entity]) -> Genome:
         chosen_size_parent = self.rng.choice(parents)
@@ -454,6 +527,7 @@ class Simulation:
                     "id": e.id,
                     "alive": e.alive,
                     "energy": e.energy,
+                    "start_energy": e.start_energy,
                     "born_at": e.born_at,
                     "parents": list(e.parents),
                     "partners": list(e.partner_ids),
@@ -471,9 +545,11 @@ class Simulation:
                         key: self._signal_state(signal)
                         for key, signal in sorted(e.k.items())
                     },
-                    "z": [None if value is None else {"value": value.value, "sources": list(value.sources)} for value in e.z],
+                    "z": [self._signal_state(value) for value in e.z],
                     "value_history": dict(sorted(e.value_history.items())),
                     "source_history": dict(sorted(e.source_history.items())),
+                    "ram_last_seen": {str(key): value for key, value in sorted(e.ram_last_seen.items())},
+                    "ram_seen_count": dict(sorted(e.ram_seen_count.items())),
                 }
                 for e in sorted(self.entities.values(), key=lambda item: item.id)
             ],
@@ -487,6 +563,7 @@ class Simulation:
             "tick": self.tick,
             "config": asdict(self.config),
             "ram": list(self.ram),
+            "ram_originators": [list(items) for items in self.ram_originators],
             "next_entity_id": self.next_entity_id,
             "rng_state": self._json_state(self.rng.getstate()),
             "entities": [self._entity_state(e) for e in sorted(self.entities.values(), key=lambda item: item.id)],
@@ -506,11 +583,15 @@ class Simulation:
 
     @staticmethod
     def _signal_state(signal: Signal | None) -> dict[str, Any] | None:
-        return None if signal is None else {"value": signal.value, "sources": list(signal.sources)}
+        return None if signal is None else {
+            "value": signal.value, "sources": list(signal.sources),
+            "originators": list(signal.originators),
+        }
 
     def _entity_state(self, entity: Entity) -> dict[str, Any]:
         return {
-            "id": entity.id, "energy": entity.energy, "born_at": entity.born_at,
+            "id": entity.id, "energy": entity.energy, "start_energy": entity.start_energy,
+            "born_at": entity.born_at,
             "parents": list(entity.parents), "alive": entity.alive,
             "partner_ids": list(entity.partner_ids),
             "genome": {
@@ -522,6 +603,8 @@ class Simulation:
             "z": [self._signal_state(signal) for signal in entity.z],
             "value_history": dict(entity.value_history),
             "source_history": dict(entity.source_history),
+            "ram_last_seen": {str(key): value for key, value in entity.ram_last_seen.items()},
+            "ram_seen_count": dict(entity.ram_seen_count),
         }
 
     @classmethod
@@ -530,6 +613,9 @@ class Simulation:
             raise ValueError("Nicht unterstütztes Checkpoint-Format")
         sim = cls(Config(**state["config"]), ram=list(state["ram"]))
         sim.tick = state["tick"]
+        sim.ram_originators = [
+            tuple(items) for items in state.get("ram_originators", [[] for _ in sim.ram])
+        ]
         sim.next_entity_id = state["next_entity_id"]
         sim.rng.setstate(cls._tuple_state(state["rng_state"]))
         sim.entities.clear()
@@ -540,12 +626,23 @@ class Simulation:
                 raw["genome"]["activity_base"],
             )
             entity = Entity(
-                id=raw["id"], genome=genome, energy=raw["energy"], born_at=raw["born_at"],
+                id=raw["id"], genome=genome, energy=raw["energy"],
+                start_energy=raw.get("start_energy", raw["energy"]), born_at=raw["born_at"],
                 parents=tuple(raw["parents"]), alive=raw["alive"],
                 partner_ids=list(raw["partner_ids"]),
-                k={key: Signal(item["value"], tuple(item["sources"])) for key, item in raw["k"].items()},
-                z=[None if item is None else Signal(item["value"], tuple(item["sources"])) for item in raw["z"]],
+                k={
+                    key: Signal(item["value"], tuple(item["sources"]), tuple(item.get("originators", ())))
+                    for key, item in raw["k"].items()
+                },
+                z=[
+                    None if item is None else Signal(
+                        item["value"], tuple(item["sources"]), tuple(item.get("originators", ()))
+                    )
+                    for item in raw["z"]
+                ],
                 value_history=dict(raw["value_history"]), source_history=dict(raw["source_history"]),
+                ram_last_seen={int(key): value for key, value in raw.get("ram_last_seen", {}).items()},
+                ram_seen_count=dict(raw.get("ram_seen_count", {})),
             )
             sim.entities[entity.id] = entity
         sim.events.clear()
