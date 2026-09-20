@@ -1,0 +1,26 @@
+# Projektlog
+
+Dieses Verzeichnis bewahrt die chronologische Entstehungsgeschichte von EVE.
+
+Das Log hält fest, was wir tun, beobachten und entscheiden – und ebenso, warum wir glaubten, dass etwas funktionieren könnte. Spekulation, Hypothese, Beobachtung und Interpretation werden klar getrennt. Irrwege, Fehlschläge, Motivation, Meta-Fragen, Anekdoten und Humor gehören ausdrücklich zur Geschichte.
+
+## Redaktioneller Leitsatz
+
+> Maximale Ambition bei den Fragen. Minimale Erwartung an das Ergebnis.
+
+Einträge verweisen nach Möglichkeit auf ihre Quellen. Medien werden im Unterverzeichnis `medien` dauerhaft zusammen mit dem Projekt aufbewahrt.
+
+## Chronik
+
+- [16.–19. August 2026 – Vorgeschichte: Warum SteamOS ein „WHAAAAT?“ auslöste](2026-08-16_bis_19_Vorgeschichte_Datenschutz_und_SteamOS.md)
+- [19. August 2026 – Genesis: Am Anfang war der Schlamm](2026-08-19_Genesis_Am_Anfang_war_der_Schlamm.md)
+- [20.–26. August 2026 – Urlaubspause](2026-08-20_bis_26_Urlaubspause.md)
+- [27. August 2026 – Der Biotop-Eimer wird gefunden](2026-08-27_Der_Biotop-Eimer_wird_gefunden.md)
+- [28. August 2026 – Vom Konzept zum Experiment](2026-08-28_Vom_Konzept_zum_Experiment.md)
+- [28. August 2026 – Bergung und Namensgebung](2026-08-28_Bergung_und_Namensgebung.md)
+- [28. August 2026 – Technische Bestandsaufnahme und Inbetriebnahme](2026-08-28_Technische_Bestandsaufnahme.md)
+- [29. August 2026 – Information ist keine Nahrung](2026-08-29_Information_ist_keine_Nahrung.md)
+- [29. August 2026 – Sinn des Lebens in EVE](2026-08-29_Sinn_des_Lebens_in_EVE.md)
+- [29. August 2026 – Das Projekt bekommt ein Gedächtnis](2026-08-29_Das_Projekt_bekommt_ein_Gedaechtnis.md)
+- [29. August 2026 – Vom Prozess zum Hunger](2026-08-29_Vom_Prozess_zum_Hunger.md)
+- [6. September 2026 – Von der Frage „Was ist P?“ zur RAM-Suppe und zum Datenflussnetz](2026-09-06_Von_der_Frage_Was_ist_P_zur_RAM-Suppe.md)

@@ -1,0 +1,48 @@
+# Lokale Konfiguration und Zugangsdaten
+.env
+.env.*
+!.env.example
+*.key
+*.pem
+*.token
+
+# Betriebssysteme und Editoren
+.DS_Store
+Thumbs.db
+*~
+*.swp
+.idea/
+.vscode/
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# JavaScript / Node.js
+node_modules/
+
+# Protokolle, Zwischenergebnisse und lokale Datenbanken
+*.log
+*.sqlite
+*.sqlite3
+*.db
+tmp/
+temp/
+
+# Große Modell- und Versuchsdaten gehören nicht ungeprüft ins Git-Repository
+data/
+datasets/
+models/
+checkpoints/
+runs/
+outputs/
+*.ckpt
+*.onnx
+*.pt
+*.pth
+*.safetensors
