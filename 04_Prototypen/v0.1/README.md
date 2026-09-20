@@ -48,10 +48,13 @@ Die implementierte Population 1 arbeitet dagegen mit der unveränderten zufälli
 
 ```bash
 python3 run.py --ticks 30 --seed 42 --population 20 \
-  --start-energy 500 --snapshot-every 1 --p1-explorers
+  --start-energy 500 --birth-energy 500 \
+  --snapshot-every 1 --p1-explorers
 ```
 
 `--snapshot-every 1` ist keine biologische Bedingung, sondern liefert der Lupe für den Lebensfilm ein Bild pro Heartbeat. `--explorers` bezeichnet weiterhin die ältere technische Fixture mit präparierbaren RAM-Inseln; sie darf nicht mit der P1-Population verwechselt werden.
+
+Startenergie und Geburtsenergie sind getrennte Versuchsparameter. `--start-energy` betrifft nur die künstlich eingesetzte Startpopulation. `--birth-energy` bestimmt die vollständig von den Eltern bezahlte Energie jedes Kindes. Für den kontrollierten P1-Vergleich werden beide auf `500` gesetzt, damit Nachkommen nicht allein aufgrund der alten P0-Geburtsenergie von `50` nur ein Zehntel des anfänglichen Energievorrats besitzen.
 
 Die Ausgabe nennt das erzeugte Run-Verzeichnis. Darin liegen:
 

@@ -99,3 +99,20 @@ Ein technischer Lauf mit Seed `42`, 20 Startentitäten, unveränderter zufällig
 Run-ID: `d89c01b8-8651-454e-b98a-a17da9a71757`.
 
 Damit sind fortschreitender Umweltzugriff, persistenter Suchstand und konditionale Weiterleitung technisch nachgewiesen. Im zufälligen Adressbereich dieses kurzen Laufs wurde kein Wert `0` gelesen; deshalb wurde `GATE` noch nie geschlossen. Unterschiedliche Startentitäten durchliefen außerdem weitgehend denselben niedrigen Adressbereich. Beides sind Befunde für die nächste Populationsvariante, keine Gründe, die Umwelt künstlich zu verändern.
+
+### Korrektur der Geburtsenergie
+
+Der erste Lauf übernahm unbemerkt die P0-Geburtsenergie `S_birth = 50`, obwohl die künstliche P1-Startpopulation je 500 Energie besaß. Die 91 Kinder waren deshalb energetisch nicht mit ihren Eltern vergleichbar. Dies war kein Vererbungsfehler: Startenergie und die vollständig von den Eltern bezahlte Geburtsenergie waren getrennte Versuchsparameter. Für einen kontrollierten P1-Vergleich müssen beide ausdrücklich denselben Wert erhalten.
+
+Ein korrigierter Lauf mit ansonsten identischen Bedingungen und `S_birth = 500` ergab:
+
+- 10 statt 91 Nachkommen,
+- 357 RAM-Lesevorgänge,
+- 22 unterschiedliche RAM-Adressen populationsweit,
+- 183 RAM-Lesevorgänge durch Kinder,
+- 322 geöffnete und weiterhin keine geschlossene `GATE`-Ausführung,
+- vollständiges Aussterben bis Tick 39 statt Tick 23.
+
+Run-ID: `9a0f25fc-5cfd-43eb-bb50-1f30baeaa008`.
+
+Die höhere Geburtsenergie erzeugte weniger Geburten, gab jedem Kind aber genügend Energie für eine längere eigene Ausführung. Die Kinder erreichten im korrigierten Lauf alle 22 populationsweit besuchten Adressen; bei Geburtsenergie 50 hatten sie nur vier unterschiedliche Adressen erreicht. Dieser korrigierte Lauf ist die maßgebliche P1-Referenz. `--start-energy` und `--birth-energy` bleiben getrennt sichtbar, weil ihre Gleichsetzung eine dokumentierte Versuchsentscheidung und kein allgemeines Naturgesetz ist.

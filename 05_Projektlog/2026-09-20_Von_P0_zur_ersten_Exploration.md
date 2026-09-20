@@ -98,3 +98,21 @@ Kein gelesener Wert war in diesem kurzen Adressbereich null. Daher wurde noch ke
 
 P1 beantwortet damit eine kleine, aber notwendige Frage: Eine EVE-Entität kann aus ihrem Genom heraus einen fortschreitenden Zugriff auf eine unveränderte Umwelt erzeugen. Die nächste Frage lautet nicht mehr, ob sie überhaupt suchen kann, sondern wie aus gleichförmiger Suche unterschiedliche, vererbbare Suchstrategien werden könnten.
 
+## Korrektur: Die Kinder starteten noch mit P0-Energie
+
+Die Einzelansicht der Lupe machte anschließend eine nicht kontrollierte Differenz sichtbar: Die P1-Startpopulation besaß je 500 Energie, Kinder wurden jedoch weiterhin mit der alten P0-Geburtsenergie 50 erzeugt. `S_birth` war korrekt energieerhaltend von den Eltern bezahlt worden, passte aber nicht zum beabsichtigten Vergleich.
+
+Die Control-Schicht erhielt deshalb den ausdrücklichen Parameter `--birth-energy`. P0 behält den Standardwert 50. Im korrigierten P1-Lauf wurden Start- und Geburtsenergie beide auf 500 gesetzt; dies bleibt eine Versuchsentscheidung und wird nicht automatisch vererbt.
+
+| Messgröße | P1 mit `S_birth=50` | P1 mit `S_birth=500` |
+|---|---:|---:|
+| Nachkommen | 91 | 10 |
+| RAM-Lesevorgänge | 312 | 357 |
+| unterschiedliche RAM-Adressen | 12 | 22 |
+| RAM-Lesevorgänge der Kinder | 116 | 183 |
+| unterschiedliche Adressen der Kinder | 4 | 22 |
+| letzter Tod | Tick 23 | Tick 39 |
+
+Der korrigierte Lauf erzeugte erheblich weniger Kinder, aber diese Kinder konnten ihr Genom wesentlich länger ausführen und trugen deutlich stärker zur Exploration bei. Vollständiges Aussterben blieb bestehen.
+
+Maßgebliche korrigierte Run-ID: `9a0f25fc-5cfd-43eb-bb50-1f30baeaa008`.

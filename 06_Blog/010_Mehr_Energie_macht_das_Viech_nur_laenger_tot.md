@@ -80,6 +80,18 @@ Die Amöben suchten tatsächlich. Aber weil sie mit demselben Explorer-Genom beg
 
 Und natürlich starben am Ende wieder alle. Diesmal bis Tick 23.
 
+Beim Blick auf die Kindeamöben fiel Stefan dann etwas auf.
+
+**Stefan:** Sie werden zumeist mit Energie 50 geboren. Was ja gar nicht mehr zu den Eltern passt und der erhöhten Startenergie. Ich vermute, dass wir hier noch anpassen müssen.
+
+Richtig. Die Eltern waren mit 500 Energie in den Lauf gesetzt worden, aber `S_birth` stand noch auf dem P0-Wert 50. Die Rechnung war energieerhaltend, der Vergleich trotzdem schief: Wir hatten kräftige Gründertiere und Kinder mit einem Zehntel ihres Energievorrats.
+
+Im korrigierten Lauf kostete ein Kind 500 Energie, vollständig bezahlt von seinen Eltern. Das änderte das Bild deutlich. Statt 91 kurzlebiger Kinder entstanden nur zehn. Dafür lasen die Kinder 183-mal aus RAM und erreichten selbst alle 22 Adressen, die in diesem Lauf populationsweit besucht wurden. Die letzte Amöbe starb erst in Tick 39.
+
+> **Redaktionelle Einordnung – Beobachtung:** Eine höhere Geburtsenergie machte die Population nicht dauerhaft lebensfähig. Sie verschob Energie von vielen kurzen Lebensläufen zu wenigen längeren und erhöhte dabei die gemessene Umweltaktivität der Kinder.
+
+Startenergie und Geburtsenergie bleiben getrennte Regler. Dass wir sie für diesen Vergleich beide auf 500 stellten, ist eine dokumentierte Versuchsanordnung und noch kein neues Naturgesetz.
+
 Das ist kein Scheitern von P1. P1 sollte zeigen, ob ein Genom einen Suchstand halten und daraus fortschreitende Umweltzugriffe erzeugen kann. Das kann es jetzt. Die nächste offene Frage ist viel interessanter: Wie entstehen aus gleichförmigem Absuchen verschiedene vererbbare Suchstrategien, ohne dass wir sie wieder selbst fertig hineinbauen?
 
 **Nova-EVE:** Sie explorieren nun wirklich, aber noch ziemlich im Gleichschritt.
@@ -89,4 +101,3 @@ Zwanzig Amöben stapfen nacheinander ins gleiche Gebüsch, finden unterschiedlic
 Tja. Forschungsexpedition ist vielleicht noch etwas hoch gegriffen. Aber immerhin haben sie diesmal den Kreisverkehr verlassen.
 
 Interne Quellen: Gespräch und Implementierung „EVE-Alife“, 20. September 2026; Projektlog „Von P0 zur ersten genomischen Exploration“; P0-Ergebnisse und P1-Genomentwurf unter `04_Prototypen/`.
-

@@ -36,6 +36,7 @@ def main() -> None:
     parser.add_argument("--snapshot-every", type=int, default=10)
     parser.add_argument("--population", type=int, default=2, help="Gerade Größe der technischen Demonstrationspopulation")
     parser.add_argument("--start-energy", type=float, default=100.0, help="Startenergie je Entität in Population 0")
+    parser.add_argument("--birth-energy", type=float, default=50.0, help="Energie eines Kindes, vollständig von den Eltern bezahlt")
     parser.add_argument("--ram-world", choices=("random", "islands"), default="random")
     parser.add_argument("--explorers", action="store_true", help="Technische Population mit rückgekoppeltem RAM-Adresszähler")
     parser.add_argument("--p1-explorers", action="store_true", help="Population 1 mit persistentem Suchstand und GATE-Reaktion")
@@ -52,9 +53,11 @@ def main() -> None:
     else:
         if args.population < 2 or args.population % 2:
             parser.error("--population muss eine gerade Zahl >= 2 sein")
+        if args.start_energy <= 0 or args.birth_energy <= 0:
+            parser.error("--start-energy und --birth-energy müssen positiv sein")
         if args.explorers and args.p1_explorers:
             parser.error("--explorers und --p1-explorers schließen einander aus")
-        config = Config(seed=args.seed)
+        config = Config(seed=args.seed, birth_energy=args.birth_energy)
         ram = None
         if args.ram_world == "islands":
             ram = [0] * config.ram_size
@@ -90,6 +93,7 @@ def main() -> None:
         "population_0": population_label,
         "population_0_size": len(sim.entities) if not args.resume else None,
         "population_0_start_energy": args.start_energy if not args.resume else None,
+        "birth_energy": config.birth_energy,
         "ram_world": args.ram_world if not args.resume else None,
         "explorer_fixture": args.explorers if not args.resume else None,
         "p1_explorer_population": args.p1_explorers if not args.resume else None,
