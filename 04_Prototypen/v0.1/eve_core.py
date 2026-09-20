@@ -12,6 +12,22 @@ from typing import Any, Iterable
 MASK64 = (1 << 64) - 1
 SIGN64 = 1 << 63
 
+# Namen sind Beobachtungsidentitaeten. Ihre Vergabe verbraucht bewusst keinen
+# Zufall und kann daher das Verhalten eines Laufs nicht beeinflussen.
+AMOEBA_NAMES = (
+    "Tom", "Erna", "Ada", "Bruno", "Clara", "Dario", "Emmi", "Fritz",
+    "Greta", "Hugo", "Ida", "Juri", "Karla", "Lino", "Maja", "Nils",
+    "Olga", "Piet", "Rosa", "Sam", "Tilda", "Uwe", "Vera", "Willi",
+    "Xenia", "Yara", "Zeno", "Alma", "Ben", "Cleo", "Dora", "Enno",
+)
+
+
+def amoeba_name(entity_id: int) -> str:
+    """Deterministischer, innerhalb eines Laufs eindeutiger Anzeigename."""
+    base = AMOEBA_NAMES[(entity_id - 1) % len(AMOEBA_NAMES)]
+    generation = (entity_id - 1) // len(AMOEBA_NAMES) + 1
+    return base if generation == 1 else f"{base} {generation}"
+
 
 def i64(value: int) -> int:
     value &= MASK64
@@ -104,6 +120,7 @@ class Genome:
 @dataclass
 class Entity:
     id: int
+    name: str
     genome: Genome
     energy: float
     start_energy: float
@@ -162,6 +179,7 @@ class Simulation:
         genome.validate()
         entity = Entity(
             id=self.next_entity_id,
+            name=amoeba_name(self.next_entity_id),
             genome=genome,
             energy=energy,
             start_energy=energy,
@@ -171,7 +189,10 @@ class Simulation:
         )
         self.next_entity_id += 1
         self.entities[entity.id] = entity
-        self.emit("birth", entity_id=entity.id, parents=list(parents), energy=energy, n_g=genome.n_g)
+        self.emit(
+            "birth", entity_id=entity.id, entity_name=entity.name,
+            parents=list(parents), energy=energy, n_g=genome.n_g,
+        )
         return entity
 
     def heartbeat(self) -> None:
@@ -525,6 +546,7 @@ class Simulation:
             "entities": [
                 {
                     "id": e.id,
+                    "name": e.name,
                     "alive": e.alive,
                     "energy": e.energy,
                     "start_energy": e.start_energy,
@@ -590,7 +612,8 @@ class Simulation:
 
     def _entity_state(self, entity: Entity) -> dict[str, Any]:
         return {
-            "id": entity.id, "energy": entity.energy, "start_energy": entity.start_energy,
+            "id": entity.id, "name": entity.name,
+            "energy": entity.energy, "start_energy": entity.start_energy,
             "born_at": entity.born_at,
             "parents": list(entity.parents), "alive": entity.alive,
             "partner_ids": list(entity.partner_ids),
@@ -626,7 +649,8 @@ class Simulation:
                 raw["genome"]["activity_base"],
             )
             entity = Entity(
-                id=raw["id"], genome=genome, energy=raw["energy"],
+                id=raw["id"], name=raw.get("name", amoeba_name(raw["id"])),
+                genome=genome, energy=raw["energy"],
                 start_energy=raw.get("start_energy", raw["energy"]), born_at=raw["born_at"],
                 parents=tuple(raw["parents"]), alive=raw["alive"],
                 partner_ids=list(raw["partner_ids"]),

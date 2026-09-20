@@ -1,9 +1,57 @@
 import unittest
+import json
+import tempfile
+from pathlib import Path
 
-from eve_core import Config, Edge, Genome, Node, Signal, Simulation, demo_genome, p1_explorer_genome
+from eve_core import Config, Edge, Genome, Node, Signal, Simulation, amoeba_name, demo_genome, p1_explorer_genome
+from run_stats import README_END, README_START, dashboard_data, update_readme_dashboard
 
 
 class EveCoreTests(unittest.TestCase):
+    def test_amoeba_names_are_unique_and_survive_checkpoint(self):
+        sim = Simulation(Config(seed=1, ram_size=8))
+        a = sim.add_entity(demo_genome(2), 100)
+        b = sim.add_entity(demo_genome(1), 100)
+        self.assertEqual((a.name, b.name), ("Tom", "Erna"))
+        self.assertEqual(Simulation.from_checkpoint(sim.checkpoint()).entities[1].name, "Tom")
+        self.assertNotEqual(amoeba_name(1), amoeba_name(33))
+
+    def test_dashboard_counts_extinction_offspring_energy_and_life_records(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            run = Path(temporary) / "run-a"
+            run.mkdir()
+            (run / "metadata.json").write_text(json.dumps({
+                "run_id": "run-a", "created_at": "2026-01-01T00:00:00+00:00", "seed": 1,
+            }), encoding="utf-8")
+            (run / "latest.json").write_text(json.dumps({
+                "tick": 9, "entities": [{"id": 1, "alive": False}, {"id": 2, "alive": False}],
+            }), encoding="utf-8")
+            events = [
+                {"tick": 0, "kind": "birth", "entity_id": 1, "entity_name": "Tom", "parents": []},
+                {"tick": 3, "kind": "birth", "entity_id": 2, "entity_name": "Erna", "parents": [1, 3]},
+                {"tick": 4, "kind": "ram_read", "entity_id": 2, "reward": 12.5},
+                {"tick": 5, "kind": "death", "entity_id": 2},
+                {"tick": 9, "kind": "death", "entity_id": 1},
+            ]
+            (run / "events.jsonl").write_text(
+                "".join(json.dumps(event) + "\n" for event in events), encoding="utf-8"
+            )
+            result = dashboard_data(Path(temporary))
+            self.assertEqual(result["mass_extinctions"], 1)
+            self.assertEqual(result["offspring"], 1)
+            self.assertEqual(result["energy_gained"], 12.5)
+            self.assertEqual(result["shortest_life"]["name"], "Erna")
+            self.assertEqual(result["longest_life"]["name"], "Tom")
+            readme = Path(temporary) / "README.md"
+            readme.write_text("# Test\n\n## Bereiche\n\nText\n", encoding="utf-8")
+            update_readme_dashboard(readme, Path(temporary))
+            first = readme.read_text(encoding="utf-8")
+            update_readme_dashboard(readme, Path(temporary))
+            self.assertEqual(readme.read_text(encoding="utf-8"), first)
+            self.assertEqual(first.count(README_START), 1)
+            self.assertEqual(first.count(README_END), 1)
+            self.assertIn("**12,50**", first)
+
     def test_same_seed_is_deterministic(self):
         def run():
             sim = Simulation(Config(seed=7, ram_size=32))

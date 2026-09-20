@@ -13,6 +13,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from eve_core import Config, Simulation, demo_genome, explorer_demo_genome, p1_explorer_genome
+from run_stats import update_readme_dashboard, write_summary
 
 
 def git_commit(project_root: Path) -> str:
@@ -28,10 +29,11 @@ def write_json(path: Path, value: object) -> None:
 
 
 def main() -> None:
+    canonical_runs = Path(__file__).resolve().parent / "runs"
     parser = argparse.ArgumentParser(description="EVE-Alife Prototyp v0.1")
     parser.add_argument("--ticks", type=int, default=100)
     parser.add_argument("--seed", type=int, default=1)
-    parser.add_argument("--output", type=Path, default=Path("runs"))
+    parser.add_argument("--output", type=Path, default=canonical_runs)
     parser.add_argument("--resume", type=Path, help="Checkpoint als Ausgangszustand")
     parser.add_argument("--snapshot-every", type=int, default=10)
     parser.add_argument("--population", type=int, default=2, help="Gerade Größe der technischen Demonstrationspopulation")
@@ -130,8 +132,21 @@ def main() -> None:
                 write_json(snapshots / f"{sim.tick:08d}.json", snapshot)
             write_json(run_dir / "latest.json", snapshot)
             write_json(run_dir / "checkpoint.json", sim.checkpoint())
+    ordered_runs = sorted(
+        [
+            path for path in args.output.iterdir()
+            if path.is_dir() and (path / "metadata.json").exists()
+        ],
+        key=lambda path: json.loads(
+            (path / "metadata.json").read_text(encoding="utf-8")
+        ).get("created_at", ""),
+    )
+    run_number = ordered_runs.index(run_dir) + 1
+    write_summary(run_dir, run_number)
+    if args.output.resolve() == canonical_runs:
+        update_readme_dashboard(project_root / "README.md", canonical_runs)
     print(json.dumps({
-        "run_id": run_id, "run_dir": str(run_dir), "tick": sim.tick,
+        "run_id": run_id, "run_number": run_number, "run_dir": str(run_dir), "tick": sim.tick,
         "living_population": sum(entity.alive for entity in sim.entities.values()),
         "entities_total": len(sim.entities),
     }))

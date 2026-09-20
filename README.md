@@ -6,6 +6,27 @@ Dieses Verzeichnis ist das dauerhafte Arbeitsgedächtnis von **EVE-Alife** auf d
 
 > Isolation ist eine Eigenschaft der Umgebung, keine Verhaltensregel ihrer Bewohner.
 
+<!-- EVE_STATS_START -->
+## Live aus dem Biotop
+
+| Massenaussterben | Nachkommen | Gewonnene Energie | Gespeicherte Läufe |
+| ---: | ---: | ---: | ---: |
+| **15** | **1186** | **3.354.520,00** | **18** |
+
+- Kürzestes abgeschlossenes Leben: **Cleo 2** (Amöbe #62), 2 Ticks in Lauf 10
+- Längstes abgeschlossenes Leben: **Dario** (Amöbe #6), 193 Ticks in Lauf 15
+
+| Lauf | Ticks | Status | Nachkommen | Energiegewinn |
+| ---: | ---: | :--- | ---: | ---: |
+| 18 | 200 | 324 lebend | 399 | 2.720.160,00 |
+| 17 | 200 | 128 lebend | 141 | 564.800,00 |
+| 16 | 200 | ausgestorben | 0 | 2.700,00 |
+| 15 | 200 | 5 lebend | 0 | 56.520,00 |
+| 14 | 200 | ausgestorben | 0 | 7.640,00 |
+
+_Automatisch aus den lokal gespeicherten Runs erzeugt. Der veröffentlichte Stand entspricht dem letzten Git-Push. [Definitionen und Dashboard](04_Prototypen/v0.1/README.md)_
+<!-- EVE_STATS_END -->
+
 ## Bereiche
 
 - `00_Archiv`: unveränderte historische Ausgangsdokumente
