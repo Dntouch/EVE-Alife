@@ -11,6 +11,11 @@ Dieses Verzeichnis enthält den jeweils aktuellen, konsolidierten Konzeptstand v
 
 Der Arbeitsentwurf ist noch keine freigegebene Spezifikation. Die Konzeptversion 0.7 ergänzt gegenüber dem zuvor in Git dokumentierten Stand die obligatorische Genomausführung, den erblichen Basisaktivitätswert `A₀`, seine Abhängigkeit von Genomgröße und verfügbarer Energie sowie `PAUSE` als primitiven Funktionspunkt.
 
+Eine schrittweise Einführung ohne vorausgesetzte Informatik-, Genetik- oder
+ALife-Kenntnisse bietet [Das EVE-Alife-Genom verstehen](Genom_verstehen.md).
+Sie erklärt Funktionspunkte, Kanten, Datenfluss, Vererbung und Mutation am
+implementierten P1-Stand und kennzeichnet Abweichungen zum Arbeitsentwurf.
+
 Die Konzeptarbeit findet ausschließlich in dieser fortlaufenden Arbeitsdatei statt. Frühere Arbeitsstände werden nicht als parallele Dateien aufbewahrt, sondern über die Git-Historie und bei wichtigen Meilensteinen über Git-Tags nachvollzogen. Das Verzeichnis `00_Archiv` bleibt historischen Dokumenten vorbehalten, die bereits vor dieser Arbeitsweise bestanden oder einen eigenständigen Dokumentcharakter besitzen.
 
 Die historische v0-Spezifikation ist derzeit **nicht implementierungsreif**. Insbesondere ihr festes 64-Byte-Genom, Instruction Pointer, Registermodell und vorgegebener Bytecode sind durch die jüngere Konzeptarbeit wieder zur Prüfung gestellt worden.

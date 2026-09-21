@@ -57,6 +57,10 @@ _Automatisch aus den lokal gespeicherten Runs erzeugt. Der veröffentlichte Stan
 
 Der erste ausführbare Stand liegt unter [Prototyp v0.1](04_Prototypen/v0.1/README.md). Er enthält den eigenständigen EVE-Core, reproduzierbare und fortsetzbare Runs, eine persistierte read-only Beobachtungsschnittstelle sowie die erste schlichte Lupe.
 
+Eine einsteigerfreundliche Erklärung des Genoms, seiner Funktionspunkte und
+Kanten sowie von Vererbung und Mutation steht unter
+[Das EVE-Alife-Genom verstehen](02_Konzept/Genom_verstehen.md).
+
 ## Arbeitsgrundsatz
 
 > Das Archiv bewahrt, Phase 0 denkt, das Konzept verdichtet, Experimente prüfen und Prototypen verkörpern.
