@@ -1,75 +1,88 @@
 # EVE-Alife
 
-Dieses Repository ist das dauerhafte Arbeitsgedächtnis von **EVE-Alife**.
+**EVE-Alife** steht für *Emergent Virtual Evolution* und ist ein experimentelles Artificial-Life-Projekt – intern auch Schlammeimer™ oder KI-Biotop genannt.
 
-Der Name verbindet **EVE = Emergent Virtual Evolution** mit
-**ALife = Artificial Life** und klingt zugleich wie „EVE alive“. EVE-Alife
-bezeichnet das Artificial-Life- und Emergent-Evolution-Projekt, intern auch
-Schlammeimer™ oder KI-Biotop genannt.
+Untersucht wird, was aus sehr einfachen digitalen Entitäten entstehen kann, wenn Genom, Energie, Umweltkontakt, Vererbung und Selektion möglichst wenig fertiges Verhalten vorgeben. Beobachtung, Interpretation und Designentscheidung werden dabei ausdrücklich getrennt.
 
 > Isolation ist eine Eigenschaft der Umgebung, keine Verhaltensregel ihrer Bewohner.
 
-<!-- EVE_STATS_START -->
-## Historischer Ergebnisstand v0.1
-
-| Massenaussterben | Nachkommen | Gewonnene Energie | Gespeicherte Läufe |
-| ---: | ---: | ---: | ---: |
-| **17** | **2478** | **14.070.529,67** | **41** |
-
-- Kürzestes abgeschlossenes Leben: **Cleo 2** (Amöbe #62), 2 Ticks in Lauf 10
-- Längstes abgeschlossenes Leben: **Enno** (Amöbe #32), 1336 Ticks in Lauf 40
-
-| Rekord | Amöbe | Wert | Lauf |
-| :--- | :--- | ---: | ---: |
-| Größtes Genom | **Tom** (#1) | 134 G | 41 |
-| Höchste Energie | **Cleo 2** (#62) | 22.343,53 | 18 |
-| Meiste direkte Kinder | **Karla** (#13) | 47 | 18 |
-| Größte Nachkommenschaft | **Karla** (#13) | 47 | 18 |
-| Tiefste Generation | **Juri 2** (#44) | 4 | 36 |
-| Älteste Amöbe | **Tilda** (#21) | 1931 Ticks | 41 |
-| Meiste RAM-Adressen | **Uwe** (#22) | 680 | 41 |
-| Meiste RAM-Energie | **Uwe** (#22) | 40.740,00 | 41 |
-| Bester Informationsproduzent | **Tom** (#1) | 4.160,00 | 35 |
-| Meiste Amöbenfunde | **Dora** (#31) | 45 | 36 |
-| Meiste erkannte Einladungen | **Tom** (#1) | 31 | 36 |
-| Meiste RAM-Schreibvorgänge | **Tilda** (#21) | 1540 | 41 |
-
-| Lauf | Ticks | Status | Nachkommen | Energiegewinn |
-| ---: | ---: | :--- | ---: | ---: |
-| 41 | 2000 | 7 lebend | 10 | 392.250,00 |
-| 40 | 2000 | 7 lebend | 17 | 541.289,83 |
-| 39 | 1000 | 26 lebend | 17 | 342.314,83 |
-| 38 | 1000 | 28 lebend | 20 | 354.840,00 |
-| 37 | 1000 | 17 lebend | 14 | 278.035,00 |
-
-_Konservierter Abschlussstand der 41 v0.1-Läufe. [Laufergebnisse v0.1](07_Laufergebnisse/v0.1/README.md)_
-<!-- EVE_STATS_END -->
-
-## Bereiche
-
-- `00_Archiv`: unveränderte historische Ausgangsdokumente
-- `01_Phase_0`: Bestandsaufnahme, Begriffe, Thesen, Fragen und Entscheidungen
-- `02_Konzept`: aktueller konsolidierter Konzeptstand und Übernahmeregeln
-- `03_Experimente`: Gedankenversuche und Untersuchungen einzelner Thesen
-- `04_Prototypen`: konkrete technische Umsetzungen
-- `05_Projektlog`: chronologische Entstehungsgeschichte mit technischen, konzeptionellen und persönlichen Notizen
-- `06_Blog`: lesbare Geschichten, Gedanken und Lab Notes aus dem Projekt
-- `07_Laufergebnisse`: nach Prototypversion getrennte, kompakte Berichte der ausgeführten Läufe
-
 ## Aktueller Prototyp
 
-Der aktuelle Stand liegt unter [Prototyp v0.2](04_Prototypen/v0.2/README.md). Er nimmt den P1-Endstand als Ausgangsbasis, ergänzt begrenzte sowie offene Runs, explizite Endgründe, strukturierte Langzeitdaten und eine gemeinsame read-only Live-/Archiv-Lupe und erprobt klar ausgewiesene Änderungen an Partnersuche, Rekombinationsauswahl und Genomkosten. Die [Architektur](04_Prototypen/v0.2/ARCHITEKTUR.md) dokumentiert Datenmodell, Skalierung, Replay-Grenzen und öffentliche Bereitstellung. Die Ergebnisse sind [nach Prototypversion geordnet](07_Laufergebnisse/README.md).
+Der aktive Entwicklungsstand ist [Prototyp v0.2](04_Prototypen/v0.2/README.md). Er startet vom konservierten P1-Endstand und ergänzt:
+
+- begrenzte und offene Runs mit eindeutigem Status und Endgrund;
+- skalierbare SQLite-Datenhaltung, Checkpoints und portable Run-Archive;
+- eine read-only Lupe mit Chronik, Zeitfilter, Lebensfilm und Genomdiagramm;
+- Genom- und Abstammungshistorie;
+- experimentelle erbliche Partnersuche und genomischen Rückzug;
+- einen ausdrücklich vorläufigen, reduzierten Genomkostentarif.
+
+Der jüngste dokumentierte Versuch ist [v0.2/Lauf 4](07_Laufergebnisse/v0.2/Lauf_004.md): 500 Ticks, 27 lebende Amöben und sieben Nachkommen, davon keiner ohne `MEM_WRITE`. Das ist ein einzelnes Versuchsergebnis und keine allgemeine Aussage über das Modell.
 
 Der erste ausführbare Stand [v0.1](04_Prototypen/v0.1/README.md) und die Ergebnisse von P0/P1 bleiben als abgeschlossene historische Prototypstände erhalten; die genaue Grenze steht in der [Konservierungsnotiz](04_Prototypen/KONSERVIERUNG_P0_P1.md).
 
-Eine einsteigerfreundliche Erklärung des Genoms, seiner Funktionspunkte und
-Kanten sowie von Vererbung und Mutation steht unter
-[Das EVE-Alife-Genom verstehen](02_Konzept/Genom_verstehen.md).
+## Neues aus dem Schlammeimer
+
+| Prototyp | Dokumentierte Läufe | Massenaussterben | Nachkommen | Gewonnene RAM-Energie |
+| :--- | ---: | ---: | ---: | ---: |
+| [v0.2](07_Laufergebnisse/v0.2/README.md) | 4 | **0** | 13 | 181.340 |
+| [v0.1](07_Laufergebnisse/v0.1/README.md) | 41 | **17** | 2.478 | 14.070.529,67 |
+
+Als Massenaussterben zählt ein Lauf, an dessen Ende keine Amöbe mehr lebt. Die Zahlen werden nicht versionsübergreifend zu einer scheinbar einheitlichen Versuchsreihe verrechnet – aber selbstverständlich vergessen wir kein einziges ordentlich dokumentiertes Aussterben. :-)
+
+## Schnellstart
+
+Voraussetzung ist Python 3. Es werden keine externen Python-Pakete benötigt.
+
+```bash
+cd 04_Prototypen/v0.2
+python3 run.py --ticks 500
+python3 lupe.py runs/DEINE-RUN-ID
+```
+
+Die Lupe ist danach standardmäßig unter `http://127.0.0.1:8080/` erreichbar. Ein Testlauf des Codes:
+
+```bash
+cd 04_Prototypen/v0.2
+python3 -m unittest -v
+```
+
+Run-Rohdaten können groß werden und bleiben deshalb lokal unter `04_Prototypen/<Version>/runs/`. Dauerhaft versioniert werden Code, Spezifikationen und kompakte Laufberichte.
+
+## Orientierung
+
+| Einstieg | Inhalt |
+| :--- | :--- |
+| [Das Genom verstehen](02_Konzept/Genom_verstehen.md) | Einführung in `G`, Funktionspunkte, Kanten, Datenfluss, Vererbung und Mutation |
+| [v0.2-Spezifikation](04_Prototypen/v0.2/SPEZIFIKATION.md) | ausführbare Regeln und Abgrenzung zum Fachkonzept |
+| [v0.2-Architektur](04_Prototypen/v0.2/ARCHITEKTUR.md) | Run-Lebenszyklus, Datenmodell, Skalierung und Beobachtung |
+| [Laufergebnisse](07_Laufergebnisse/README.md) | nach Prototypversion getrennte Versuchsberichte |
+| [Projektlog](05_Projektlog/README.md) | chronologische Entstehung einschließlich Irrwegen und Entscheidungen |
+| [Blog](06_Blog/README.md) | lesbare Gesprächserzählungen und Lab Notes; derzeit interne Entwürfe |
+
+## Versionen
+
+| Stand | Status | Schwerpunkt |
+| :--- | :--- | :--- |
+| `v0.2` | aktiv und experimentell | langfristige Runs, neue Datenhaltung und Lupe sowie klar markierte Modellversuche |
+| `v0.1` | konserviert | ausführbarer gemeinsamer P0/P1-Stand und historische Läufe 1–41 |
+| P0/P1 | abgeschlossen | technische Machbarkeit und erste genomische Exploration |
+
+Laufnummern gelten innerhalb einer Version. Deshalb sind beispielsweise `v0.1/Lauf 4` und `v0.2/Lauf 4` unterschiedliche Versuche; die jeweilige Run-ID ist die technisch eindeutige Identität.
+
+## Repository
+
+- `00_Archiv`: unveränderte historische Ausgangsdokumente
+- `01_Phase_0`: Bestandsaufnahme, Begriffe, Thesen, Fragen und Entscheidungen
+- `02_Konzept`: aktueller Konzeptstand und Übernahmeregeln
+- `03_Experimente`: Gedankenversuche und Untersuchungen einzelner Thesen
+- `04_Prototypen`: konkrete technische Umsetzungen und Spezifikationen
+- `05_Projektlog`: chronologische Entstehungsgeschichte
+- `06_Blog`: redaktionelle Gesprächserzählungen und Lab Notes
+- `07_Laufergebnisse`: nach Prototypversion getrennte Ergebnisberichte
 
 ## Arbeitsgrundsatz
 
 > Das Archiv bewahrt, Phase 0 denkt, das Konzept verdichtet, Experimente prüfen und Prototypen verkörpern.
 
-Das Projektlog begleitet alle Bereiche chronologisch. Es trennt Spekulation, Hypothese, Beobachtung und Interpretation, darf dabei aber ausdrücklich persönlich, humorvoll und auch einmal ratlos sein.
-
-Die Dokumente im Archiv werden nicht redaktionell verändert. Neue Gedanken beginnen in Phase 0 und werden erst nach bewusster Prüfung in das Konzept übernommen.
+Das Projektlog trennt Spekulation, Hypothese, Beobachtung und Interpretation. Dokumente im Archiv werden nicht redaktionell verändert. Neue Gedanken werden erst nach bewusster Prüfung in das Konzept übernommen.
