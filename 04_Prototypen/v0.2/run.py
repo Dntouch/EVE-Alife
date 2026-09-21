@@ -62,7 +62,10 @@ def main() -> None:
     parser.add_argument("--entity-discovery-base", type=float, default=10.0, help="Energie für den neuen Fund einer lebenden fremden Amöbe")
     parser.add_argument("--invitation-discovery-base", type=float, default=20.0, help="Energie für eine neu erkannte Einladung im fremden Partnerslot")
     parser.add_argument("--life-state-discovery-base", type=float, default=10.0, help="Energie für einen neu erkannten Lebenszustand einer fremden Amöbe")
-    parser.add_argument("--ram-world", choices=("random", "islands"), default="random")
+    parser.add_argument(
+        "--ram-world", choices=("random", "islands", "toys"), default="random",
+        help="RAM-Suppe: Zahlenbrei, statische Inseln oder experimenteller Spielzeugkasten",
+    )
     parser.add_argument("--population-model", choices=("p1", "demo", "technical-explorer"), default="p1")
     parser.add_argument("--explorers", action="store_true", help="Technische Population mit rückgekoppeltem RAM-Adresszähler")
     parser.add_argument("--p1-explorers", action="store_true", help="Population 1 mit persistentem Suchstand und GATE-Reaktion")
@@ -116,6 +119,8 @@ def main() -> None:
             entity_discovery_base=args.entity_discovery_base,
             invitation_discovery_base=args.invitation_discovery_base,
             life_state_discovery_base=args.life_state_discovery_base,
+            toy_habitats=128 if args.ram_world == "toys" else 0,
+            local_ram_coordinates=args.ram_world == "toys",
         )
         ram = None
         if args.ram_world == "islands":
@@ -134,24 +139,28 @@ def main() -> None:
         sim = Simulation(config, ram=ram)
         founder_variants = []
         founder_rng = Random(args.seed ^ 0xA11FE)
+        position_rng = Random(args.seed ^ 0xB1070F)
         for entity_id in range(1, args.population + 1):
             partner_id = entity_id + 1 if entity_id % 2 else entity_id - 1
             if population_model == "p1":
                 if args.uniform_p1:
-                    variant = {"search_offset": -1, "search_step": 1, "search_patience": 64, "activity_base": 100}
+                    variant = {"search_offset": -1, "search_step": 1, "search_patience": 64, "activity_base": 100, "knock_capacity": 2, "bond_ticks": 5}
                 else:
                     variant = {
                         "search_offset": founder_rng.randint(-5, 5),
                         "search_step": founder_rng.choice((-4, -3, -2, -1, 1, 2, 3, 4)),
                         "search_patience": founder_rng.randint(32, 96),
                         "activity_base": founder_rng.randint(96, 104),
+                        "knock_capacity": founder_rng.randint(1, 4),
+                        "bond_ticks": founder_rng.randint(3, 12),
                     }
                 genome = p1_explorer_genome(partner_id, **variant)
                 founder_variants.append({"entity_id": entity_id, **variant})
             else:
                 factory = explorer_demo_genome if population_model == "technical-explorer" else demo_genome
                 genome = factory(partner_id, ram_start=(entity_id * 313) % config.ram_size)
-            sim.add_entity(genome, energy=args.start_energy)
+            ram_position = position_rng.randrange(config.ram_size) if config.local_ram_coordinates else 0
+            sim.add_entity(genome, energy=args.start_energy, ram_position=ram_position)
         population_label = "p1-explorer" if population_model == "p1" else "technical-demonstrator-not-research-result"
     project_root = Path(__file__).resolve().parents[2]
     created_at = utc_now()

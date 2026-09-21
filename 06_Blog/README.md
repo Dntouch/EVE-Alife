@@ -38,6 +38,7 @@ Eine Kennzeichnung gilt für die unmittelbar zugehörige Passage. Der restliche 
 - [009 – Das Viech kann einfach nicht anders](009_Das_Viech_kann_einfach_nicht_anders.md)
 - [010 – Mehr Energie macht das Viech nur länger tot](010_Mehr_Energie_macht_das_Viech_nur_laenger_tot.md)
 - [011 – Die IG Amöbe fordert Quadratwurzeln](011_Die_IG_Amoebe_fordert_Quadratwurzeln.md)
+- [012 – Die reichste Amöbe der Welt ist allein](012_Die_reichste_Amoebe_der_Welt_ist_allein.md)
 
 ## Status
 

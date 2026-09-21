@@ -52,11 +52,13 @@ class RunLifecycleTests(unittest.TestCase):
             payload = db.execute("SELECT payload_zlib FROM observations ORDER BY tick DESC LIMIT 1").fetchone()[0]
         observation = json.loads(zlib.decompress(payload))
         self.assertEqual(len(observation["entities"]), 20)
-        self.assertEqual(len(observation["entities"][0]["genome"]["nodes"]), 67)
+        self.assertEqual(len(observation["entities"][0]["genome"]["nodes"]), 76)
         variants = manifest["p1_founder_variants"]
         self.assertEqual(len(variants), 20)
         self.assertGreater(len({(item["search_offset"], item["search_step"], item["search_patience"], item["activity_base"]) for item in variants}), 1)
         self.assertTrue(all(item["search_step"] != 0 for item in variants))
+        self.assertTrue(all(1 <= item["knock_capacity"] <= 4 for item in variants))
+        self.assertTrue(all(3 <= item["bond_ticks"] <= 12 for item in variants))
 
     def test_v01_lupe_features_and_genome_diagram_are_retained(self) -> None:
         for label in ("Chronik des Biotops", "Lebensfilm", "Umweltkontakte", "Population und Zeitfilter"):
@@ -65,8 +67,21 @@ class RunLifecycleTests(unittest.TestCase):
         self.assertIn("function openGenomeDiagram", HTML)
         self.assertIn("In eigenem Fenster öffnen", HTML)
         self.assertIn("Unfruchtbar", HTML)
+        self.assertIn("Klopfer", HTML)
+        self.assertIn("case'knock'", HTML)
         self.assertIn(".activity-grid{margin-bottom:1.2rem}", HTML)
         self.assertIn("const readHeight=v.reads*120/max", HTML)
+        self.assertIn("Die Suppe lebt", HTML)
+        self.assertIn("function drawSoup", HTML)
+        self.assertIn("/api/live-feed?after=", HTML)
+        self.assertIn("soupTooltip", HTML)
+        self.assertIn("pointermove", HTML)
+        self.assertIn("data-soup-filter", HTML)
+        self.assertIn("soupVisible", HTML)
+        self.assertIn("hoveredSoupEntity", HTML)
+        self.assertIn("scrollIntoView", HTML)
+        self.assertIn("syncSoupToSelection", HTML)
+        self.assertIn("historische Ansicht", HTML)
 
     def test_extended_dashboard_keeps_amoeba_records(self) -> None:
         _, run_dir = self.run_cli("--ticks", "1")
@@ -75,6 +90,19 @@ class RunLifecycleTests(unittest.TestCase):
         self.assertEqual(dashboard["history"][0]["infertile_offspring"], 0)
         self.assertIsNotNone(dashboard["records"]["largest_genome"])
         self.assertIsNotNone(dashboard["records"]["highest_energy"])
+
+    def test_toy_world_is_reproducible_and_recorded(self) -> None:
+        _, run_dir = self.run_cli("--ticks", "1", "--ram-world", "toys")
+        manifest = json.loads((run_dir / "manifest.json").read_text(encoding="utf-8"))
+        self.assertEqual(manifest["ram_world"], "toys")
+        self.assertEqual(manifest["configuration"]["toy_habitats"], 128)
+        live = json.loads((run_dir / "live.json").read_text(encoding="utf-8"))
+        self.assertEqual(len(live["environment_toys"]["stones"]), 128)
+        self.assertEqual(len(live["environment_toys"]["bubbles"]), 256)
+        self.assertEqual(len(live["environment_toys"]["switches"]), 128)
+        positions = [entity["ram_position"] for entity in live["entities"] if not entity["parents"]]
+        self.assertGreater(len(set(positions)), 1)
+        self.assertTrue(manifest["configuration"]["local_ram_coordinates"])
 
     def test_dashboard_orders_runs_by_creation_time_newest_first(self) -> None:
         temporary = tempfile.TemporaryDirectory()
@@ -144,7 +172,10 @@ class RunLifecycleTests(unittest.TestCase):
         self.assertTrue(trace["inherited_fragments"])
         self.assertIn(trace["size_parent_id"], (1, 2))
         self.assertIn(trace["activity_parent_id"], (1, 2))
-        self.assertIn(trace["mutation"]["class"], ("activity", "node", "edge"))
+        self.assertIn(
+            trace["mutation"]["class"],
+            ("activity", "knock_capacity", "bond_ticks", "node", "edge"),
+        )
 
     def test_portable_archive_contains_manifest_and_consistent_database(self) -> None:
         _, run_dir = self.run_cli("--ticks", "1")

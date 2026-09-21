@@ -269,7 +269,7 @@ Weiterhin gesetzt sind:
 
 - kein künstlicher Energiebonus durch Reproduktion,
 - Startenergie des Kindes aus bilanzierten Quellen, grundsätzlich Elternbeiträgen,
-- Fortpflanzung ausschließlich aus selbst erwirtschaftetem Überschuss: Nach Abzug ihres Beitrags muss jede beteiligte Entität strikt mehr Energie als bei ihrer eigenen Geburt besitzen,
+- Fortpflanzung ausschließlich aus selbst erwirtschaftetem Überschuss: Der gemeinsame Überschuss aller beteiligten Entitäten über ihrem jeweiligen Geburtswert `S₀` muss die Kindesenergie decken. Zunächst gilt ein gleicher Beitrag; kann ein Elternteil diesen nicht vollständig oberhalb seines `S₀` tragen, übernehmen die übrigen Eltern den Fehlbetrag aus ihrem Überschuss. Dadurch kann ein einzelner Elternteil theoretisch die vollständige Geburt finanzieren, während kein Elternteil unter sein eigenes `S₀` fällt,
 - mindestens zwei aktiv beteiligte kompatible Eltern als gegenwärtiger Grundansatz,
 - gemeinsamer realer Elternpool aus zusammenhängenden Netzfragmenten,
 - Ziehen ohne Zurücklegen entsprechend realer Häufigkeit,

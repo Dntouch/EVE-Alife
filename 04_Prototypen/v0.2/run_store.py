@@ -21,7 +21,8 @@ FORMAT_NAME = "eve-alife-run"
 # häufigen Ausführungsdetails bleiben in Checkpoints bzw. im flüchtigen Livebild.
 PERSISTED_EVENT_KINDS = {
     "birth", "death", "birth_rejected", "reproduction_cost", "genome_created",
-    "ram_read", "ram_write", "mem_read", "mem_write", "mem_write_rejected",
+    "ram_read", "ram_write", "mem_read", "mem_write", "mem_write_rejected", "knock",
+    "environment_change",
 }
 
 
@@ -87,6 +88,7 @@ class RunStore:
         CREATE TABLE IF NOT EXISTS entities (
             entity_id INTEGER PRIMARY KEY, name TEXT NOT NULL,
             born_tick INTEGER NOT NULL, died_tick INTEGER, death_reason TEXT,
+            ram_position INTEGER NOT NULL DEFAULT 0,
             genome_id INTEGER NOT NULL REFERENCES genomes(genome_id)
         );
         CREATE TABLE IF NOT EXISTS ancestry (
@@ -133,6 +135,8 @@ class RunStore:
     def _genome_data(genome: Any) -> dict[str, Any]:
         return {
             "activity_base": genome.activity_base,
+            "knock_capacity": genome.knock_capacity,
+            "bond_ticks": genome.bond_ticks,
             "nodes": [asdict(node) for node in genome.nodes],
             "edges": [asdict(edge) for edge in genome.edges],
         }
@@ -159,8 +163,8 @@ class RunStore:
             genome_id = self.register_genome(entity.genome, entity.born_at)
             inserted = self.db.execute(
                 """INSERT OR IGNORE INTO entities
-                (entity_id,name,born_tick,genome_id) VALUES(?,?,?,?)""",
-                (entity.id, entity.name, entity.born_at, genome_id),
+                (entity_id,name,born_tick,ram_position,genome_id) VALUES(?,?,?,?,?)""",
+                (entity.id, entity.name, entity.born_at, entity.ram_position, genome_id),
             ).rowcount
             if inserted:
                 self.db.executemany(

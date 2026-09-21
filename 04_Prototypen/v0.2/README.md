@@ -8,6 +8,10 @@ Der v0.2-Standard erprobt einen auf ein Zehntel abgesenkten Genomkostentarif (`0
 
 Die derzeitige experimentelle P1-Population streut Offset, vorzeichenbehaftete Schrittweite, Geduld und A₀ reproduzierbar über den Seed. `--uniform-p1` erzeugt den Kontrollfall mit identischen Startwerten. Diese Suchwerte sind normale Genomkonstanten und keine fest benannten Strategien. Hintergrund und offene Prüffragen stehen in [EXPERIMENT_PARTNERSUCHE.md](EXPERIMENT_PARTNERSUCHE.md).
 
+Seit der Auswertung von Lauf 6 besitzt v0.2 außerdem eine experimentelle Klingel. Lauf 7 erprobte zunächst genau einen eingehenden Klopfer. Der folgende Arbeitsstand macht deren Kapazität `Nₖ` und die notwendige stabile Bindungsdauer `Tₚ` vererbbar. Annahme, Erwiderung und das Belegen eines zweiten Partnerslots bleiben genomische Handlungen; die technische Schicht stellt lediglich reale Vorschläge mit Herkunft zu und zählt die Stabilität einer vollständig gegenseitigen Zwei- oder Dreiergruppe.
+
+Seit Lauf 16 wird eine Geburt aus dem gemeinsamen Überschuss aller Eltern über ihrem jeweils individuellen `S₀` finanziert. Ausgangspunkt bleibt der gleiche Anteil; nicht finanzierbare Anteile werden von den übrigen Eltern übernommen. Der Versuchsstand und sein nicht stabiler Generationenwechsel sind in [EXPERIMENT_GENERATIONENWECHSEL.md](EXPERIMENT_GENERATIONENWECHSEL.md) dokumentiert.
+
 Die Architekturentscheidungen stehen in [ARCHITEKTUR.md](ARCHITEKTUR.md), die präzisen Regeln in [SPEZIFIKATION.md](SPEZIFIKATION.md). P0/P1 bleiben gemäß [KONSERVIERUNG_P0_P1.md](../KONSERVIERUNG_P0_P1.md) unter `v0.1` erhalten.
 
 Die tatsächlich ausgeführten Versuche werden getrennt von Spezifikation und Implementierung unter [Laufergebnisse v0.2](../../07_Laufergebnisse/v0.2/README.md) geführt. Ihre Laufnummern beginnen innerhalb dieser Version bei 1.
@@ -49,7 +53,13 @@ python3 run.py --open --sample-every 100 --checkpoint-every 10000
 python3 lupe.py runs/DEINE-RUN-ID
 ```
 
-Die v0.1-Lupe wurde nicht ersetzt: Chronik, Zeitfilter, Umweltkontakte, Amöbenkarten, K/Z-Ansichten und Lebensfilm bleiben erhalten. Hinzu kommen Live-/Endstatus, die v0.2-Datenquelle und ein bildliches SVG-Genomdiagramm mit gerichteten Kanten. Die Lupe öffnet SQLite ausschließlich read-only und besitzt keine Steuerroute.
+Die v0.1-Lupe wurde nicht ersetzt: Chronik, Zeitfilter, Umweltkontakte, Amöbenkarten, K/Z-Ansichten und Lebensfilm bleiben erhalten. Hinzu kommen Live-/Endstatus, die v0.2-Datenquelle und ein bildliches SVG-Genomdiagramm mit gerichteten Kanten. Die ovale Live-Suppe zeigt Amöben, Spielzeuge und Ereignisse, besitzt schaltbare Ebenen, folgt der historischen Tickauswahl und fokussiert beim Mouseover die Aktivität einer einzelnen Amöbe. Die Lupe öffnet SQLite ausschließlich read-only und besitzt keine Steuerroute.
+
+### Spielzeug in der Suppe
+
+Mit `--ram-world toys` entsteht eine reproduzierbare experimentelle Umwelt aus 128 über den RAM-Ring verteilten Spielzeuginseln. Jede Insel verbindet ein festes Zahlenmuster, zwei langsame externe Blasen und einen gekoppelten Schalter. Veränderungen liefern nach der vorhandenen Neuheitsregel Energie. Schalter bewahren jedoch die Urheberkette ihres Auslösers und erlauben deshalb keine Selbstfütterung. Die vollständige vorläufige Festlegung steht in [EXPERIMENT_UMWELTSPIELZEUG.md](EXPERIMENT_UMWELTSPIELZEUG.md).
+
+Im Spielzeugmodus sind Entity-ID und Standort getrennt. `RAM_READ` und `RAM_WRITE` verwenden genomische Werte als lokale Offsets relativ zu `ram_position`; Kinder werden nahe einem zufällig gewählten Elternstandort abgelegt. Eine Bewegung während des Lebens existiert noch nicht.
 
 ## Portables Archiv
 

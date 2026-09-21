@@ -15,9 +15,10 @@ Der aktive Entwicklungsstand ist [Prototyp v0.2](04_Prototypen/v0.2/README.md). 
 - eine read-only Lupe mit Chronik, Zeitfilter, Lebensfilm und Genomdiagramm;
 - Genom- und Abstammungshistorie;
 - experimentelle erbliche Partnersuche und genomischen Rückzug;
+- flächendeckende RAM-Habitate, grafische Live-Suppe und gemeinsame Elternfinanzierung;
 - einen ausdrücklich vorläufigen, reduzierten Genomkostentarif.
 
-Der jüngste dokumentierte Versuch ist [v0.2/Lauf 4](07_Laufergebnisse/v0.2/Lauf_004.md): 500 Ticks, 27 lebende Amöben und sieben Nachkommen, davon keiner ohne `MEM_WRITE`. Das ist ein einzelnes Versuchsergebnis und keine allgemeine Aussage über das Modell.
+Der jüngste abgeschlossene Versuch ist [v0.2/Lauf 16](07_Laufergebnisse/v0.2/Lauf_016.md): Die gemeinsame Elternfinanzierung trug 75 Nachkommen bis Generation 8, erzeugte aber noch keine stabile Kultur. Bei Tick 5.000 lebte allein Ada 4 mit mehr als 101.000 Energie und einem kleinen, nicht fortpflanzungsfähigen Genom weiter. Die Untersuchung ist im [Experiment Generationenwechsel](04_Prototypen/v0.2/EXPERIMENT_GENERATIONENWECHSEL.md) zusammengefasst.
 
 Der erste ausführbare Stand [v0.1](04_Prototypen/v0.1/README.md) und die Ergebnisse von P0/P1 bleiben als abgeschlossene historische Prototypstände erhalten; die genaue Grenze steht in der [Konservierungsnotiz](04_Prototypen/KONSERVIERUNG_P0_P1.md).
 
@@ -25,7 +26,7 @@ Der erste ausführbare Stand [v0.1](04_Prototypen/v0.1/README.md) und die Ergebn
 
 | Prototyp | Dokumentierte Läufe | Massenaussterben | Nachkommen | Gewonnene RAM-Energie |
 | :--- | ---: | ---: | ---: | ---: |
-| [v0.2](07_Laufergebnisse/v0.2/README.md) | 4 | **0** | 13 | 181.340 |
+| [v0.2](07_Laufergebnisse/v0.2/README.md) | 16 | **5** | 536 | 6.603.400,00 |
 | [v0.1](07_Laufergebnisse/v0.1/README.md) | 41 | **17** | 2.478 | 14.070.529,67 |
 
 Als Massenaussterben zählt ein Lauf, an dessen Ende keine Amöbe mehr lebt. Die Zahlen werden nicht versionsübergreifend zu einer scheinbar einheitlichen Versuchsreihe verrechnet – aber selbstverständlich vergessen wir kein einziges ordentlich dokumentiertes Aussterben. :-)

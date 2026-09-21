@@ -93,6 +93,8 @@ class Genome:
     nodes: list[Node]
     edges: list[Edge]
     activity_base: int
+    knock_capacity: int = 1
+    bond_ticks: int = 1
 
     @property
     def n_p(self) -> int:
@@ -108,6 +110,10 @@ class Genome:
             raise ValueError("Instanz-IDs müssen innerhalb eines Genoms eindeutig sein")
         if self.activity_base < 1:
             raise ValueError("A₀ muss mindestens 1 sein")
+        if not 1 <= self.knock_capacity <= 16:
+            raise ValueError("Nₖ muss zwischen 1 und 16 liegen")
+        if self.bond_ticks < 1:
+            raise ValueError("Tₚ muss mindestens 1 sein")
         for edge in self.edges:
             if edge.source not in by_id or edge.target not in by_id:
                 raise ValueError("Kante referenziert eine fehlende Instanz")
@@ -125,10 +131,12 @@ class Entity:
     energy: float
     start_energy: float
     born_at: int
+    ram_position: int = 0
     parents: tuple[int, ...] = ()
     k: dict[str, Signal] = field(default_factory=dict)
     z: list[Signal | None] = field(default_factory=list)
     partner_ids: list[int | None] = field(default_factory=lambda: [None, None])
+    knocker_ids: list[int] = field(default_factory=list)
     value_history: dict[str, int] = field(default_factory=dict)
     source_history: dict[str, int] = field(default_factory=dict)
     ram_last_seen: dict[int, int] = field(default_factory=dict)
@@ -161,6 +169,12 @@ class Config:
     invitation_discovery_base: float = 20.0
     life_state_discovery_base: float = 10.0
     membrane_base: int = 1_000_000
+    toy_stones: int = 0
+    toy_bubbles: int = 0
+    toy_switches: int = 0
+    toy_habitats: int = 0
+    local_ram_coordinates: bool = False
+    birth_position_radius: int = 32
 
 
 class Simulation:
@@ -178,12 +192,119 @@ class Simulation:
         self.next_entity_id = 1
         self.events: list[dict[str, Any]] = []
         self._last_genome_trace: dict[str, Any] | None = None
+        self.group_stability: dict[tuple[int, ...], int] = {}
+        self.environment_toys: dict[str, list[dict[str, Any]]] = {
+            "stones": [], "bubbles": [], "switches": [],
+        }
+        self._initialize_environment_toys()
+
+    def _toy_addresses(self, rng: Random, count: int, width: int, occupied: set[int]) -> list[int]:
+        """Reproduzierbare Mischung aus gut erreichbaren und globalen Positionen."""
+        starts: list[int] = []
+        immediate_limit = max(width, min(self.config.ram_size, 128))
+        near_limit = max(width, min(self.config.ram_size, 4096))
+        for index in range(count):
+            limit = (immediate_limit, near_limit, self.config.ram_size)[index % 3]
+            for _ in range(self.config.ram_size):
+                start = rng.randrange(max(1, limit - width + 1))
+                cells = {(start + offset) % self.config.ram_size for offset in range(width)}
+                if not cells & occupied:
+                    occupied.update(cells)
+                    starts.append(start)
+                    break
+            else:
+                raise ValueError("RAM ist für die gewünschte Spielzeugdichte zu klein")
+        return starts
+
+    def _initialize_environment_toys(self) -> None:
+        if not any((self.config.toy_stones, self.config.toy_bubbles, self.config.toy_switches, self.config.toy_habitats)):
+            return
+        rng = Random(self.config.seed ^ 0x70A5)
+        if self.config.toy_habitats:
+            self._initialize_toy_habitats(rng)
+            return
+        occupied: set[int] = set()
+        for index, start in enumerate(self._toy_addresses(rng, self.config.toy_stones, 8, occupied)):
+            values = [i64(0x53544F4E45 + index * 257 + offset) for offset in range(8)]
+            for offset, value in enumerate(values):
+                self.ram[start + offset] = value
+            self.environment_toys["stones"].append({"start": start, "length": 8, "values": values})
+        for index, address in enumerate(self._toy_addresses(rng, self.config.toy_bubbles, 1, occupied)):
+            low = i64(rng.randint(-(1 << 15), (1 << 15) - 1))
+            high = i64(low ^ (0xB00B + index * 17))
+            period = rng.randint(17, 97)
+            self.ram[address] = low
+            self.environment_toys["bubbles"].append({
+                "address": address, "period": period, "low": low, "high": high,
+            })
+        starts = self._toy_addresses(rng, self.config.toy_switches, 2, occupied)
+        for index, trigger in enumerate(starts):
+            output = trigger + 1
+            self.ram[trigger] = i64(0x53574954 + index)
+            self.ram[output] = i64(0x4F555450 + index)
+            self.environment_toys["switches"].append({
+                "trigger": trigger, "output": output, "salt": i64(0x51A7 + index * 131),
+            })
+
+    def _initialize_toy_habitats(self, rng: Random) -> None:
+        """Seedvariierte Inseln in gleich großen Sektoren des RAM-Rings."""
+        count = self.config.toy_habitats
+        if count < 1 or self.config.ram_size < count * 32:
+            raise ValueError("RAM ist für die gewünschte Zahl Spielzeuginseln zu klein")
+        sector = self.config.ram_size / count
+        for index in range(count):
+            sector_start = floor(index * sector)
+            sector_end = floor((index + 1) * sector)
+            room = sector_end - sector_start
+            base = sector_start + rng.randrange(max(1, room - 31))
+            stone_start = base
+            values = [i64(0x53544F4E45 + index * 257 + offset) for offset in range(8)]
+            for offset, value in enumerate(values):
+                self.ram[stone_start + offset] = value
+            self.environment_toys["stones"].append({
+                "start": stone_start, "length": 8, "values": values, "habitat": index,
+            })
+            for bubble_index, address in enumerate((base + 12, base + 20)):
+                low = i64(rng.randint(-(1 << 15), (1 << 15) - 1))
+                high = i64(low ^ (0xB00B + index * 17 + bubble_index))
+                period = rng.randint(17, 97)
+                self.ram[address] = low
+                self.environment_toys["bubbles"].append({
+                    "address": address, "period": period, "low": low, "high": high,
+                    "habitat": index,
+                })
+            trigger, output = base + 24, base + 25
+            self.ram[trigger] = i64(0x53574954 + index)
+            self.ram[output] = i64(0x4F555450 + index)
+            self.environment_toys["switches"].append({
+                "trigger": trigger, "output": output,
+                "salt": i64(0x51A7 + index * 131), "habitat": index,
+            })
+
+    def _advance_environment(self) -> None:
+        for bubble in self.environment_toys["bubbles"]:
+            if self.tick % bubble["period"]:
+                continue
+            address = bubble["address"]
+            before = self.ram[address]
+            after = bubble["high"] if before == bubble["low"] else bubble["low"]
+            self.ram[address] = after
+            self.ram_originators[address] = ()
+            self.emit(
+                "environment_change", toy_kind="bubble", address=address,
+                value_before=before, value=after,
+            )
 
     def emit(self, kind: str, **data: Any) -> None:
         self.events.append({"tick": self.tick, "kind": kind, **data})
 
-    def add_entity(self, genome: Genome, energy: float, parents: tuple[int, ...] = ()) -> Entity:
+    def add_entity(
+        self, genome: Genome, energy: float, parents: tuple[int, ...] = (),
+        ram_position: int | None = None,
+    ) -> Entity:
         genome.validate()
+        if ram_position is None:
+            ram_position = self.rng.randrange(len(self.ram)) if self.config.local_ram_coordinates else 0
         entity = Entity(
             id=self.next_entity_id,
             name=amoeba_name(self.next_entity_id),
@@ -191,6 +312,7 @@ class Simulation:
             energy=energy,
             start_energy=energy,
             born_at=self.tick,
+            ram_position=ram_position % len(self.ram),
             parents=parents,
             z=[None] * self.config.z_size,
         )
@@ -199,11 +321,13 @@ class Simulation:
         self.emit(
             "birth", entity_id=entity.id, entity_name=entity.name,
             parents=list(parents), energy=energy, n_g=genome.n_g,
+            ram_position=entity.ram_position,
         )
         return entity
 
     def heartbeat(self) -> None:
         self.tick += 1
+        self._advance_environment()
         for entity_id in sorted(tuple(self.entities)):
             entity = self.entities[entity_id]
             if not entity.alive:
@@ -352,7 +476,9 @@ class Simulation:
                     discovery_type=discovery_type, reward=reward,
                 )
                 return {"value": Signal(value, (f"MEM[{target.id},{offset},{slot}]",))}
-            address = raw_address % len(self.ram)
+            address = (
+                entity.ram_position + raw_address if self.config.local_ram_coordinates else raw_address
+            ) % len(self.ram)
             value = self.ram[address]
             writers = self.ram_originators[address]
             previous = entity.ram_last_seen.get(address)
@@ -368,6 +494,7 @@ class Simulation:
             entity.ram_last_seen[address] = value
             self.emit(
                 "ram_read", entity_id=entity.id, address=address, value=value,
+                address_offset=raw_address,
                 virtual=False, previous=previous, changed=changed,
                 self_origin=self_origin, originators=list(writers), reward=reward,
             )
@@ -377,14 +504,31 @@ class Simulation:
             signal = inputs["value"]
             if raw_address >= self.config.membrane_base:
                 return {"value": signal}
-            address = raw_address % len(self.ram)
+            address = (
+                entity.ram_position + raw_address if self.config.local_ram_coordinates else raw_address
+            ) % len(self.ram)
             self.ram[address] = signal.value
             writers = tuple(sorted({*signal.originators, entity.id}))
             self.ram_originators[address] = writers
             self.emit(
                 "ram_write", entity_id=entity.id, address=address, value=signal.value,
-                originators=list(writers),
+                address_offset=raw_address, originators=list(writers),
             )
+            for switch in self.environment_toys["switches"]:
+                if switch["trigger"] != address:
+                    continue
+                output = switch["output"]
+                before = self.ram[output]
+                after = i64(signal.value ^ switch["salt"] ^ before)
+                self.ram[output] = after
+                # Die Umweltreaktion bleibt kausal mit ihren Auslösern verbunden:
+                # Der Schreiber kann sich damit nicht selbst ernähren.
+                self.ram_originators[output] = writers
+                self.emit(
+                    "environment_change", toy_kind="switch", address=output,
+                    trigger_address=address, triggered_by=entity.id,
+                    value_before=before, value=after, originators=list(writers),
+                )
             return {"value": signal}
         if kind == "Z_READ":
             address = inputs["address"].value % len(entity.z)
@@ -404,7 +548,8 @@ class Simulation:
         if kind == "MEM_READ":
             offset, slot = inputs["offset"].value, inputs["slot"].value
             value = self._mem_read(entity, offset, slot)
-            return {"value": Signal(value, (f"MEM[{offset},{slot}]",))}
+            source = f"KNOCK[{value}]" if offset == 3 and value else f"MEM[{offset},{slot}]"
+            return {"value": Signal(value, (source,))}
         if kind == "MEM_WRITE":
             offset, slot, signal = inputs["offset"].value, inputs["slot"].value, inputs["value"]
             if offset == 1 and slot in (0, 1):
@@ -439,13 +584,23 @@ class Simulation:
                     return {"value": signal}
                 target = self.entities.get(signal.value)
                 required_source = f"MEM[{signal.value},0,0]"
-                discovered = required_source in signal.sources
+                knock_source = f"KNOCK[{signal.value}]"
+                discovered = required_source in signal.sources or knock_source in signal.sources
                 if target is not None and target.alive and target.id != entity.id and discovered:
                     entity.partner_ids[slot] = signal.value
                     self.emit(
                         "mem_write", entity_id=entity.id, offset=offset,
                         slot=slot, value=signal.value, discovered=True,
                     )
+                    if entity.id not in target.knocker_ids:
+                        target.knocker_ids.append(entity.id)
+                        overwritten_knocker = None
+                        if len(target.knocker_ids) > target.genome.knock_capacity:
+                            overwritten_knocker = target.knocker_ids.pop(0)
+                        self.emit(
+                            "knock", entity_id=entity.id, target_id=target.id,
+                            slot=slot, overwritten_knocker=overwritten_knocker,
+                        )
                 else:
                     self.emit(
                         "mem_write_rejected", entity_id=entity.id, offset=offset,
@@ -470,6 +625,13 @@ class Simulation:
             if threshold == inf:
                 return 9
             return max(1, min(9, ceil(9 * max(0.0, entity.energy) / threshold)))
+        if offset == 3 and slot >= 0:
+            entity.knocker_ids[:] = [
+                proposer_id for proposer_id in entity.knocker_ids
+                if (proposer := self.entities.get(proposer_id)) is not None
+                and proposer.alive and entity.id in proposer.partner_ids
+            ][-entity.genome.knock_capacity:]
+            return entity.knocker_ids[slot] if slot < len(entity.knocker_ids) else 0
         return 0
 
     @staticmethod
@@ -526,17 +688,45 @@ class Simulation:
                 groups.add(candidate)
         return sorted(groups)
 
+    @staticmethod
+    def _birth_contributions(parents: list[Entity], child_energy: float) -> list[float] | None:
+        """Verteilt Geburtsenergie gleichmaessig, begrenzt durch den S0-Sockel."""
+        available = [max(0.0, parent.energy - parent.start_energy) for parent in parents]
+        if sum(available) + 1e-12 < child_energy:
+            return None
+        contributions = [0.0] * len(parents)
+        active = set(range(len(parents)))
+        remaining = child_energy
+        while active:
+            share = remaining / len(active)
+            limited = [index for index in active if available[index] < share]
+            if not limited:
+                for index in active:
+                    contributions[index] = share
+                break
+            for index in limited:
+                contributions[index] = available[index]
+                remaining -= available[index]
+                active.remove(index)
+        return contributions
+
     def _reproduce(self) -> None:
-        for group in self._valid_groups():
+        valid_groups = self._valid_groups()
+        valid_set = set(valid_groups)
+        self.group_stability = {
+            group: age for group, age in self.group_stability.items() if group in valid_set
+        }
+        for group in valid_groups:
+            self.group_stability[group] = self.group_stability.get(group, 0) + 1
             parents = [self.entities[eid] for eid in group]
+            required_bond_ticks = max(parent.genome.bond_ticks for parent in parents)
+            if self.group_stability[group] < required_bond_ticks:
+                continue
             if self.config.birth_energy_fraction is None:
                 child_energy = self.config.birth_energy
             else:
                 mean_parent_energy = sum(parent.energy for parent in parents) / len(parents)
                 child_energy = self.config.birth_energy_fraction * mean_parent_energy
-            contribution = child_energy / len(parents)
-            if any(parent.energy < contribution for parent in parents):
-                continue
             genome = self._recombine(parents)
             minimum = self._minimum_birth_energy(genome)
             if child_energy < minimum:
@@ -547,17 +737,19 @@ class Simulation:
                         reason="minimum_heartbeats_unaffordable",
                     )
                 continue
-            if any(parent.energy - contribution <= parent.start_energy for parent in parents):
+            contributions = self._birth_contributions(parents, child_energy)
+            if contributions is None:
                 for parent in parents:
                     self.emit(
                         "birth_rejected", entity_id=parent.id, group=list(group),
                         offered_energy=child_energy, required_energy=minimum,
-                        contribution=contribution, energy=parent.energy,
+                        pooled_surplus=sum(max(0.0, item.energy - item.start_energy) for item in parents),
+                        energy=parent.energy,
                         start_energy=parent.start_energy,
                         reason="parent_surplus_required",
                     )
                 continue
-            for parent in parents:
+            for parent, contribution in zip(parents, contributions):
                 energy_before = parent.energy
                 parent.energy -= contribution
                 parent.partner_ids[:] = [None, None]
@@ -565,11 +757,20 @@ class Simulation:
                     "reproduction_cost", entity_id=parent.id, child_id=self.next_entity_id,
                     cost=contribution, energy_before=energy_before, energy_after=parent.energy,
                 )
-            child = self.add_entity(genome, child_energy, group)
+            if self.config.local_ram_coordinates:
+                anchor = self.rng.choice(parents)
+                child_position = (
+                    anchor.ram_position
+                    + self.rng.randint(-self.config.birth_position_radius, self.config.birth_position_radius)
+                ) % len(self.ram)
+            else:
+                child_position = 0
+            child = self.add_entity(genome, child_energy, group, child_position)
             self.emit(
                 "genome_created", entity_id=child.id, parents=list(group),
                 trace=self._last_genome_trace,
             )
+            self.group_stability.pop(group, None)
 
     def _minimum_birth_energy(self, genome: Genome) -> float:
         """Konservative Energie für konfigurierte volle Heartbeats ohne Belohnungen."""
@@ -596,6 +797,10 @@ class Simulation:
         target = max(1, min(target, sum(p.genome.n_g for p in parents)))
         activity_parent = self.rng.choice(parents)
         activity_base = activity_parent.genome.activity_base
+        knock_parent = self.rng.choice(parents)
+        knock_capacity = knock_parent.genome.knock_capacity
+        bond_parent = self.rng.choice(parents)
+        bond_ticks = bond_parent.genome.bond_ticks
         fragments: list[tuple[int, list[Node], list[Edge]]] = []
         for parent in parents:
             nodes = {node.id: node for node in parent.genome.nodes}
@@ -669,13 +874,15 @@ class Simulation:
                 "node_mapping": {str(source): target for source, target in sorted(mapping.items())},
                 "edges": [asdict(edge) for edge in selected_edges],
             })
-        genome = Genome(child_nodes, child_edges, activity_base)
+        genome = Genome(child_nodes, child_edges, activity_base, knock_capacity, bond_ticks)
         mutation = self._mutate(genome)
         genome.validate()
         self._last_genome_trace = {
             "target_n_g": target,
             "size_parent_id": chosen_size_parent.id,
             "activity_parent_id": activity_parent.id,
+            "knock_capacity_parent_id": knock_parent.id,
+            "bond_ticks_parent_id": bond_parent.id,
             "selection_rule": "closest_atomic_subset",
             "inherited_fragments": inherited_fragments,
             "mutation": mutation,
@@ -685,7 +892,7 @@ class Simulation:
     def _mutate(self, genome: Genome) -> dict[str, Any] | None:
         if self.rng.random() >= self.config.mutation_probability:
             return None
-        classes = ["activity"]
+        classes = ["activity", "knock_capacity", "bond_ticks"]
         if genome.nodes:
             classes.append("node")
         if genome.edges:
@@ -696,6 +903,14 @@ class Simulation:
             detail["before"] = genome.activity_base
             genome.activity_base = max(1, genome.activity_base + self.rng.choice((-1, 1)))
             detail["after"] = genome.activity_base
+        elif mutation == "knock_capacity":
+            detail["before"] = genome.knock_capacity
+            genome.knock_capacity = max(1, min(16, genome.knock_capacity + self.rng.choice((-1, 1))))
+            detail["after"] = genome.knock_capacity
+        elif mutation == "bond_ticks":
+            detail["before"] = genome.bond_ticks
+            genome.bond_ticks = max(1, genome.bond_ticks + self.rng.choice((-1, 1)))
+            detail["after"] = genome.bond_ticks
         elif mutation == "node":
             node = self.rng.choice(genome.nodes)
             detail.update({"node_id": node.id, "before": asdict(node)})
@@ -730,6 +945,7 @@ class Simulation:
             "tick": self.tick,
             "config": asdict(self.config),
             "ram": list(self.ram),
+            "environment_toys": self.environment_toys,
             "entities": [
                 {
                     "id": e.id,
@@ -738,12 +954,16 @@ class Simulation:
                     "energy": e.energy,
                     "start_energy": e.start_energy,
                     "born_at": e.born_at,
+                    "ram_position": e.ram_position,
                     "parents": list(e.parents),
                     "partners": list(e.partner_ids),
+                    "knockers": [self._mem_read(e, 3, slot) for slot in range(e.genome.knock_capacity)],
                     "n_f": len(e.genome.nodes),
                     "n_p": e.genome.n_p,
                     "n_g": e.genome.n_g,
                     "activity_base": e.genome.activity_base,
+                    "knock_capacity": e.genome.knock_capacity,
+                    "bond_ticks": e.genome.bond_ticks,
                     "k_slots": len(e.k),
                     "z_used": sum(value is not None for value in e.z),
                     "genome": {
@@ -773,8 +993,10 @@ class Simulation:
             "config": asdict(self.config),
             "ram": list(self.ram),
             "ram_originators": [list(items) for items in self.ram_originators],
+            "environment_toys": self.environment_toys,
             "next_entity_id": self.next_entity_id,
             "rng_state": self._json_state(self.rng.getstate()),
+            "group_stability": {",".join(map(str, group)): age for group, age in self.group_stability.items()},
             "entities": [self._entity_state(e) for e in sorted(self.entities.values(), key=lambda item: item.id)],
         }
 
@@ -802,10 +1024,14 @@ class Simulation:
             "id": entity.id, "name": entity.name,
             "energy": entity.energy, "start_energy": entity.start_energy,
             "born_at": entity.born_at,
+            "ram_position": entity.ram_position,
             "parents": list(entity.parents), "alive": entity.alive,
             "partner_ids": list(entity.partner_ids),
+            "knocker_ids": list(entity.knocker_ids),
             "genome": {
                 "activity_base": entity.genome.activity_base,
+                "knock_capacity": entity.genome.knock_capacity,
+                "bond_ticks": entity.genome.bond_ticks,
                 "nodes": [asdict(node) for node in entity.genome.nodes],
                 "edges": [asdict(edge) for edge in entity.genome.edges],
             },
@@ -822,6 +1048,7 @@ class Simulation:
         if state.get("schema") != 1 or state.get("version") not in {"0.1", cls.version}:
             raise ValueError("Nicht unterstütztes Checkpoint-Format")
         sim = cls(Config(**state["config"]), ram=list(state["ram"]))
+        sim.ram = list(state["ram"])
         sim.tick = state["tick"]
         sim.ram_originators = [
             tuple(items) for items in state.get("ram_originators", [[] for _ in sim.ram])
@@ -834,13 +1061,17 @@ class Simulation:
                 [Node(**node) for node in raw["genome"]["nodes"]],
                 [Edge(**edge) for edge in raw["genome"]["edges"]],
                 raw["genome"]["activity_base"],
+                raw["genome"].get("knock_capacity", 1),
+                raw["genome"].get("bond_ticks", 1),
             )
             entity = Entity(
                 id=raw["id"], name=raw.get("name", amoeba_name(raw["id"])),
                 genome=genome, energy=raw["energy"],
                 start_energy=raw.get("start_energy", raw["energy"]), born_at=raw["born_at"],
+                ram_position=raw.get("ram_position", 0),
                 parents=tuple(raw["parents"]), alive=raw["alive"],
                 partner_ids=list(raw["partner_ids"]),
+                knocker_ids=list(raw.get("knocker_ids", [raw["knocker_id"]] if raw.get("knocker_id") else [])),
                 k={
                     key: Signal(item["value"], tuple(item["sources"]), tuple(item.get("originators", ())))
                     for key, item in raw["k"].items()
@@ -857,6 +1088,13 @@ class Simulation:
             )
             sim.entities[entity.id] = entity
         sim.events.clear()
+        sim.group_stability = {
+            tuple(int(item) for item in key.split(",")): age
+            for key, age in state.get("group_stability", {}).items()
+        }
+        sim.environment_toys = state.get("environment_toys", {
+            "stones": [], "bubbles": [], "switches": [],
+        })
         return sim
 
 
@@ -895,6 +1133,8 @@ def p1_explorer_genome(
     search_step: int = 1,
     search_patience: int = 64,
     activity_base: int = 100,
+    knock_capacity: int = 2,
+    bond_ticks: int = 5,
 ) -> Genome:
     """P1: Membransuche/Handshake, RAM-Exploration und neutrales Schreiben."""
     if search_step == 0:
@@ -939,6 +1179,15 @@ def p1_explorer_genome(
         Node(60, "EQ"), Node(61, "MEM_READ"), Node(62, "EQ"), Node(63, "EQ"),
         Node(64, "GATE"), Node(65, "GATE"), Node(66, "MEM_WRITE"),
         Node(67, "Z_WRITE"),
+        # Experimentelle Klingel: Der erste wartende lebende Vorschlag ist in
+        # der eigenen Membran unter Offset 3 lesbar. Bei freiem Partnerslot
+        # wird er genomisch erwidert; die technische Schicht paart nicht selbst.
+        Node(68, "CONST", 3), Node(69, "MEM_READ"), Node(70, "GATE"),
+        Node(71, "MEM_WRITE"),
+        # Zweiter Partnerslot und zweiter Klopfer erlauben, aber erzwingen
+        # keine vollständig gegenseitige Dreierbeziehung.
+        Node(72, "MEM_READ"), Node(73, "EQ"), Node(74, "MEM_READ"),
+        Node(75, "GATE"), Node(76, "MEM_WRITE"),
     ]
     edges = [
         Edge(3, "value", 5, "address"), Edge(5, "value", 6, "a"),
@@ -994,5 +1243,18 @@ def p1_explorer_genome(
         Edge(60, "value", 65, "condition"), Edge(65, "value", 66, "value"),
         Edge(2, "value", 66, "offset"), Edge(1, "value", 66, "slot"),
         Edge(65, "value", 67, "value"), Edge(54, "value", 67, "address"),
+        Edge(68, "value", 69, "offset"), Edge(1, "value", 69, "slot"),
+        Edge(69, "value", 70, "value"), Edge(39, "value", 70, "condition"),
+        Edge(70, "value", 71, "value"), Edge(2, "value", 71, "offset"),
+        Edge(1, "value", 71, "slot"),
+        Edge(2, "value", 72, "offset"), Edge(2, "value", 72, "slot"),
+        Edge(72, "value", 73, "a"), Edge(1, "value", 73, "b"),
+        Edge(68, "value", 74, "offset"), Edge(2, "value", 74, "slot"),
+        Edge(74, "value", 75, "value"), Edge(73, "value", 75, "condition"),
+        Edge(75, "value", 76, "value"), Edge(2, "value", 76, "offset"),
+        Edge(2, "value", 76, "slot"),
     ]
-    return Genome(nodes, edges, activity_base=activity_base)
+    return Genome(
+        nodes, edges, activity_base=activity_base,
+        knock_capacity=knock_capacity, bond_ticks=bond_ticks,
+    )

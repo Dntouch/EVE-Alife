@@ -28,3 +28,4 @@ Einträge verweisen nach Möglichkeit auf ihre Quellen. Medien werden im Unterve
 - [20. September 2026 – Vom Konzept zum ersten laufenden Prototyp](2026-09-20_Vom_Konzept_zum_ersten_Prototyp.md)
 - [20. September 2026 – Von P0 zur ersten genomischen Exploration](2026-09-20_Von_P0_zur_ersten_Exploration.md)
 - [20. September 2026 – Von der Partnersuche zum beobachtbaren Biotop](2026-09-20_Von_der_Partnersuche_zum_beobachtbaren_Biotop.md)
+- [21. September 2026 – Von Spielzeuginseln zur reichen Einsiedlerin](2026-09-21_Von_Spielzeuginseln_zur_reichen_Einsiedlerin.md)

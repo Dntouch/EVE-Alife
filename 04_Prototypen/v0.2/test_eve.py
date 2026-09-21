@@ -155,6 +155,72 @@ class EveCoreTests(unittest.TestCase):
         self.assertEqual(writer.energy, 0)
         self.assertEqual(reader.energy, sim.config.novelty_base)
 
+    def test_external_bubble_changes_are_rewardable_and_persisted_as_events(self):
+        sim = Simulation(Config(seed=1, ram_size=128, toy_bubbles=1))
+        bubble = sim.environment_toys["bubbles"][0]
+        address = bubble["address"]
+        before = sim.ram[address]
+        sim.tick = bubble["period"] - 1
+        sim.heartbeat()
+        self.assertNotEqual(sim.ram[address], before)
+        event = next(event for event in sim.events if event["kind"] == "environment_change")
+        self.assertEqual((event["toy_kind"], event["address"]), ("bubble", address))
+        reader = sim.add_entity(Genome([Node(1, "RAM_READ")], [], 1), 0)
+        reader.k["1:address"] = Signal(address, ("G",))
+        sim._fire(reader, reader.genome.nodes[0])
+        self.assertEqual(reader.energy, sim.config.novelty_base)
+
+    def test_toy_habitats_cover_every_sector_without_following_entities(self):
+        sim = Simulation(Config(seed=4, ram_size=4096, toy_habitats=8))
+        self.assertEqual(len(sim.environment_toys["stones"]), 8)
+        self.assertEqual(len(sim.environment_toys["bubbles"]), 16)
+        self.assertEqual(len(sim.environment_toys["switches"]), 8)
+        for index, stone in enumerate(sim.environment_toys["stones"]):
+            self.assertLessEqual(index * 512, stone["start"])
+            self.assertLess(stone["start"], (index + 1) * 512)
+
+    def test_switch_preserves_trigger_origin_and_cannot_feed_its_writer(self):
+        sim = Simulation(Config(seed=2, ram_size=128, toy_switches=1))
+        switch = sim.environment_toys["switches"][0]
+        writer = sim.add_entity(Genome([Node(1, "RAM_WRITE")], [], 1), 0)
+        reader = sim.add_entity(Genome([Node(1, "RAM_READ")], [], 1), 0)
+        writer.k["1:address"] = Signal(switch["trigger"], ("G",))
+        writer.k["1:value"] = Signal(77, ("G",))
+        sim._fire(writer, writer.genome.nodes[0])
+        self.assertEqual(sim.ram_originators[switch["output"]], (writer.id,))
+        writer.k["1:address"] = Signal(switch["output"], ("G",))
+        sim._fire(writer, Node(1, "RAM_READ"))
+        reader.k["1:address"] = Signal(switch["output"], ("G",))
+        sim._fire(reader, reader.genome.nodes[0])
+        self.assertEqual(writer.energy, 0)
+        self.assertEqual(reader.energy, sim.config.novelty_base)
+
+    def test_local_ram_coordinates_translate_offsets_around_entity_position(self):
+        sim = Simulation(Config(seed=3, ram_size=16, local_ram_coordinates=True))
+        genome = Genome([Node(1, "RAM_READ"), Node(2, "RAM_WRITE")], [], 1)
+        entity = sim.add_entity(genome, 0, ram_position=10)
+        sim.ram[13] = 77
+        entity.k["1:address"] = Signal(3, ("G",))
+        self.assertEqual(sim._fire(entity, genome.nodes[0])["value"].value, 77)
+        entity.k["2:address"] = Signal(-2, ("G",))
+        entity.k["2:value"] = Signal(91, ("G",))
+        sim._fire(entity, genome.nodes[1])
+        self.assertEqual(sim.ram[8], 91)
+        events = [event for event in sim.events if event["kind"] in {"ram_read", "ram_write"}]
+        self.assertEqual([(event["address_offset"], event["address"]) for event in events], [(3, 13), (-2, 8)])
+
+    def test_child_is_born_at_a_parent_position_when_birth_radius_is_zero(self):
+        sim = Simulation(Config(
+            seed=3, ram_size=128, local_ram_coordinates=True, birth_position_radius=0,
+            birth_energy=50, mutation_probability=0,
+        ))
+        first = sim.add_entity(demo_genome(2), 100, ram_position=11)
+        second = sim.add_entity(demo_genome(1), 100, ram_position=99)
+        first.energy = second.energy = 150
+        first.partner_ids[0], second.partner_ids[0] = 2, 1
+        sim._reproduce()
+        self.assertIn(sim.entities[3].ram_position, {11, 99})
+
     def test_birth_conserves_energy_and_clears_partners(self):
         sim = Simulation(Config(seed=3, ram_size=8, birth_energy=50, mutation_probability=0))
         a = sim.add_entity(demo_genome(2), 100)
@@ -203,7 +269,7 @@ class EveCoreTests(unittest.TestCase):
         self.assertEqual(len(rejected), 2)
         self.assertGreater(rejected[0]["required_energy"], rejected[0]["offered_energy"])
 
-    def test_birth_requires_each_parent_to_keep_more_than_own_start_energy(self):
+    def test_birth_requires_pooled_surplus_above_parent_start_energy(self):
         sim = Simulation(Config(seed=3, ram_size=8, birth_energy=50, mutation_probability=0))
         a = sim.add_entity(demo_genome(2), 100)
         b = sim.add_entity(demo_genome(1), 100)
@@ -214,8 +280,20 @@ class EveCoreTests(unittest.TestCase):
         rejected = [event for event in sim.events if event["kind"] == "birth_rejected"]
         self.assertEqual({event["reason"] for event in rejected}, {"parent_surplus_required"})
 
+    def test_one_parent_can_fund_the_complete_birth_from_its_surplus(self):
+        sim = Simulation(Config(seed=3, ram_size=8, birth_energy=50, mutation_probability=0))
+        rich = sim.add_entity(demo_genome(2), 100)
+        poor = sim.add_entity(demo_genome(1), 100)
+        rich.energy = 400
+        rich.partner_ids[0], poor.partner_ids[0] = 2, 1
+        sim._reproduce()
+        self.assertEqual(sim.entities[3].energy, 50)
+        self.assertEqual((rich.energy, poor.energy), (350, 100))
+        costs = [event for event in sim.events if event["kind"] == "reproduction_cost"]
+        self.assertEqual([event["cost"] for event in costs], [50, 0])
+
     def test_checkpoint_resumes_exactly(self):
-        config = Config(seed=11, ram_size=16)
+        config = Config(seed=11, ram_size=64, toy_stones=1, toy_bubbles=1, toy_switches=1)
         sim = Simulation(config); sim.add_entity(demo_genome(2), 100); sim.add_entity(demo_genome(1), 100)
         for _ in range(3): sim.heartbeat()
         resumed = Simulation.from_checkpoint(sim.checkpoint())
@@ -253,6 +331,90 @@ class EveCoreTests(unittest.TestCase):
         })
         sim._fire(finder, write)
         self.assertEqual(finder.partner_ids, [target.id, None])
+
+    def test_knock_is_delivered_but_requires_genomic_reply(self):
+        sim = Simulation(Config(seed=1, ram_size=8))
+        proposer = sim.add_entity(Genome([Node(1, "MEM_WRITE")], [], 1), 100)
+        receiver = sim.add_entity(Genome(
+            [Node(1, "MEM_READ"), Node(2, "MEM_WRITE")],
+            [Edge(1, "value", 2, "value")], 1,
+        ), 100)
+        proposer.k.update({
+            "1:offset": Signal(1, ("G",)), "1:slot": Signal(0, ("G",)),
+            "1:value": Signal(receiver.id, (f"MEM[{receiver.id},0,0]",)),
+        })
+        sim._fire(proposer, proposer.genome.nodes[0])
+        self.assertEqual(proposer.partner_ids[0], receiver.id)
+        self.assertEqual(receiver.knocker_ids, [proposer.id])
+        self.assertIsNone(receiver.partner_ids[0])
+
+        receiver.k.update({
+            "1:offset": Signal(3, ("G",)), "1:slot": Signal(0, ("G",)),
+        })
+        knock_signal = sim._fire(receiver, receiver.genome.nodes[0])["value"]
+        receiver.k["2:value"] = knock_signal
+        self.assertEqual(knock_signal.value, proposer.id)
+        self.assertIn(f"KNOCK[{proposer.id}]", knock_signal.sources)
+        receiver.k.update({
+            "2:offset": Signal(1, ("G",)), "2:slot": Signal(0, ("G",)),
+        })
+        sim._fire(receiver, receiver.genome.nodes[1])
+        self.assertEqual(receiver.partner_ids[0], proposer.id)
+        self.assertIn((proposer.id, receiver.id), sim._valid_groups())
+
+    def test_withdrawn_or_dead_knocker_is_no_longer_readable(self):
+        sim = Simulation(Config(seed=1, ram_size=8))
+        proposer = sim.add_entity(demo_genome(2), 100)
+        receiver = sim.add_entity(demo_genome(1), 100)
+        proposer.partner_ids[0] = receiver.id
+        receiver.knocker_ids = [proposer.id]
+        self.assertEqual(sim._mem_read(receiver, 3, 0), proposer.id)
+        proposer.partner_ids[0] = None
+        self.assertEqual(sim._mem_read(receiver, 3, 0), 0)
+        proposer.partner_ids[0] = receiver.id
+        proposer.alive = False
+        self.assertEqual(sim._mem_read(receiver, 3, 0), 0)
+
+    def test_knock_capacity_keeps_distinct_proposers_in_fifo_order(self):
+        sim = Simulation(Config(seed=1, ram_size=8))
+        proposers = [sim.add_entity(Genome([Node(1, "MEM_WRITE")], [], 1), 100) for _ in range(3)]
+        receiver = sim.add_entity(Genome([Node(1, "PAUSE")], [], 1, knock_capacity=2), 100)
+        for proposer in proposers:
+            proposer.k.update({
+                "1:offset": Signal(1, ("G",)), "1:slot": Signal(0, ("G",)),
+                "1:value": Signal(receiver.id, (f"MEM[{receiver.id},0,0]",)),
+            })
+            sim._fire(proposer, proposer.genome.nodes[0])
+        self.assertEqual(receiver.knocker_ids, [proposers[1].id, proposers[2].id])
+        self.assertEqual(sim._mem_read(receiver, 3, 0), proposers[1].id)
+        self.assertEqual(sim._mem_read(receiver, 3, 1), proposers[2].id)
+
+    def test_group_must_remain_mutual_for_heritable_bond_time(self):
+        sim = Simulation(Config(
+            seed=1, ram_size=8, birth_energy_fraction=0.1,
+            birth_min_heartbeats=0, mutation_probability=0,
+        ))
+        genome = demo_genome(2)
+        genome.bond_ticks = 3
+        first = sim.add_entity(genome, 10_000)
+        second = sim.add_entity(demo_genome(1), 10_000)
+        second.genome.bond_ticks = 2
+        first.start_energy = second.start_energy = 100
+        first.partner_ids[0] = second.id
+        second.partner_ids[0] = first.id
+        sim._reproduce()
+        sim._reproduce()
+        self.assertEqual(len(sim.entities), 2)
+        sim._reproduce()
+        self.assertEqual(len(sim.entities), 3)
+        self.assertEqual(sim.entities[3].parents, (1, 2))
+
+    def test_three_mutual_partner_lists_form_a_reproductive_group(self):
+        sim = Simulation(Config(seed=1, ram_size=8))
+        entities = [sim.add_entity(demo_genome(1), 100) for _ in range(3)]
+        for entity in entities:
+            entity.partner_ids = [other.id for other in entities if other.id != entity.id]
+        self.assertEqual(sim._valid_groups(), [(1, 2, 3)])
 
     def test_partner_can_be_cleared_by_observed_death_or_genomic_withdrawal(self):
         sim = Simulation(Config(seed=1, ram_size=8))
@@ -388,6 +550,7 @@ class EveCoreTests(unittest.TestCase):
         entity.k["6:address"] = Signal(3, ("G",))
         entity.z[0] = Signal(17, ("RAM[3]",))
         observation = sim.observation()["entities"][0]
+        self.assertEqual(observation["ram_position"], 0)
         self.assertEqual(observation["genome"]["nodes"][0]["kind"], "CONST")
         self.assertEqual(observation["genome"]["edges"][0]["source"], 1)
         self.assertEqual(observation["k"]["6:address"]["value"], 3)
