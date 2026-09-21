@@ -1,8 +1,11 @@
 # EVE-Alife
 
-Dieses Verzeichnis ist das dauerhafte Arbeitsgedächtnis von **EVE-Alife** auf dem Rechner Eve.
+Dieses Repository ist das dauerhafte Arbeitsgedächtnis von **EVE-Alife**.
 
-**EVE-Alife** verbindet **EVE = Emergent Virtual Evolution** mit **ALife = Artificial Life** und klingt zugleich wie „EVE alive“. Der Name bezeichnet ausschließlich das Artificial-Life-/Emergent-Evolution-Projekt, intern auch Schlammeimer™ oder KI-Biotop genannt. EVE, die Home-Assistant-Assistentin, ist ein separates Projekt.
+Der Name verbindet **EVE = Emergent Virtual Evolution** mit
+**ALife = Artificial Life** und klingt zugleich wie „EVE alive“. EVE-Alife
+bezeichnet das Artificial-Life- und Emergent-Evolution-Projekt, intern auch
+Schlammeimer™ oder KI-Biotop genannt.
 
 > Isolation ist eine Eigenschaft der Umgebung, keine Verhaltensregel ihrer Bewohner.
 
