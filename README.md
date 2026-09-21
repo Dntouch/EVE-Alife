@@ -10,7 +10,7 @@ Schlammeimer™ oder KI-Biotop genannt.
 > Isolation ist eine Eigenschaft der Umgebung, keine Verhaltensregel ihrer Bewohner.
 
 <!-- EVE_STATS_START -->
-## Live aus dem Biotop
+## Historischer Ergebnisstand v0.1
 
 | Massenaussterben | Nachkommen | Gewonnene Energie | Gespeicherte Läufe |
 | ---: | ---: | ---: | ---: |
@@ -42,7 +42,7 @@ Schlammeimer™ oder KI-Biotop genannt.
 | 38 | 1000 | 28 lebend | 20 | 354.840,00 |
 | 37 | 1000 | 17 lebend | 14 | 278.035,00 |
 
-_Automatisch aus den lokal gespeicherten Runs erzeugt. Der veröffentlichte Stand entspricht dem letzten Git-Push. [Definitionen und Dashboard](04_Prototypen/v0.1/README.md)_
+_Konservierter Abschlussstand der 41 v0.1-Läufe. [Laufergebnisse v0.1](07_Laufergebnisse/v0.1/README.md)_
 <!-- EVE_STATS_END -->
 
 ## Bereiche
@@ -54,11 +54,13 @@ _Automatisch aus den lokal gespeicherten Runs erzeugt. Der veröffentlichte Stan
 - `04_Prototypen`: konkrete technische Umsetzungen
 - `05_Projektlog`: chronologische Entstehungsgeschichte mit technischen, konzeptionellen und persönlichen Notizen
 - `06_Blog`: lesbare Geschichten, Gedanken und Lab Notes aus dem Projekt
-- `07_Laufergebnisse`: kompakte, versionierte Berichte der ausgeführten Prototyp-Läufe
+- `07_Laufergebnisse`: nach Prototypversion getrennte, kompakte Berichte der ausgeführten Läufe
 
 ## Aktueller Prototyp
 
-Der erste ausführbare Stand liegt unter [Prototyp v0.1](04_Prototypen/v0.1/README.md). Er enthält den eigenständigen EVE-Core, reproduzierbare und fortsetzbare Runs, eine persistierte read-only Beobachtungsschnittstelle sowie die erste schlichte Lupe.
+Der aktuelle Stand liegt unter [Prototyp v0.2](04_Prototypen/v0.2/README.md). Er nimmt den P1-Endstand als Ausgangsbasis, ergänzt begrenzte sowie offene Runs, explizite Endgründe, strukturierte Langzeitdaten und eine gemeinsame read-only Live-/Archiv-Lupe und erprobt klar ausgewiesene Änderungen an Partnersuche, Rekombinationsauswahl und Genomkosten. Die [Architektur](04_Prototypen/v0.2/ARCHITEKTUR.md) dokumentiert Datenmodell, Skalierung, Replay-Grenzen und öffentliche Bereitstellung. Die Ergebnisse sind [nach Prototypversion geordnet](07_Laufergebnisse/README.md).
+
+Der erste ausführbare Stand [v0.1](04_Prototypen/v0.1/README.md) und die Ergebnisse von P0/P1 bleiben als abgeschlossene historische Prototypstände erhalten; die genaue Grenze steht in der [Konservierungsnotiz](04_Prototypen/KONSERVIERUNG_P0_P1.md).
 
 Eine einsteigerfreundliche Erklärung des Genoms, seiner Funktionspunkte und
 Kanten sowie von Vererbung und Mutation steht unter
