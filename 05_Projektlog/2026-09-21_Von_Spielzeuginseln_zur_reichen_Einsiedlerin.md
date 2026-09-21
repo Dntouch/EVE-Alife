@@ -76,4 +76,3 @@ Die spontane Vermutung, der Genompreis müsse noch deutlich sinken, hielt einer 
 - [Lauf 15](../07_Laufergebnisse/v0.2/Lauf_015.md)
 - [Lauf 16](../07_Laufergebnisse/v0.2/Lauf_016.md)
 - [Blogentwurf 012 – Die reichste Amöbe der Welt ist allein](../06_Blog/012_Die_reichste_Amoebe_der_Welt_ist_allein.md)
-

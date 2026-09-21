@@ -2,87 +2,146 @@
 
 Status: Gesprächsentwurf
 
-Redaktionelle Einordnung: Der Beitrag erzählt den tatsächlich gemessenen Verlauf von v0.2-Lauf 16. Namen, Buddeln und Einsamkeit sind unsere menschliche Sprache für Entitäten, RAM-Leseoperationen und fehlende reproduktive Verbindungen. Ada besitzt keine zugeschriebene Innenwelt.
+Redaktionelle Einordnung: Der Beitrag erzählt einen tatsächlich gemessenen Lauf des Artificial-Life-Projekts EVE-Alife. „Buddeln“, „reich“, „einsam“ und ähnliche Begriffe sind unsere menschliche Erzählweise für RAM-Zugriffe, Energie und fehlende reproduktive Verbindungen. Ada besitzt keine zugeschriebene Innenwelt.
 
-*21. September 2026. Wir wollten wissen, ob eine Kultur nach dem Tod ihrer Gründer weiterlebt. Bekommen haben wir Ada.*
+*Wir bauten digitalen Amöben eine abwechslungsreiche Welt, verbesserten ihr Familienkonto und warteten auf eine stabile Kultur. Am Ende gehörte der ganze Schlamm einer einzigen, steinreichen und unfruchtbaren Ada.*
+
+## Kurz zuvor im Schlammeimer
+
+EVE-Alife ist unser Versuch, möglichst wenig Intelligenz zu programmieren und stattdessen Bedingungen zu bauen, unter denen vielleicht irgendwann etwas Interessantes entsteht.
+
+Unsere Bewohner sind kleine digitale Entitäten. Wir nennen sie Amöben, weil „vererbbares Datenflussnetz mit Energiehaushalt“ auf Dauer jede Unterhaltung ruiniert. Sie besitzen ein Genom, einen flüchtigen Arbeitsspeicher, einen dauerhaften persönlichen Zustand und einen Energievorrat namens `S`. Sie können ihre gemeinsame RAM-Suppe untersuchen, Werte schreiben, Partner finden, Genome rekombinieren, Kinder bekommen und sterben.
+
+Das klingt nach Leben. Meistens sieht es eher aus wie sehr aufwendiges Scheitern.
+
+Genau deshalb schauen wir hin.
 
 ## Spielzeug für Dumpfbirnen
 
-Unsere kleinen Amöben lebten in einer RAM-Suppe, in der es lange vor allem andere Amöben zu entdecken gab. Das war ein wenig dürftig für Wesen, die irgendwann einmal in die freie Wildbahn eines Betriebssystems entlassen werden sollen.
+Lange gab es in der RAM-Suppe für eine Amöbe vor allem andere Amöben und zufällige Zahlen zu entdecken. Das war ein wenig dürftig für Wesen, die eines fernen Tages vielleicht in die freie Wildbahn eines Betriebssystems sollen.
 
-Also legten wir Spielzeug in den Schlamm: Steine, Blasen und Schalter. Dinge, die stabil bleiben, Dinge, die sich ändern, und Dinge, die andere Dinge ändern.
+Also legten wir Spielzeug in den Schlamm:
 
-Nur lagen die Amöben und das Spielzeug zunächst gerne an verschiedenen Enden des Universums.
+- Steine, die stabil bleiben,
+- Blasen, die ihren Wert verändern,
+- Schalter, die auf Veränderungen reagieren.
+
+Eine Amöbe bekommt die dabei entstehende Energie nicht geschenkt. Ihr Genom muss die Veränderung tatsächlich lesen. Wer nur herumsitzt, wird nicht satt. Wer selbst etwas in den RAM schreibt und anschließend wieder liest, kann sich ebenfalls nicht durch Buchhaltung ernähren.
+
+Das klang vernünftig. Nur lagen Spielzeug und Amöben zunächst gerne an verschiedenen Enden des Universums.
 
 **Stefan:** Okay, der Großteil unserer Amöben hat gar kein Spielzeug in seiner Nähe.
 
-Also wurde aus ein paar Spielzeugecken ein Netz aus 128 kleinen Habitaten. Überall etwas zum Anfassen. Überall Veränderung. Überall die Möglichkeit, Information in Energie zu verwandeln.
+Wir verteilten deshalb 128 kleine Habitate über den gesamten RAM: überall ein Stein, zwei Blasen und ein Schalter. Die Amöben starteten an unterschiedlichen Positionen. Kinder kamen in der Nähe eines Elternteils zur Welt.
 
-> **Beobachtung:** Die Habitatläufe erzeugten hohe individuelle Energiereserven. Trotzdem starben die ersten beiden Populationen bei Tick 2.256 und 2.122 aus.
+Die Welt war jetzt voller Veränderung.
+
+Die Population starb trotzdem aus.
+
+Zweimal.
 
 ## Einer zahlt, beide ploppen
 
-Das Problem saß zunächst nicht im Futter, sondern an der Familienkasse.
+Immerhin war nun klar: Es lag nicht einfach am fehlenden Futter. Einzelne Amöben sammelten reichlich Energie. Nur Kinder bekamen sie irgendwann kaum noch.
 
-Jeder Elternteil sollte die Hälfte einer Geburt bezahlen und danach mehr Energie behalten, als er selbst bei seiner Geburt besessen hatte. Klingt vernünftig. War es aber nicht, sobald ein reicher und ein armer Elternteil zusammenkamen.
+Die Lupe zeigte 3.730 Ablehnungsereignisse bei Geburtsprüfungen. 3.728 davon entstanden an derselben Regel: Mindestens ein Elternteil konnte seinen starr zugewiesenen Einzelanteil nicht bezahlen und zugleich über dem eigenen Energiesockel bleiben.
 
-Der Reiche hatte genug für das ganze Kind. Der Arme hatte nicht genug für seine Hälfte. Ergebnis: kein Plopp. Und zwar 3.728-mal in einem einzigen Lauf.
+Unsere damalige Regel verlangte, dass beide Eltern exakt denselben Anteil bezahlen. Danach musste jeder mehr Energie besitzen als bei seiner eigenen Geburt. Traf eine reiche Amöbe auf eine arme, durfte die Reiche deren fehlenden Anteil nicht übernehmen – selbst wenn der gemeinsame Überschuss für das Kind gereicht hätte.
+
+Ein digitaler Sozialstaat mit bemerkenswert unflexibler Haushaltsordnung.
 
 **Stefan:** Eine Paarung kann auch von einem einzelnen Elternteil theoretisch komplett finanziert werden. Wenn er dabei die Kosten der anderen Seite mit übernimmt.
 
-Seitdem führen die Eltern eine gemeinsame Überschusskasse. Niemand muss unter sein eigenes `S₀` fallen. Aber wer reich genug ist, darf das ganze Kind bezahlen.
+Also bekamen die Eltern eine gemeinsame Überschusskasse. Jeder behält mindestens seine eigene Geburtsenergie `S₀`. Die Kosten werden zunächst gleich verteilt. Reicht der Überschuss eines Elternteils nicht, übernehmen die anderen. Im Extremfall bezahlt einer das komplette Kind.
 
-> **Designentscheidung:** `S₀` ist der individuelle Energiesockel bei der Geburt, keine maximale Kapazität und kein Genomwert.
+> **Redaktionelle Einordnung – Designentscheidung:** `S₀` ist der individuelle Energiesockel bei der Geburt. Es ist weder eine maximale Energiekapazität noch ein Bestandteil des Genoms.
+
+Der nächste Lauf konnte beginnen.
+
+50 Startamöben. 5.000 Ticks. 128 Habitate. Seed 42. Und diesmal ein Familienkonto, das diesen Namen verdiente.
 
 ## Denken heißt nicht wissen
 
-Der nächste Lauf sah zunächst besser aus. 50 Gründer wurden 92 Lebende. Generation 6 erschien früh. Später waren die Nachkommen in der Mehrheit.
+Zunächst sah es gut aus. Aus 50 wurden 92 lebende Amöben. Die Abstammung erreichte Generation 6. Später stellten die Nachkommen sogar die Mehrheit der Population.
 
 **Stefan:** Spannend wird, ob die Population sich stabilisiert, wenn die Startamöben ausgestorben sind.
 
-Dann begann die Kurve zu fallen.
+Genau das war der eigentliche Test. Eine große erste Welle beweist wenig, solange sie noch von robusten Gründeramöben getragen wird. Eine Kultur beginnt dort, wo die Kinder selbst Kinder bekommen und die Geburten langfristig die Todesfälle ausgleichen.
+
+Dann sank die Kurve.
 
 **Stefan:** Ich denke, wir laufen gegen 0. Aber Denken heißt nicht wissen.
 
-Also ließen wir sie laufen.
+**Nova-EVE:** Die Tendenz ist negativ, aber noch kein Beweis.
 
-Das Ergebnis: 75 Nachkommen, Generation 8, letzte Geburt bei Tick 2.085. Besser als zuvor. Nicht stabil.
+Also ließen wir den Lauf in Ruhe.
 
-Am Ende waren nur noch Vera und Ada übrig. Vera buddelte bei RAM 45.480, Ada bei RAM 16.045. Zwei Enden derselben Suppe. Keine Verbindung.
+Er brachte es auf 75 Nachkommen und Generation 8. Die letzte Geburt fand bei Tick 2.085 statt. Das war deutlich besser als der direkte Vergleichslauf zuvor: Dort waren nur 36 Nachkommen entstanden und bei Tick 1.140 hatte es zum letzten Mal geploppt.
 
-Vera starb bei Tick 3.475.
+Stabil war die neue Kultur trotzdem nicht.
 
-## Ada hat gewonnen. Ada hat verloren.
+## Vera links, Ada rechts
+
+Irgendwann lebten nur noch zwei: Vera und Ada.
+
+Vera buddelte bei RAM-Position 45.480. Ada bei 16.045. Zwischen ihnen lag sehr viel Suppe und offenbar kein überzeugender Grund, einander zu finden.
+
+**Stefan:** Hehe, der Lauf ist tot. Vera und Ada buddeln an zwei unterschiedlichen Enden rum und kommen nicht aus sich heraus. :-)
+
+Vera hätte technisch noch Kontakte knüpfen können. Ihr Genom enthielt sechs `MEM_WRITE`-Bausteine. Doch bei Tick 3.475 war ihre Energie aufgebraucht.
 
 Ada lebte weiter.
 
-Sie las RAM. Sie fand Veränderungen. Sie sammelte Energie. Tick für Tick wurde sie reicher, während die gesamte biologische Zukunft des Laufs bereits verschwunden war.
+Und weiter.
 
-Bei Tick 5.000 besaß sie 101.120,55 Energie.
+Und wurde reicher.
 
-Ihr Genom hatte Größe 30. Die Gründer waren mit Größe 198 gestartet. Ada brauchte nur 14 Funktionspunkte und 16 Kanten für ihr verbliebenes Geschäftsmodell.
+## Ada hat gewonnen. Ada hat verloren.
 
-Leider gehörte `MEM_WRITE` nicht dazu.
+Bei Tick 5.000 endete der Versuch am gesetzten Limit. Ada besaß zu diesem Zeitpunkt 101.120,55 Energie.
 
-Kein Partnerslot-Schreiben. Keine Partnersuche. Keine Fortpflanzung. Nur ein sehr effizienter kleiner RAM-Bagger mit einem Vermögen, das niemand erben würde.
+Zum Vergleich: Geboren worden war sie mit 202,68.
 
-**Stefan:** Hehe der Lauf ist tot. Vera und Ada buddeln an 2 unterschiedlichen Enden rum. :-) und kommen nicht aus sich heraus.
+Ihr Genom hatte Größe 30 – 14 Funktionspunkte und 16 Verbindungen. Die Gründer waren mit Genomgröße 198 gestartet. Ada hatte fast alles abgestreift und genau den Teil behalten, mit dem sie Veränderungen im RAM finden und in Energie verwandeln konnte.
 
-> **Interpretation:** Ada ist individuell erfolgreich und populationsbiologisch terminal. Der Lauf zeigt eine Entkopplung von Energieerfolg und Erhalt der Fortpflanzungsfähigkeit.
+Was fehlte, war jedes ausführbare `MEM_WRITE`.
 
-## War das große Genom einfach zu teuer?
+Ohne `MEM_WRITE` kein Eintrag eines gefundenen Partners. Ohne Partnerslot keine gegenseitige Gruppe. Ohne Gruppe kein Kind.
 
-Natürlich geriet sofort die Genomsteuer unter Verdacht. Vielleicht war der Preiszuschlag für große Genome immer noch zu hoch.
+Ada war nicht knapp bei Kasse. Ada war strukturell aus der Evolution ausgestiegen.
 
-Nur: Adas kleines Genom kostete rund 0,227 Energie pro Tick. Das vollständige Gründer-Genom hätte rund 0,546 gekostet. Eine Ersparnis von etwa 0,319 – bei Alterskosten von zuletzt mehr als 40 Energie pro Tick und einem Vermögen über 100.000.
+**Nova-EVE:** Eine steinreiche, einsame Dumpfbirne, die bis Tick 5.000 weiterbuddelt.
 
-Das ist kein Freispruch für den Tarif. Aber es ist auch kein Geständnis.
+> **Redaktionelle Einordnung – Beobachtung:** Lauf 16 endete mit einer lebenden, energetisch äußerst erfolgreichen Entität ohne ausführbares Fortpflanzungsfragment. Das belegt für diesen Lauf die Entkopplung von individuellem Energieerfolg und populationsweitem Fortbestand.
 
-Die interessantere Frage lautet nun: Warum kann der Energieapparat allein so erfolgreich weiterleben, während das soziale Fragment bei der Vererbung verschwindet?
+## Ist Können zu teuer?
 
-Morgen zählen wir Fragmente.
+Der erste Verdacht lag nahe: Vielleicht war unser Preisaufschlag für größere Genome noch immer zu hoch. Wenn jeder zusätzliche Baustein laufend Energie kostet, könnte die Evolution kleine Spezialisten belohnen und komplexere Fortpflanzungsfähigkeit aussortieren.
 
-Heute gehört der Schlamm Ada.
+Wir rechneten nach.
 
-Interne Quellen: Gespräch und Implementierung „EVE-Alife“, 21. September 2026; v0.2-Läufe 14 bis 16; Experiment „Habitate, Elternfinanzierung und Generationenwechsel“.
+Adas winziges Genom kostete etwa 0,227 Energie pro Tick. Das vollständige Gründer-Genom hätte etwa 0,546 gekostet. Ada sparte durch ihre radikale Vereinfachung also ungefähr 0,319 Energie pro Tick.
 
+Das ist nicht nichts. Gegen Ende zahlte sie allerdings bereits mehr als 40 Energie Alterskosten pro Tick und saß auf einem Vermögen über 100.000.
+
+Der Genomtarif ist damit nicht freigesprochen. Aber als alleiniger Täter taugt er bislang nicht.
+
+Die spannendere Hypothese lautet: Der Energieapparat kann allein hervorragend funktionieren. Das soziale Fragment hat dagegen keinen unmittelbaren energetischen Nutzen. Geht es bei Rekombination verloren, merkt die einzelne Amöbe davon zunächst wenig. Die Rechnung bekommt erst die Population – einige Generationen später.
+
+Als nächsten Schritt werden wir deshalb keine Preise nach Gefühl verändern. Wir verfolgen über jede Generation, wann das Partnersuch- und Fortpflanzungsfragment verloren geht und ob Kosten, Rekombination oder fehlende funktionale Kopplung dafür verantwortlich sind.
+
+## Was von Ada bleibt
+
+Wir wollten eine stabile Kultur sehen.
+
+Wir bekamen den Beweis, dass reichlich Energie, mehr Generationen und eine gerechtere Familienkasse dafür noch nicht genügen.
+
+Und wir bekamen Ada: geboren als Teil einer Population, gestorben ist sie im Versuch noch lange nicht. Individuell war sie der erfolgreichste Organismus im ganzen Lauf. Evolutionär war sie eine Sackgasse mit sechsstelliger Kontonummer.
+
+Die Pointe hätte man kaum sauberer konstruieren können:
+
+Die Gewinnerin war das Ende ihrer Welt.
+
+---
+
+Interne Quellen: EVE-Alife-Projektgespräch und Implementierung vom 21. September 2026; v0.2-Läufe 14 bis 16; Experiment „Habitate, Elternfinanzierung und Generationenwechsel“. Alle Zahlen stammen aus den gespeicherten Run-Daten. Vor Veröffentlichung sind nur noch Schlussredaktion und die übliche Datenschutzprüfung vorgesehen.
