@@ -39,6 +39,7 @@ Eine Kennzeichnung gilt für die unmittelbar zugehörige Passage. Der restliche 
 - [010 – Mehr Energie macht das Viech nur länger tot](010_Mehr_Energie_macht_das_Viech_nur_laenger_tot.md)
 - [011 – Die IG Amöbe fordert Quadratwurzeln](011_Die_IG_Amoebe_fordert_Quadratwurzeln.md)
 - [012 – Die reichste Amöbe der Welt ist allein](012_Die_reichste_Amoebe_der_Welt_ist_allein.md)
+- [013 – Die Lupe, die einen Stammbaum verschluckte](013_Die_Lupe_die_einen_Stammbaum_verschluckte.md)
 
 ## Status
 

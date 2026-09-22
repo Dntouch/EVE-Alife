@@ -8,15 +8,18 @@ Untersucht wird, was aus sehr einfachen digitalen Entitäten entstehen kann, wen
 
 ## Aktueller Prototyp
 
-Der aktive Entwicklungsstand ist [Prototyp v0.2](04_Prototypen/v0.2/README.md). Er startet vom konservierten P1-Endstand und ergänzt:
+Der aktive Entwicklungsstand ist [Prototyp v0.3](04_Prototypen/v0.3/README.md). Er basiert auf dem konservierten v0.2-Fachstand und ergänzt:
 
-- begrenzte und offene Runs mit eindeutigem Status und Endgrund;
-- skalierbare SQLite-Datenhaltung, Checkpoints und portable Run-Archive;
-- eine read-only Lupe mit Chronik, Zeitfilter, Lebensfilm und Genomdiagramm;
-- Genom- und Abstammungshistorie;
-- experimentelle erbliche Partnersuche und genomischen Rückzug;
-- flächendeckende RAM-Habitate, grafische Live-Suppe und gemeinsame Elternfinanzierung;
-- einen ausdrücklich vorläufigen, reduzierten Genomkostentarif.
+- eine EVE-Analyseoberfläche mit Leitstand, Historie, Chronik, Stammbaum und Genom;
+- lineares zoombares RAM-Band, Evolutionsverlauf und Beobachtungs-Replay;
+- eine evolutionäre Zeitlandschaft mit Verwandtschaftslinse und Vergleich;
+- einen zoombaren Genom-Arbeitsraum mit Beziehungsfokus;
+- ein versionsübergreifendes Run-Archiv samt Hall of Life;
+- einen getrennten Supervisor für Presets, offene Runs und kontrollierten Stopp.
+
+Der vollständige Fachstand von v0.2 einschließlich Genom, Energie, Umwelt,
+Partnersuche und gemeinsamer Elternfinanzierung bleibt dabei erhalten. Das
+Run-Datenformat bleibt kompatibel bei Version 2; v0.2 selbst wird nicht verändert.
 
 Der jüngste abgeschlossene Versuch ist [v0.2/Lauf 16](07_Laufergebnisse/v0.2/Lauf_016.md): Die gemeinsame Elternfinanzierung trug 75 Nachkommen bis Generation 8, erzeugte aber noch keine stabile Kultur. Bei Tick 5.000 lebte allein Ada 4 mit mehr als 101.000 Energie und einem kleinen, nicht fortpflanzungsfähigen Genom weiter. Die Untersuchung ist im [Experiment Generationenwechsel](04_Prototypen/v0.2/EXPERIMENT_GENERATIONENWECHSEL.md) zusammengefasst.
 
@@ -36,15 +39,16 @@ Als Massenaussterben zählt ein Lauf, an dessen Ende keine Amöbe mehr lebt. Die
 Voraussetzung ist Python 3. Es werden keine externen Python-Pakete benötigt.
 
 ```bash
-cd 04_Prototypen/v0.2
+cd 04_Prototypen/v0.3
 python3 run.py --ticks 500
-python3 lupe.py runs/DEINE-RUN-ID
+python3 supervisor.py
+python3 lupe.py runs/DEINE-RUN-ID --port 8766
 ```
 
-Die Lupe ist danach standardmäßig unter `http://127.0.0.1:8080/` erreichbar. Ein Testlauf des Codes:
+Die Lupe ist danach unter `http://127.0.0.1:8766/` erreichbar. Ein Testlauf des Codes:
 
 ```bash
-cd 04_Prototypen/v0.2
+cd 04_Prototypen/v0.3
 python3 -m unittest -v
 ```
 
@@ -55,8 +59,9 @@ Run-Rohdaten können groß werden und bleiben deshalb lokal unter `04_Prototypen
 | Einstieg | Inhalt |
 | :--- | :--- |
 | [Das Genom verstehen](02_Konzept/Genom_verstehen.md) | Einführung in `G`, Funktionspunkte, Kanten, Datenfluss, Vererbung und Mutation |
-| [v0.2-Spezifikation](04_Prototypen/v0.2/SPEZIFIKATION.md) | ausführbare Regeln und Abgrenzung zum Fachkonzept |
-| [v0.2-Architektur](04_Prototypen/v0.2/ARCHITEKTUR.md) | Run-Lebenszyklus, Datenmodell, Skalierung und Beobachtung |
+| [v0.3-Lupe](04_Prototypen/v0.3/LUPE.md) | Arbeitsbereiche, Fokusmodus, Bedienung und Beobachtungsgrenze |
+| [v0.3-Spezifikation](04_Prototypen/v0.3/SPEZIFIKATION.md) | ausführbare Regeln und Abgrenzung zum Fachkonzept |
+| [v0.3-Architektur](04_Prototypen/v0.3/ARCHITEKTUR.md) | Run-Lebenszyklus, Datenmodell, Skalierung und Beobachtung |
 | [Laufergebnisse](07_Laufergebnisse/README.md) | nach Prototypversion getrennte Versuchsberichte |
 | [Projektlog](05_Projektlog/README.md) | chronologische Entstehung einschließlich Irrwegen und Entscheidungen |
 | [Blog](06_Blog/README.md) | lesbare Gesprächserzählungen und Lab Notes; derzeit interne Entwürfe |
@@ -65,7 +70,8 @@ Run-Rohdaten können groß werden und bleiben deshalb lokal unter `04_Prototypen
 
 | Stand | Status | Schwerpunkt |
 | :--- | :--- | :--- |
-| `v0.2` | aktiv und experimentell | langfristige Runs, neue Datenhaltung und Lupe sowie klar markierte Modellversuche |
+| `v0.3` | aktiv und experimentell | EVE-Analysearbeitsplatz, Supervisor, Stammbaum, Genom und Chronik |
+| `v0.2` | konserviert | langfristige Runs, Datenhaltung und klar markierte Modellversuche |
 | `v0.1` | konserviert | ausführbarer gemeinsamer P0/P1-Stand und historische Läufe 1–41 |
 | P0/P1 | abgeschlossen | technische Machbarkeit und erste genomische Exploration |
 
