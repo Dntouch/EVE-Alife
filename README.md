@@ -8,7 +8,14 @@ Untersucht wird, was aus sehr einfachen digitalen Entitäten entstehen kann, wen
 
 ## Aktueller Prototyp
 
-Der aktive Entwicklungsstand ist [Prototyp v0.3](04_Prototypen/v0.3/README.md). Er basiert auf dem konservierten v0.2-Fachstand und ergänzt:
+Der aktive Entwicklungsstand ist [Prototyp v0.4](04_Prototypen/v0.4/README.md).
+Er basiert auf dem abgeschlossenen v0.3-Stand und beginnt als Genomrevision für
+evolvierbare Kantengewichte. Im neutralen Ausgangsstand sind Gewichte noch nicht
+aktiv; der Wert `0` ist bereits verbindlich als unverändertes bisheriges
+Kantenverhalten festgelegt.
+
+Der konservierte [Prototyp v0.3](04_Prototypen/v0.3/README.md) ergänzt gegenüber
+v0.2:
 
 - eine EVE-Analyseoberfläche mit Leitstand, Historie, Chronik, Stammbaum und Genom;
 - lineares zoombares RAM-Band, Evolutionsverlauf und Beobachtungs-Replay;
@@ -71,7 +78,8 @@ Run-Rohdaten können groß werden und bleiben deshalb lokal unter `04_Prototypen
 
 | Stand | Status | Schwerpunkt |
 | :--- | :--- | :--- |
-| `v0.3` | abgeschlossen | EVE-Analysearbeitsplatz, Supervisor, Stammbaum, Genom und Chronik |
+| `v0.4` | aktiv und experimentell | evolvierbare Kantengewichte und Genomrevision |
+| `v0.3` | konserviert | EVE-Analysearbeitsplatz, Supervisor, Stammbaum, Genom und Chronik |
 | `v0.2` | konserviert | langfristige Runs, Datenhaltung und klar markierte Modellversuche |
 | `v0.1` | konserviert | ausführbarer gemeinsamer P0/P1-Stand und historische Läufe 1–41 |
 | P0/P1 | abgeschlossen | technische Machbarkeit und erste genomische Exploration |
