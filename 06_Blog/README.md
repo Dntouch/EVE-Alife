@@ -40,6 +40,7 @@ Eine Kennzeichnung gilt für die unmittelbar zugehörige Passage. Der restliche 
 - [011 – Die IG Amöbe fordert Quadratwurzeln](011_Die_IG_Amoebe_fordert_Quadratwurzeln.md)
 - [012 – Die reichste Amöbe der Welt ist allein](012_Die_reichste_Amoebe_der_Welt_ist_allein.md)
 - [013 – Die Lupe, die einen Stammbaum verschluckte](013_Die_Lupe_die_einen_Stammbaum_verschluckte.md)
+- [014 – Der Arme ist ja durch ein Leichenfeld gestolpert](014_Der_Arme_ist_durch_ein_Leichenfeld_gestolpert.md)
 
 ## Status
 

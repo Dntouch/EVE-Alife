@@ -1,6 +1,6 @@
 # EVE-Alife – Prototyp v0.3
 
-> **Status:** funktionsfähiger Zwischenstand vom 22. September 2026. v0.3 basiert auf dem letzten Stand von
+> **Status:** abgeschlossener Arbeitsstand vom 23. September 2026. v0.3 basiert auf dem letzten Stand von
 > v0.2. Der Ordner `../v0.2/` bleibt unverändert konserviert.
 
 ## Ziel des ersten v0.3-Wurfs
@@ -31,6 +31,13 @@ fortsetzen. Details stehen in [SUPERVISOR.md](SUPERVISOR.md).
 Die wissenschaftliche Grenze bleibt sichtbar: historische Beobachtungsbilder
 sind persistierte Messpunkte und kein exakter Tick-Replay. Die Lupe bleibt
 vollständig read-only.
+
+Zum Abschlussstand gehören außerdem der direkte Eltern-Kind-Genomvergleich,
+eine interaktive versionsübergreifende Chronik, generationstreue Anzeigenamen
+aus einem Pool von 500 Namen und einmalig verwertbare Leichen in der RAM-Suppe.
+Die historische Amöbe bleibt nach der Verwertung vollständig analysierbar.
+Evolvierbare Kantengewichte sind lediglich für v0.4 konzipiert und in v0.3
+nicht aktiv.
 
 ## Versions- und Formatgrenze
 

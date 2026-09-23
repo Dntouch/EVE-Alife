@@ -399,9 +399,11 @@ Trainingsphase, Gradienten oder erlernten Kantengewichte.
 
 Die Punkte führen benannte primitive Operationen aus. Die Kanten transportieren
 konkrete ganzzahlige Werte zwischen benannten Ports. Eine Kante besitzt im
-aktuellen Code kein Gewicht. Lernen während des Lebens verändert das Genom
-nicht; der vorgesehene Pfad `Z -> G` ist konzeptionell anschlussfähig, aber
-derzeit inaktiv und nicht implementiert.
+aktuellen Code kein Gewicht. Für die nächste Genomrevision sind evolvierbare
+Kantengewichte mit dem neutralen Wert `0` konzeptionell vorgesehen; ihre
+mathematische Wirkung ist bewusst noch offen. Lernen während des Lebens
+verändert das Genom nicht; der vorgesehene Pfad `Z -> G` ist konzeptionell
+anschlussfähig, aber derzeit inaktiv und nicht implementiert.
 
 ## 11. Vererbung: Was bekommt ein Kind?
 

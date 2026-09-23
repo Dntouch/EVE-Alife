@@ -10,6 +10,14 @@ des Supervisors in `SUPERVISOR.md`. Der Ordner `../v0.2` bleibt konserviert.
 
 Für Genom, Ports, A₀, K, Z, S, RAM, Membran, Energie, Mutation, Rekombination, Reproduktion und Scheduling gilt unverändert die Spezifikation von `../v0.1/SPEZIFIKATION.md` zusammen mit `../../02_Konzept/Genom_verstehen.md`. Bei Widersprüchen beschreibt diese Datei ausschließlich die neue technische Lauf- und Beobachtungsschicht; sie ändert keine biologische Regel.
 
+Als nächste Genomerweiterung sind evolvierbare Gewichte gerichteter Kanten
+fachlich vorgesehen. Der neutrale Wert `0` muss dabei exakt dem heutigen
+Kantenverhalten entsprechen. Wertebereich, Kodierung, Mutationsschritte und
+mathematische Wirkung sind noch nicht festgelegt und deshalb in v0.3 noch
+nicht implementiert. Der geprüfte Ist-Zustand, der Neutralitätsvertrag und die
+offenen Entscheidungen stehen in
+[`KANTENGEWICHTE_KONZEPT.md`](KANTENGEWICHTE_KONZEPT.md).
+
 ## Run-Modi
 
 - `--ticks N`: begrenzter Run, `N >= 1`; beim Resume sind es N weitere Ticks.

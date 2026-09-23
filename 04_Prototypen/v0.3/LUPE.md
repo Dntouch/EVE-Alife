@@ -26,13 +26,21 @@ Die Amöbenliste unterstützt mehrere kommagetrennte Suchbegriffe als ODER-Suche
 beispielsweise `Ada, Vera, #99`. Suchbegriffe erscheinen als einzeln entfernbare
 Chips; nicht gefundene Begriffe werden kenntlich gemacht.
 
+Der Amöben-Desk zeigt unter anderem K, Z, Startenergie S₀, Genomgröße,
+Generation, direkte Kinder und den aus der tatsächlich verdrahteten Struktur
+abgeleiteten Fortpflanzungsstatus. Vom Leitstand und Stammbaum aus wird die
+gewählte Amöbe unmittelbar im Desk geöffnet. Eltern-Kind-Genome können nach
+unverändert geerbten, veränderten, anderweitig geerbten, neuen und nicht
+übernommenen Bestandteilen verglichen werden.
+
 ### Chronik
 
 Die Chronik ist das versionsübergreifende EVE-Archiv. Sie führt v0.2 und v0.3
-zusammen, ohne ihre Versuchsreihen fachlich gleichzusetzen. Run-Signaturen,
-Run-Dossiers, Versionsfilter, Run-Rekorde und ein Zwei-Run-Vergleich erschließen
-das Archiv. Die „Hall of Life“ bewahrt die Rekordhalter einzelner Amöben und
-öffnet auf Klick den zugehörigen Run und Historieneintrag.
+zusammen, ohne ihre Versuchsreihen fachlich gleichzusetzen. Informative
+Run-Karten, Run-Dossiers, wirksame Versionsfilter, Run-Rekorde und ein
+Zwei-Run-Vergleich erschließen das Archiv. Ein Klick auf eine Run-Karte führt
+sichtbar zum zugehörigen Dossier. Die „Hall of Life“ bewahrt die Rekordhalter
+einzelner Amöben und öffnet auf Klick den zugehörigen Run und Historieneintrag.
 
 ### Stammbaum
 
@@ -40,6 +48,8 @@ Der Stammbaum ist eine evolutionäre Zeitlandschaft. Er zeigt Elternkanten,
 Generationen, Lebensstatus, Genomänderungen und Schlüsselereignisse. Beim
 Anklicken einer Amöbe bildet eine Verwandtschaftslinse ihre Vorfahren links und
 ihre Nachkommen rechts ab. Vorfahren erscheinen cyan, Nachkommen violett.
+Unmittelbare Eltern und unmittelbare Kinder werden gegenüber entfernteren
+Beziehungen besonders hell dargestellt.
 
 Umschalt-Klick vergleicht zwei Amöben und ermittelt ihren letzten gemeinsamen
 Vorfahren. Mausrad und Ziehen steuern den zweidimensionalen Arbeitsraum. Ein
@@ -85,10 +95,21 @@ python3 lupe.py runs/DEINE-RUN-ID --port 8766
 
 Die Lupe ist anschließend unter `http://127.0.0.1:8766/` erreichbar.
 
+Für den Zugriff aus einem vertrauenswürdigen lokalen Netzwerk kann sie
+ausdrücklich auf allen Netzwerkschnittstellen gebunden werden:
+
+```bash
+python3 lupe.py runs/DEINE-RUN-ID --host 0.0.0.0 --port 8766
+```
+
+Der Supervisor bleibt dabei ausschließlich lokal gebunden. Die Lupe besitzt
+keine Anmeldung oder TLS-Verschlüsselung und darf in dieser Form nicht direkt
+ins öffentliche Internet freigegeben werden.
+
 ## Screenshots
 
-Die folgenden Aufnahmen zeigen den Stand vom 22. September 2026 bei einer
-Viewport-Größe von 1920 × 1080:
+Die folgenden Aufnahmen zeigen den Abschlussstand vom 23. September 2026 am
+10.000-Tick-Lauf bei einer Viewport-Größe von 1920 × 1080:
 
 - [Leitstand](screenshots/01-leitstand.png)
 - [Historische Analyse](screenshots/02-historie.png)

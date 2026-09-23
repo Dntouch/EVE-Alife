@@ -1,6 +1,6 @@
-# Zwischenbericht zum Prototyp v0.3
+# Abschlussbericht zum Prototyp v0.3
 
-Stand: 22. September 2026
+Stand: 23. September 2026
 
 ## Ergebnis
 
@@ -47,9 +47,18 @@ einer Auswahl erhalten.
 ## Archiv
 
 Die Chronik des Biotops ist nun ein eigener, versionsübergreifender Bereich.
-Run-Signaturen, Dossiers, Versionsfilter, Rekorde und der Zwei-Run-Vergleich
+Informative Run-Karten, Dossiers, Versionsfilter, Rekorde und der Zwei-Run-Vergleich
 erschließen die erhaltenen Experimente. Die Hall of Life ermittelt Rekordhalter
 einzelner Amöben und verlinkt direkt auf ihren Run und Historieneintrag.
+
+Die Historie bietet außerdem einen direkten Eltern-Kind-Genomvergleich. Der
+Stammbaum hebt unmittelbare Eltern und Kinder gegenüber weiter entfernten
+Beziehungen hervor und bewahrt die Auswahl beim Wechsel in andere Werkzeuge.
+
+Anzeigenamen bilden die tatsächliche Generation ab und stammen aus einem Pool
+von 500 Namen. Tote Amöben können genau einmal mit ihrer verbliebenen Energie
+aus der RAM-Suppe verwertet werden; ihre historischen und genomischen Daten
+bleiben davon unberührt.
 
 ## Bewusst offen
 
@@ -57,12 +66,14 @@ einzelner Amöben und verlinkt direkt auf ihren Run und Historieneintrag.
   vollständiger Maschinenzustand jedes Ticks.
 - Die aktuelle Oberfläche schafft Analysewerkzeuge; neue wissenschaftliche
   Regeln des Fachkerns werden danach in getrennten Versuchen untersucht.
-- Weitere Rückmeldungen zu Historie und Arbeitsabläufen werden auf diesem
-  gesicherten Zwischenstand aufgebaut.
+- Evolvierbare Kantengewichte sind für v0.4 konzipiert, aber in v0.3 nicht
+  implementiert.
+- Der 10.000-Tick-Lauf wird vor Änderungen an Alterskosten oder Umweltregeln
+  gesondert ausgewertet.
 
 ## Verifikation
 
-56 automatisierte Tests prüfen Fachkern, Persistenz, Run-Lebenszyklus,
+58 automatisierte Tests prüfen Fachkern, Persistenz, Run-Lebenszyklus,
 Supervisor und wesentliche Oberflächenverträge. Python-Module und JavaScript
 werden zusätzlich syntaktisch geprüft. Die lokale Lupe wurde mit konservierten
 v0.2- und aktuellen v0.3-Runs getestet.

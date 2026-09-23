@@ -22,7 +22,7 @@ FORMAT_NAME = "eve-alife-run"
 PERSISTED_EVENT_KINDS = {
     "birth", "death", "birth_rejected", "reproduction_cost", "genome_created",
     "ram_read", "ram_write", "mem_read", "mem_write", "mem_write_rejected", "knock",
-    "environment_change",
+    "environment_change", "corpse_scavenged",
 }
 
 

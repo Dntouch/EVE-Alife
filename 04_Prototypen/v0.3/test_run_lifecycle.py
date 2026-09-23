@@ -11,8 +11,8 @@ import zlib
 from pathlib import Path
 
 from eve_core import Config, Simulation, demo_genome
-from lupe import HTML, chronicle_data, dashboard_data, lineage_data, readonly_connection
-from run_store import RunStore, export_archive
+from lupe import HTML, chronicle_data, dashboard_data, entity_genome_data, genome_comparison_data, lineage_data, readonly_connection
+from run_store import PERSISTED_EVENT_KINDS, RunStore, export_archive
 
 
 HERE = Path(__file__).resolve().parent
@@ -38,6 +38,9 @@ class RunLifecycleTests(unittest.TestCase):
                 db.execute("SELECT mode,status,end_reason,current_tick FROM run").fetchone(),
                 ("limited", "completed", "tick_limit_reached", 2),
             )
+
+    def test_corpse_scavenging_is_part_of_the_permanent_run_record(self) -> None:
+        self.assertIn("corpse_scavenged", PERSISTED_EVENT_KINDS)
 
     def test_default_run_uses_frozen_p1_reference_start(self) -> None:
         _, run_dir = self.run_cli("--ticks", "1")
@@ -90,24 +93,61 @@ class RunLifecycleTests(unittest.TestCase):
         self.assertIn("Genom-Analyse", ui_script)
         self.assertIn("scrollIntoView", ui_script)
         self.assertIn("showCluster(entities)", ui_script)
+        self.assertIn("sessionStorage.setItem('eve-open-entity', String(entity.id))", ui_script)
         self.assertIn("renderEntityBrowser(entities, target)", ui_script)
         self.assertIn("showGenome(entity)", ui_script)
+        self.assertIn("showGenomeById(entityId)", ui_script)
+        self.assertIn("/api/entity/${Number(entityId)}", ui_script)
         self.assertIn("data-view=\"lineage\"", ui_script)
         self.assertIn("/api/lineage", ui_script)
         self.assertIn("commonAncestor", ui_script)
         self.assertNotIn("filter(byId.has)", ui_script)
         self.assertIn("lineage-workspace", ui_style)
+        self.assertIn("UNMITTELBARE ELTERN", ui_script)
+        self.assertIn("data-focus-parent", ui_script)
+        self.assertIn("sessionStorage.setItem('eve-open-entity',String(focusId))", ui_script)
+        self.assertIn("lineage-direct-parents", ui_style)
+        self.assertIn("direct-parent", ui_script)
+        self.assertIn("lineage-edge.direct-parent", ui_style)
         self.assertIn("Evolutionsverlauf", ui_script)
         self.assertIn("Mehrere Amöben mit Komma suchen", ui_script)
         self.assertIn("amoeba-search-chips", ui_style)
         self.assertIn("evolution-chart-stage", ui_style)
+        self.assertIn("Kleinstes Genom", ui_script)
+        self.assertIn("Größtes Genom", ui_script)
+        self.assertIn("Strg + Mausrad: zoomen", ui_script)
+        self.assertIn("ram-minimap", ui_style)
         self.assertIn("data-analysis-focus", ui_script)
         self.assertIn("analysis-focus-mode", ui_style)
+        self.assertIn('parser.add_argument("--host", default="127.0.0.1"', (HERE / "lupe.py").read_text(encoding="utf-8"))
+        self.assertIn("genome-node-inspector", ui_script)
+        self.assertIn("HAT STRUKTURELL ZUR FOLGE, DASS", ui_script)
+        self.assertIn("genome-consequence", ui_style)
+        self.assertIn("K · KURZZEIT", ui_script)
+        self.assertIn("Z · ZUSTAND", ui_script)
+        self.assertIn("Startenergie S₀", ui_script)
+        self.assertIn("amoeba-memory-grid", ui_style)
+        self.assertIn("reproductionState", ui_script)
+        self.assertIn("required=['offset','slot','value']", ui_script)
+        self.assertIn("kein vollständig verdrahtetes MEM_WRITE", ui_script)
+        self.assertIn("status-sterile", ui_style)
+        self.assertIn("Leiche verwertet", ui_script)
+        self.assertIn("corpse_available", ui_script)
+        self.assertIn("run-analysis-dock", ui_script)
+        self.assertIn("history-selection-context", ui_script)
+        self.assertIn("genome-total", ui_script)
         self.assertIn("data-view=\"chronicle\"", ui_script)
         self.assertIn("/api/chronicle", ui_script)
         self.assertIn("chronicle-workspace", ui_style)
+        self.assertIn("revealRun", ui_script)
+        self.assertIn("chronicle-run-open", ui_style)
+        self.assertIn(".chronicle-version-filter [data-version]", ui_script)
+        self.assertIn("direct-child", ui_script)
+        self.assertIn("lineage-edge.direct-child", ui_style)
         self.assertIn("genomes_distinct", HTML if "genomes_distinct" in HTML else (HERE / "lupe.py").read_text(encoding="utf-8"))
         self.assertIn("eve-v03-biotope-wallpaper.png", ui_style)
+        self.assertIn("neural-node", ui_style)
+        self.assertIn("eve-neural-field", ui_script)
         self.assertIn("syncSoupToSelection", HTML)
         self.assertIn("historische Ansicht", HTML)
 
@@ -200,10 +240,22 @@ class RunLifecycleTests(unittest.TestCase):
             self.assertEqual(db.execute("SELECT parent_id FROM ancestry WHERE child_id=?", (second.id,)).fetchone()[0], first.id)
         with readonly_connection(run_dir / "run.sqlite3") as db:
             lineage = lineage_data(db)
+            dossier = entity_genome_data(db, second.id)
         child = next(entity for entity in lineage["entities"] if entity["id"] == second.id)
         self.assertEqual(child["parents"], [first.id])
         self.assertEqual(child["generation"], 1)
         self.assertEqual(child["parent_deltas"][str(first.id)]["total"], 0)
+        self.assertEqual(dossier["id"], second.id)
+        self.assertEqual(dossier["parents"], [first.id])
+        self.assertTrue(dossier["genome"]["nodes"])
+        self.assertEqual(dossier["n_g"], len(dossier["genome"]["nodes"]) + len(dossier["genome"]["edges"]))
+        with readonly_connection(run_dir / "run.sqlite3") as db:
+            comparison = genome_comparison_data(db, first.id, second.id)
+        self.assertEqual(comparison["parent"]["id"], first.id)
+        self.assertEqual(comparison["child"]["id"], second.id)
+        self.assertEqual(comparison["parents"], [first.id])
+        self.assertEqual(comparison["evidence"], "structural")
+        self.assertEqual(comparison["parent"]["genome"], comparison["child"]["genome"])
 
     def test_recombination_trace_records_real_fragments_and_mutation(self) -> None:
         sim = Simulation(Config(seed=11, mutation_probability=1.0))

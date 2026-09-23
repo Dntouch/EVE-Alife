@@ -3,18 +3,27 @@ import json
 import tempfile
 from pathlib import Path
 
-from eve_core import Config, Edge, Genome, Node, Signal, Simulation, amoeba_name, demo_genome, p1_explorer_genome
+from eve_core import AMOEBA_NAMES, Config, Edge, Genome, Node, Signal, Simulation, amoeba_name, demo_genome, p1_explorer_genome
 from run_stats import README_END, README_START, dashboard_data, publish_run_reports, update_readme_dashboard
 
 
 class EveCoreTests(unittest.TestCase):
-    def test_amoeba_names_are_unique_and_survive_checkpoint(self):
+    def test_amoeba_names_encode_generation_and_survive_checkpoint(self):
+        self.assertEqual(len(AMOEBA_NAMES), 500)
+        self.assertEqual(len(set(AMOEBA_NAMES)), 500)
+        self.assertTrue({"Stefan", "Nova", "Sam", "Elena", "Sonja", "Milo", "EVE"} <= set(AMOEBA_NAMES))
         sim = Simulation(Config(seed=1, ram_size=8))
         a = sim.add_entity(demo_genome(2), 100)
         b = sim.add_entity(demo_genome(1), 100)
         self.assertEqual((a.name, b.name), ("Tom", "Erna"))
+        child = sim.add_entity(demo_genome(2), 100, (a.id, b.id))
+        grandchild = sim.add_entity(demo_genome(2), 100, (child.id,))
+        self.assertEqual((child.name, child.generation), ("Ada 1", 1))
+        self.assertEqual((grandchild.name, grandchild.generation), ("Bruno 2", 2))
         self.assertEqual(Simulation.from_checkpoint(sim.checkpoint()).entities[1].name, "Tom")
-        self.assertNotEqual(amoeba_name(1), amoeba_name(33))
+        resumed = Simulation.from_checkpoint(sim.checkpoint())
+        self.assertEqual((resumed.entities[3].name, resumed.entities[3].generation), ("Ada 1", 1))
+        self.assertEqual(amoeba_name(501, 4), "Tom 4")
 
     def test_dashboard_counts_extinction_offspring_energy_and_life_records(self):
         with tempfile.TemporaryDirectory() as temporary:
@@ -314,6 +323,32 @@ class EveCoreTests(unittest.TestCase):
         b.alive = False
         self.assertEqual(sim._mem_read(b, 2, 0), 0)
 
+    def test_first_corpse_finder_receives_remaining_energy_and_removes_membrane(self):
+        sim = Simulation(Config(
+            seed=1, ram_size=8, life_state_discovery_base=99,
+        ))
+        finder = sim.add_entity(Genome([Node(1, "RAM_READ")], [], 1), 10)
+        corpse = sim.add_entity(Genome([Node(1, "PAUSE")], [], 1), 2)
+        sim._kill(corpse, "test_death")
+        vitality_address = sim.config.membrane_base + (corpse.id - 1) * 4 + 3
+        finder.k["1:address"] = Signal(vitality_address, ("G",))
+        result = sim._fire(finder, finder.genome.nodes[0])
+        self.assertEqual(result["value"].value, 0)
+        self.assertEqual(finder.energy, 12)
+        self.assertEqual(corpse.energy, 0)
+        self.assertFalse(corpse.corpse_available)
+        self.assertIsNone(sim._decode_membrane_address(vitality_address))
+        scavenged = [event for event in sim.events if event["kind"] == "corpse_scavenged"]
+        self.assertEqual(len(scavenged), 1)
+        self.assertEqual(scavenged[0]["reward"], 2)
+        self.assertEqual(scavenged[0]["target_id"], corpse.id)
+        self.assertIn(corpse.id, [item["id"] for item in sim.observation()["entities"]])
+
+        finder.k["1:address"] = Signal(vitality_address, ("G",))
+        sim._fire(finder, finder.genome.nodes[0])
+        self.assertEqual(finder.energy, 12)
+        self.assertEqual(len([event for event in sim.events if event["kind"] == "corpse_scavenged"]), 1)
+
     def test_partner_id_must_come_from_a_living_foreign_membrane(self):
         sim = Simulation(Config(seed=1, ram_size=8))
         finder = sim.add_entity(Genome([Node(1, "MEM_WRITE")], [], 1), 100)
@@ -462,7 +497,7 @@ class EveCoreTests(unittest.TestCase):
             rewards.append(finder.energy - before)
         self.assertEqual(rewards, [7, 0, 13, 0])
 
-    def test_changed_life_state_is_new_knowledge(self):
+    def test_dead_life_state_becomes_single_use_corpse_instead_of_bonus_information(self):
         sim = Simulation(Config(
             seed=1, ram_size=8, life_state_discovery_base=11,
         ))
@@ -471,18 +506,22 @@ class EveCoreTests(unittest.TestCase):
         read = finder.genome.nodes[0]
         status_address = sim.config.membrane_base + (target.id - 1) * 4 + 3
         rewards = []
-        for alive in (True, True, False, False):
-            target.alive = alive
+        for index in range(4):
+            if index == 2:
+                sim._kill(target, "test_death")
             before = finder.energy
             finder.k["1:address"] = Signal(status_address, ("G",))
             sim._fire(finder, read)
             rewards.append(finder.energy - before)
-        self.assertEqual(rewards, [11, 0, 11, 0])
+        self.assertEqual(rewards, [11, 0, 0, 0])
         discoveries = [
             event for event in sim.events
             if event.get("discovery_type") == "life_state"
         ]
-        self.assertEqual([event["value"] for event in discoveries], [1, 0])
+        self.assertEqual([event["value"] for event in discoveries], [1])
+        scavenged = [event for event in sim.events if event["kind"] == "corpse_scavenged"]
+        self.assertEqual(len(scavenged), 1)
+        self.assertEqual(scavenged[0]["reward"], 0)
 
     def test_membrane_vitality_reaches_ten_only_above_reproductive_threshold(self):
         sim = Simulation(Config(

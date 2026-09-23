@@ -14,19 +14,32 @@ SIGN64 = 1 << 63
 
 # Namen sind Beobachtungsidentitaeten. Ihre Vergabe verbraucht bewusst keinen
 # Zufall und kann daher das Verhalten eines Laufs nicht beeinflussen.
-AMOEBA_NAMES = (
+_CLASSIC_AMOEBA_NAMES = (
     "Tom", "Erna", "Ada", "Bruno", "Clara", "Dario", "Emmi", "Fritz",
     "Greta", "Hugo", "Ida", "Juri", "Karla", "Lino", "Maja", "Nils",
     "Olga", "Piet", "Rosa", "Sam", "Tilda", "Uwe", "Vera", "Willi",
     "Xenia", "Yara", "Zeno", "Alma", "Ben", "Cleo", "Dora", "Enno",
+    "Stefan", "Nova", "Elena", "Sonja", "Milo", "EVE",
 )
+_EVE_NAME_PREFIXES = (
+    "Ae", "Al", "An", "Ar", "Ca", "Ce", "Da", "El", "En",
+    "Fa", "Io", "Ka", "Le", "Ma", "Na", "Or", "Sa", "Ve",
+)
+_EVE_NAME_SUFFIXES = (
+    "bela", "ciel", "dra", "fen", "gis", "hra", "ian", "jara", "kel",
+    "lian", "mera", "niel", "ora", "pris", "quen", "riel", "sia", "tor",
+    "una", "vis", "wen", "xia", "yel", "zara", "din", "mon",
+)
+AMOEBA_NAMES = _CLASSIC_AMOEBA_NAMES + tuple(
+    f"{prefix}{suffix}" for prefix in _EVE_NAME_PREFIXES for suffix in _EVE_NAME_SUFFIXES
+)[:500 - len(_CLASSIC_AMOEBA_NAMES)]
+assert len(AMOEBA_NAMES) == 500 and len(set(AMOEBA_NAMES)) == 500
 
 
-def amoeba_name(entity_id: int) -> str:
-    """Deterministischer, innerhalb eines Laufs eindeutiger Anzeigename."""
+def amoeba_name(entity_id: int, generation: int = 0) -> str:
+    """Deterministischer Basisname mit biologischer Generation als Suffix."""
     base = AMOEBA_NAMES[(entity_id - 1) % len(AMOEBA_NAMES)]
-    generation = (entity_id - 1) // len(AMOEBA_NAMES) + 1
-    return base if generation == 1 else f"{base} {generation}"
+    return base if generation == 0 else f"{base} {generation}"
 
 
 def i64(value: int) -> int:
@@ -131,6 +144,7 @@ class Entity:
     energy: float
     start_energy: float
     born_at: int
+    generation: int = 0
     ram_position: int = 0
     parents: tuple[int, ...] = ()
     k: dict[str, Signal] = field(default_factory=dict)
@@ -142,6 +156,7 @@ class Entity:
     ram_last_seen: dict[int, int] = field(default_factory=dict)
     ram_seen_count: dict[str, int] = field(default_factory=dict)
     alive: bool = True
+    corpse_available: bool = False
 
     @staticmethod
     def key(node_id: int, port: str) -> str:
@@ -305,13 +320,15 @@ class Simulation:
         genome.validate()
         if ram_position is None:
             ram_position = self.rng.randrange(len(self.ram)) if self.config.local_ram_coordinates else 0
+        generation = 0 if not parents else 1 + max(self.entities[parent].generation for parent in parents)
         entity = Entity(
             id=self.next_entity_id,
-            name=amoeba_name(self.next_entity_id),
+            name=amoeba_name(self.next_entity_id, generation),
             genome=genome,
             energy=energy,
             start_energy=energy,
             born_at=self.tick,
+            generation=generation,
             ram_position=ram_position % len(self.ram),
             parents=parents,
             z=[None] * self.config.z_size,
@@ -449,7 +466,18 @@ class Simulation:
                 reward = 0.0
                 discovery_type = None
                 alive_foreign = target.alive and target.id != entity.id
-                if alive_foreign and offset == 0 and slot == 0 and changed:
+                if not target.alive and target.corpse_available and offset == 2 and slot == 0:
+                    reward = max(0.0, target.energy)
+                    target.energy = 0.0
+                    target.corpse_available = False
+                    entity.energy += reward
+                    discovery_type = "corpse"
+                    self.emit(
+                        "corpse_scavenged", entity_id=entity.id, target_id=target.id,
+                        corpse_id=target.id, corpse_name=target.name,
+                        ram_position=target.ram_position, reward=reward,
+                    )
+                elif alive_foreign and offset == 0 and slot == 0 and changed:
                     discovery_type = "entity"
                     count_key = f"{source}:{value}"
                     count = entity.source_history.get(count_key, 0)
@@ -468,7 +496,8 @@ class Simulation:
                     reward = self.config.life_state_discovery_base / (1 + count)
                     entity.source_history[count_key] = count + 1
                 entity.value_history[source] = value
-                entity.energy += reward
+                if discovery_type != "corpse":
+                    entity.energy += reward
                 self.emit(
                     "ram_read", entity_id=entity.id, address=raw_address, value=value,
                     virtual=True, target_id=target.id, membrane_offset=offset,
@@ -662,7 +691,7 @@ class Simulation:
             return None
         entity_id, cell = divmod(relative, 4)
         entity = self.entities.get(entity_id + 1)
-        if entity is None:
+        if entity is None or (not entity.alive and not entity.corpse_available):
             return None
         if cell == 0:
             return entity, 0, 0
@@ -672,8 +701,12 @@ class Simulation:
 
     def _kill(self, entity: Entity, reason: str) -> None:
         entity.alive = False
+        entity.corpse_available = True
         entity.k.clear()
-        self.emit("death", entity_id=entity.id, reason=reason)
+        self.emit(
+            "death", entity_id=entity.id, reason=reason,
+            remaining_energy=max(0.0, entity.energy), ram_position=entity.ram_position,
+        )
 
     def _valid_groups(self) -> list[tuple[int, ...]]:
         groups: set[tuple[int, ...]] = set()
@@ -951,9 +984,11 @@ class Simulation:
                     "id": e.id,
                     "name": e.name,
                     "alive": e.alive,
+                    "corpse_available": e.corpse_available,
                     "energy": e.energy,
                     "start_energy": e.start_energy,
                     "born_at": e.born_at,
+                    "generation": e.generation,
                     "ram_position": e.ram_position,
                     "parents": list(e.parents),
                     "partners": list(e.partner_ids),
@@ -1024,8 +1059,10 @@ class Simulation:
             "id": entity.id, "name": entity.name,
             "energy": entity.energy, "start_energy": entity.start_energy,
             "born_at": entity.born_at,
+            "generation": entity.generation,
             "ram_position": entity.ram_position,
             "parents": list(entity.parents), "alive": entity.alive,
+            "corpse_available": entity.corpse_available,
             "partner_ids": list(entity.partner_ids),
             "knocker_ids": list(entity.knocker_ids),
             "genome": {
@@ -1064,12 +1101,18 @@ class Simulation:
                 raw["genome"].get("knock_capacity", 1),
                 raw["genome"].get("bond_ticks", 1),
             )
+            parents = tuple(raw["parents"])
+            generation = raw.get(
+                "generation",
+                0 if not parents else 1 + max(sim.entities[parent].generation for parent in parents),
+            )
             entity = Entity(
-                id=raw["id"], name=raw.get("name", amoeba_name(raw["id"])),
+                id=raw["id"], name=raw.get("name", amoeba_name(raw["id"], generation)),
                 genome=genome, energy=raw["energy"],
                 start_energy=raw.get("start_energy", raw["energy"]), born_at=raw["born_at"],
                 ram_position=raw.get("ram_position", 0),
-                parents=tuple(raw["parents"]), alive=raw["alive"],
+                parents=parents, generation=generation, alive=raw["alive"],
+                corpse_available=raw.get("corpse_available", not raw["alive"]),
                 partner_ids=list(raw["partner_ids"]),
                 knocker_ids=list(raw.get("knocker_ids", [raw["knocker_id"]] if raw.get("knocker_id") else [])),
                 k={
