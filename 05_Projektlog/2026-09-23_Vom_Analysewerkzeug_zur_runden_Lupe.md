@@ -86,4 +86,5 @@ Umweltbedingungen werden nicht nachträglich in diesen Stand gemischt.
 - [Lupe v0.3](../04_Prototypen/v0.3/LUPE.md)
 - [Konzept für Kantengewichte](../04_Prototypen/v0.3/KANTENGEWICHTE_KONZEPT.md)
 - [Aktueller Screenshot-Satz](../04_Prototypen/v0.3/screenshots/)
+- [Laufergebnisse v0.3](../07_Laufergebnisse/v0.3/README.md)
 - [Blogentwurf 014](../06_Blog/014_Der_Arme_ist_durch_ein_Leichenfeld_gestolpert.md)

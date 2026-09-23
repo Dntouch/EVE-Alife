@@ -61,7 +61,10 @@ Seit Lauf 16 wird eine Geburt aus dem gemeinsamen Überschuss aller Eltern über
 
 Die Architekturentscheidungen stehen in [ARCHITEKTUR.md](ARCHITEKTUR.md), die präzisen Regeln in [SPEZIFIKATION.md](SPEZIFIKATION.md). P0/P1 bleiben gemäß [KONSERVIERUNG_P0_P1.md](../KONSERVIERUNG_P0_P1.md) unter `v0.1` erhalten.
 
-Die tatsächlich ausgeführten Versuche werden getrennt von Spezifikation und Implementierung unter [Laufergebnisse v0.2](../../07_Laufergebnisse/v0.2/README.md) geführt. Ihre Laufnummern beginnen innerhalb dieser Version bei 1.
+Die tatsächlich ausgeführten Versuche werden getrennt von Spezifikation und
+Implementierung unter [Laufergebnisse v0.3](../../07_Laufergebnisse/v0.3/README.md)
+geführt. Ihre Laufnummern beginnen innerhalb dieser Version bei 1. Technische
+Supervisor- und Oberflächenläufe sind dort als solche gekennzeichnet.
 
 ## Testen
 

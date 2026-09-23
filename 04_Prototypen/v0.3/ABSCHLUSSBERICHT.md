@@ -82,3 +82,8 @@ Ein versionierter Satz aus fünf Screenshots dokumentiert Leitstand, Historie,
 Chronik sowie Stammbaum und Genom im Fokusmodus. Die Bedienung ist ausführlich
 in [LUPE.md](LUPE.md), die Auftragsgrenze in [SUPERVISOR.md](SUPERVISOR.md)
 beschrieben.
+
+Die sieben tatsächlich ausgeführten v0.3-Runs sind unter
+[Laufergebnisse v0.3](../../07_Laufergebnisse/v0.3/README.md) dokumentiert.
+Technische Lebenszyklusläufe, die deterministische 5.000-Tick-Wiederholung und
+der 10.000-Tick-Lauf mit halbierter Altersrate werden dort getrennt eingeordnet.

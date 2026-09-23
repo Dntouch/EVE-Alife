@@ -21,7 +21,7 @@ Der vollständige Fachstand von v0.2 einschließlich Genom, Energie, Umwelt,
 Partnersuche und gemeinsamer Elternfinanzierung bleibt dabei erhalten. Das
 Run-Datenformat bleibt kompatibel bei Version 2; v0.2 selbst wird nicht verändert.
 
-Der jüngste abgeschlossene Versuch ist [v0.2/Lauf 16](07_Laufergebnisse/v0.2/Lauf_016.md): Die gemeinsame Elternfinanzierung trug 75 Nachkommen bis Generation 8, erzeugte aber noch keine stabile Kultur. Bei Tick 5.000 lebte allein Ada 4 mit mehr als 101.000 Energie und einem kleinen, nicht fortpflanzungsfähigen Genom weiter. Die Untersuchung ist im [Experiment Generationenwechsel](04_Prototypen/v0.2/EXPERIMENT_GENERATIONENWECHSEL.md) zusammengefasst.
+Der jüngste abgeschlossene Versuch ist [v0.3/Lauf 7](07_Laufergebnisse/v0.3/Lauf_007.md): Mit halbierter Altersrate trug der Run 163 Nachkommen bis Generation 28 und erreichte Tick 10.000 mit 13 lebenden Amöben. Da gegenüber dem 5.000-Tick-Standardlauf gleichzeitig Laufdauer und Altersrate geändert wurden, ist dies noch kein isolierter Test einer einzelnen Umweltbedingung.
 
 Der erste ausführbare Stand [v0.1](04_Prototypen/v0.1/README.md) und die Ergebnisse von P0/P1 bleiben als abgeschlossene historische Prototypstände erhalten; die genaue Grenze steht in der [Konservierungsnotiz](04_Prototypen/KONSERVIERUNG_P0_P1.md).
 
@@ -29,6 +29,7 @@ Der erste ausführbare Stand [v0.1](04_Prototypen/v0.1/README.md) und die Ergebn
 
 | Prototyp | Dokumentierte Läufe | Massenaussterben | Nachkommen | Gewonnene RAM-Energie |
 | :--- | ---: | ---: | ---: | ---: |
+| [v0.3](07_Laufergebnisse/v0.3/README.md) | 7 | **1** | 387 | 5.494.422,00 |
 | [v0.2](07_Laufergebnisse/v0.2/README.md) | 16 | **5** | 536 | 6.603.400,00 |
 | [v0.1](07_Laufergebnisse/v0.1/README.md) | 41 | **17** | 2.478 | 14.070.529,67 |
 
@@ -70,7 +71,7 @@ Run-Rohdaten können groß werden und bleiben deshalb lokal unter `04_Prototypen
 
 | Stand | Status | Schwerpunkt |
 | :--- | :--- | :--- |
-| `v0.3` | aktiv und experimentell | EVE-Analysearbeitsplatz, Supervisor, Stammbaum, Genom und Chronik |
+| `v0.3` | abgeschlossen | EVE-Analysearbeitsplatz, Supervisor, Stammbaum, Genom und Chronik |
 | `v0.2` | konserviert | langfristige Runs, Datenhaltung und klar markierte Modellversuche |
 | `v0.1` | konserviert | ausführbarer gemeinsamer P0/P1-Stand und historische Läufe 1–41 |
 | P0/P1 | abgeschlossen | technische Machbarkeit und erste genomische Exploration |
