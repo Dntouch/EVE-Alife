@@ -61,6 +61,8 @@ class RunStore:
         run_dir.mkdir(parents=True, exist_ok=True)
         self.db = sqlite3.connect(self.path)
         self.manifest_extra: dict[str, Any] = {}
+        self._genome_ids: dict[str, int] = {}
+        self._synced_entity_ids: set[int] = set()
         self.db.execute("PRAGMA journal_mode=WAL")
         self.db.execute("PRAGMA foreign_keys=ON")
         if create:
@@ -145,6 +147,9 @@ class RunStore:
         value = self._genome_data(genome)
         encoded = canonical_json(value)
         fingerprint = hashlib.sha256(encoded.encode()).hexdigest()
+        cached = self._genome_ids.get(fingerprint)
+        if cached is not None:
+            return cached
         self.db.execute(
             """INSERT OR IGNORE INTO genomes
             (fingerprint,genome_json,n_f,n_p,n_g,activity_base,first_seen_tick)
@@ -156,10 +161,19 @@ class RunStore:
             "SELECT genome_id FROM genomes WHERE fingerprint=?", (fingerprint,)
         ).fetchone()
         assert row is not None
-        return int(row[0])
+        genome_id = int(row[0])
+        self._genome_ids[fingerprint] = genome_id
+        return genome_id
 
-    def sync_entities(self, simulation: Any) -> None:
-        for entity in simulation.entities.values():
+    def sync_entities(self, simulation: Any, entity_ids: Iterable[int] | None = None) -> None:
+        """Persist new entities once, normally from the current tick's births."""
+        candidates = (
+            simulation.entities.values() if entity_ids is None
+            else (simulation.entities[entity_id] for entity_id in entity_ids)
+        )
+        for entity in candidates:
+            if entity.id in self._synced_entity_ids:
+                continue
             genome_id = self.register_genome(entity.genome, entity.born_at)
             inserted = self.db.execute(
                 """INSERT OR IGNORE INTO entities
@@ -171,6 +185,7 @@ class RunStore:
                     "INSERT INTO ancestry(child_id,parent_id,parent_order) VALUES(?,?,?)",
                     [(entity.id, parent, order) for order, parent in enumerate(entity.parents)],
                 )
+            self._synced_entity_ids.add(entity.id)
 
     def append_events(self, events: Iterable[dict[str, Any]]) -> None:
         for event in events:
@@ -218,14 +233,22 @@ class RunStore:
         )
         self.db.commit()
 
-    def update_running(self, simulation: Any) -> None:
+    def update_running(self, simulation: Any, publish: bool = True) -> None:
         population = sum(entity.alive for entity in simulation.entities.values())
         self.db.execute(
             "UPDATE run SET current_tick=?, population=? WHERE singleton=1",
             (simulation.tick, population),
         )
+        if publish:
+            self.db.commit()
+            self.write_manifest()
+
+    def flush(self, simulation: Any, publish_manifest: bool = True) -> None:
+        """Publish one consistent batch of events, entities and run status."""
+        self.update_running(simulation, publish=False)
         self.db.commit()
-        self.write_manifest()
+        if publish_manifest:
+            self.write_manifest()
 
     def finish(self, simulation: Any, end_reason: str) -> None:
         if end_reason not in {"natural_extinction", "tick_limit_reached", "user_requested"}:

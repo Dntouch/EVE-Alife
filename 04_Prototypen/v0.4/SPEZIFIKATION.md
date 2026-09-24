@@ -10,12 +10,14 @@ des Supervisors in `SUPERVISOR.md`. Der Ordner `../v0.2` bleibt konserviert.
 
 Für Genom, Ports, A₀, K, Z, S, RAM, Membran, Energie, Mutation, Rekombination, Reproduktion und Scheduling gilt unverändert die Spezifikation von `../v0.1/SPEZIFIKATION.md` zusammen mit `../../02_Konzept/Genom_verstehen.md`. Bei Widersprüchen beschreibt diese Datei ausschließlich die neue technische Lauf- und Beobachtungsschicht; sie ändert keine biologische Regel.
 
-Als nächste Genomerweiterung sind evolvierbare Gewichte gerichteter Kanten
-fachlich vorgesehen. Der neutrale Wert `0` muss dabei exakt dem heutigen
-Kantenverhalten entsprechen. Wertebereich, Kodierung, Mutationsschritte und
-mathematische Wirkung sind noch nicht festgelegt und deshalb im v0.4-Ausgangsstand noch
-nicht implementiert. Der geprüfte Ist-Zustand, der Neutralitätsvertrag und die
-offenen Entscheidungen stehen in
+Gerichtete Kanten besitzen in v0.4 ein ganzzahliges erbliches Gewicht. Der
+neutrale Wert `0` entspricht exakt dem bisherigen Kantenverhalten. Eine Kante
+transportiert `T(v,w) = trunc(v × (100+w) / 100)`; Quellen- und
+Urheberprovenienz bleiben dabei unverändert. Gewichte werden mit ihren Kanten
+rekombiniert und können ausschließlich bei der Geburt mutieren. Der Betrag
+folgt ohne feste Obergrenze `P(k) ∝ 1/k²`, die Richtung wird gleichverteilt
+gezogen. Altformate ohne Gewicht werden als `0` gelesen. Die vollständige
+Semantik und die weiterhin offenen Entscheidungen stehen in
 [`KANTENGEWICHTE_KONZEPT.md`](KANTENGEWICHTE_KONZEPT.md).
 
 ## Run-Modi
@@ -27,7 +29,7 @@ offenen Entscheidungen stehen in
 
 Vor jedem Heartbeat wird zuerst Extinktion, dann das Tick-Limit geprüft. Deshalb kann eine Population, die im letzten erlaubten Heartbeat ausstirbt, korrekt mit `natural_extinction` enden.
 
-Ohne abweichende Parameter wird der eingefrorene P1-Endstand von Lauf 41 eingesetzt: Population `p1`, 20 Startamöben, Seed 42, zufälliger RAM, Startenergie 500, `birth_energy_fraction = 0.5`, `birth_min_heartbeats = 5`, `novelty_base = 60` und Altersrate 0,01. Für v0.2 gilt versuchsweise der deutlich reduzierte Genomkostentarif 0,05 je Quadratwurzel der Funktionspunktzahl und 0,01 je Quadratwurzel der Kantenzahl. P0, P1 und v0.1 bleiben beim historischen Tarif 0,5/0,1. Beide v0.2-Werte bleiben über die Kommandozeile parametrisiert.
+Ohne abweichende Parameter wird der eingefrorene P1-Endstand von Lauf 41 eingesetzt: Population `p1`, 20 Startamöben, Seed 42, zufälliger RAM, Startenergie 500, `birth_energy_fraction = 0.5`, `birth_min_heartbeats = 5`, `novelty_base = 60` und Altersrate 0,005. Damit setzt v0.4 den im v0.3-Langlauf bewährten reduzierten Alterstarif fort. Für v0.2 gilt versuchsweise der deutlich reduzierte Genomkostentarif 0,05 je Quadratwurzel der Funktionspunktzahl und 0,01 je Quadratwurzel der Kantenzahl. P0, P1 und v0.1 bleiben beim historischen Tarif 0,5/0,1. Beide v0.2-Werte bleiben über die Kommandozeile parametrisiert.
 
 Experimentell werden die P1-Gründergenome mit einer separaten, aus dem Run-Seed abgeleiteten Zufallsquelle variiert: Offset `−5 … +5`, Schrittweite aus `−4 … −1` oder `+1 … +4`, Geduld `32 … 96`, A₀ `96 … 104`, Klingelkapazität Nₖ `1 … 4` und Bindungszeit Tₚ `3 … 12`. Alle konkreten Werte stehen im Run-Manifest. `--uniform-p1` setzt Offset `−1`, Schritt `+1`, Geduld `64`, A₀ `100`, Nₖ `2` und Tₚ `5`.
 
@@ -41,7 +43,20 @@ Die erbliche Bindungszeit Tₚ ist die Zahl aufeinanderfolgender Reproduktionspr
 
 Die Geburtsenergie wird aus dem gemeinsamen Energieüberschuss der Eltern über ihrem jeweils individuellen Geburtswert `S₀` finanziert. Ausgangspunkt ist eine gleichmäßige Aufteilung. Reicht der Überschuss eines Elternteils dafür nicht, wird sein Fehlbetrag gleichmäßig auf die noch zahlungsfähigen Eltern verteilt. Eine Geburt ist möglich, sobald der gemeinsame Überschuss die vollständige Kindesenergie deckt; damit darf auch ein einzelner Elternteil sämtliche Kosten tragen. Kein Beitrag senkt ein Elternteil unter `S₀`. `S₀` bleibt individueller Lebenszustand und ist weder eine maximale Energiekapazität noch ein Genommerkmal.
 
-Die Rekombination hält Komponenten weiterhin atomar, wählt aber eine Kombination, die die gezogene Zielgröße bestmöglich erreicht, ohne sie zu überschreiten. Unter gleich großen Ergebnissen entscheidet der Simulationszufall. Ein eigener belegter Partnerslot darf durch ein genomisch erzeugtes, provenienzbehaftetes `0` zurückgezogen werden; fremde oder unbelegte Slots werden dadurch nicht verändert. Das vorläufige Rückzugsgenom zählt eigene Prüfzyklen in Z und ist ausdrücklich Experiment, nicht konsolidiertes Konzept.
+Der v0.4-Simulationskern kombiniert evolvierbare Vererbungsplätze beliebiger
+Größe. P1 startet mit drei Plätzen. Die Architektur eines Elternteils liefert
+die kindlichen Loci; strukturell homologe elterliche Varianten werden bevorzugt
+gepaart und vollständig vererbt. Die Gesamtgenomgröße ist Ergebnis dieser
+Vererbung und der seltenen Duplikation, Löschung, Teilung oder Verschmelzung von
+Plätzen. Eine vor der Geburt gezogene Zielgenomgröße existiert nicht.
+Platzübergreifende offene Anschlusskanten werden ausschließlich an semantisch
+kompatible, unbelegte Eingänge gekoppelt oder verworfen. Die Einzelheiten stehen in
+[`SEGMENTVERERBUNG_KONZEPT.md`](SEGMENTVERERBUNG_KONZEPT.md).
+
+Ein eigener belegter Partnerslot darf durch ein genomisch erzeugtes,
+provenienzbehaftetes `0` zurückgezogen werden; fremde oder unbelegte Slots
+werden dadurch nicht verändert. Das vorläufige Rückzugsgenom zählt eigene
+Prüfzyklen in Z und ist ausdrücklich Experiment, nicht konsolidiertes Konzept.
 
 ## Status und Endgrund
 

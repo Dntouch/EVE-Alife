@@ -7,6 +7,7 @@ import argparse
 import json
 import signal
 import subprocess
+import time
 import uuid
 from random import Random
 from dataclasses import asdict
@@ -27,8 +28,7 @@ def git_commit(project_root: Path) -> str:
 
 def live_observation(sim: Simulation, run_id: str, started_at: datetime) -> dict:
     """Aktuelles Lupe-Bild; absichtlich flüchtig und ohne vollständigen RAM."""
-    value = sim.observation()
-    value.pop("ram", None)
+    value = sim.live_observation()
     value.update({
         "run_id": run_id, "status": "running", "end_reason": None,
         "population": sum(entity.alive for entity in sim.entities.values()),
@@ -58,7 +58,7 @@ def main() -> None:
     parser.add_argument("--birth-energy-fraction", type=float, default=0.5, help="Geburtsenergie als Anteil der mittleren aktuellen Elternenergie")
     parser.add_argument("--birth-min-heartbeats", type=int, default=5, help="Mindestzahl vollständig finanzierbarer Heartbeats des Kindergenoms")
     parser.add_argument("--novelty-base", type=float, default=60.0, help="P1-Tarif für den ersten belohnten RAM-Wechsel")
-    parser.add_argument("--aging-cost-rate", type=float, default=0.01, help="Zusätzliche Standby-Kosten je bereits gelebtem Heartbeat")
+    parser.add_argument("--aging-cost-rate", type=float, default=0.005, help="Zusätzliche Standby-Kosten je bereits gelebtem Heartbeat")
     parser.add_argument("--genome-node-cost", type=float, default=0.05, help="Faktor der unterlinear wachsenden Funktionspunktkosten")
     parser.add_argument("--genome-edge-cost", type=float, default=0.01, help="Faktor der unterlinear wachsenden Kantenkosten")
     parser.add_argument("--entity-discovery-base", type=float, default=10.0, help="Energie für den neuen Fund einer lebenden fremden Amöbe")
@@ -212,10 +212,11 @@ def main() -> None:
         store.initialize(metadata)
         store.sync_entities(sim)
         store.append_events(sim.events)
+        sim.events.clear()
         store.sample(sim)
         store.observe(sim, run_id)
         store.update_running(sim)
-        event_cursor = len(sim.events)
+        last_live_write = 0.0
         while True:
             if not any(entity.alive for entity in sim.entities.values()):
                 end_reason = "natural_extinction"
@@ -227,18 +228,27 @@ def main() -> None:
                 end_reason = "user_requested"
                 break
             sim.heartbeat()
-            store.sync_entities(sim)
-            store.append_events(sim.events[event_cursor:])
-            event_cursor = len(sim.events)
+            tick_events = sim.events
+            birth_ids = [
+                int(event["entity_id"]) for event in tick_events
+                if event["kind"] == "birth"
+            ]
+            if birth_ids:
+                store.sync_entities(sim, birth_ids)
+            store.append_events(tick_events)
+            sim.events = []
             if sim.tick == 1 or sim.tick % args.sample_every == 0:
                 store.sample(sim)
                 store.observe(sim, run_id)
+                store.flush(sim)
             if args.checkpoint_every and sim.tick % args.checkpoint_every == 0:
                 checkpoint = run_dir / "checkpoints" / f"{sim.tick:012d}.json"
                 atomic_json(checkpoint, sim.checkpoint())
                 store.record_checkpoint(checkpoint, sim.tick)
-            atomic_json(run_dir / "live.json", live_observation(sim, run_id, started_at))
-            store.update_running(sim)
+            now = time.monotonic()
+            if sim.tick == 1 or now - last_live_write >= 0.5:
+                atomic_json(run_dir / "live.json", live_observation(sim, run_id, started_at))
+                last_live_write = now
         store.sample(sim)
         store.observe(sim, run_id)
         if end_reason:

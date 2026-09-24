@@ -39,7 +39,7 @@ Ein Run ist `limited` mit positivem `tick_limit` oder `open` mit `tick_limit = N
 - `observations`: komprimierte periodische Amöbenzustände für Zeitfilter und Lebensfilm, ohne vollständigen RAM;
 - `checkpoints`: reservierter Katalog für verifizierte Recovery-Dateien.
 
-`manifest.json` ist ein kleiner, atomar ersetzter Einstiegspunkt mit `format = eve-alife-run` und `format_version = 2`. `live.json` ist ein atomar ersetztes, flüchtiges Detailbild ohne vollständigen RAM. Die periodischen `observations` konservieren die Untersuchungstiefe der v0.1-Lupe in konfigurierbarer Auflösung. Technische Logs gehören nicht in diese Tabellen.
+`manifest.json` ist ein kleiner, atomar ersetzter Einstiegspunkt mit `format = eve-alife-run` und `format_version = 2`. `live.json` ist ein atomar ersetztes, flüchtiges Übersichtsbild ohne vollständigen RAM, Genomtopologien, K-/Z-Signale oder wachsende Wissenshistorien. Es wird höchstens zweimal pro Sekunde erneuert. Die periodischen `observations` konservieren die Untersuchungstiefe der v0.1-Lupe in konfigurierbarer Auflösung. Technische Logs gehören nicht in diese Tabellen.
 
 ## Speicherung und Skalierung
 
@@ -47,11 +47,26 @@ Nicht dauerhaft pro Tick gespeichert werden vollständiger RAM, vollständiger Z
 
 Damit wächst der reguläre Datensatz näherungsweise mit `verschiedenen Genomen + Viechern + Abstammungskanten + relevanten Ereignissen + komprimierten Beobachtungen im gewählten Intervall`, nicht zwangsläufig mit `Ticks × Population × RAM-Vollzustand`. Beispiel: Bei 10 Millionen Ticks erzeugt `sample_every=100` 100.001 Beobachtungspunkte statt 10 Millionen Vollbilder. RAM-Kontakte können weiterhin dominant werden; eine spätere Aggregation braucht zuerst eine wissenschaftliche Aufbewahrungsentscheidung und ist daher in v0.2 nicht irreversibel eingebaut.
 
+Seit der Performance-Revision vom 24. September 2026 bildet jedes
+Messintervall zugleich eine Veröffentlichungsgrenze: Ereignisse werden pro Tick
+in die laufende SQLite-Transaktion übertragen und danach aus dem
+Simulationsspeicher entfernt; Commit, Run-Status und Manifest werden gebündelt
+publiziert. Neue Entitäten und ihre Genome werden ausschließlich bei der Geburt
+registriert. Ein Writer-Cache vermeidet die erneute Serialisierung bereits
+bekannter Genome. Diese Änderungen betreffen Beobachtung und Persistenz, nicht
+Reihenfolge, Zufall oder Fachzustand eines Heartbeats.
+
+Auslöser war der OOM-Abbruch des Runs
+`0ccf273f-6bc6-4a91-a42c-7bca96f9d70b`: Die nie geleerte Ereignisliste ließ
+den Prozess bei 9.446 erzeugten Amöben auf rund 52 GB RSS wachsen. Die
+vollständige [Laufanalyse](../../07_Laufergebnisse/v0.4/Lauf_001.md) hält den
+Befund und seine Grenzen fest.
+
 ## Historie, Genomgraph und Abstammung
 
-Die Kombination aus unveränderlicher Entity-ID, Elternkanten und deduplizierter vollständiger Genomstruktur beantwortet Elternschaft, Genombesitz, Linien, ausgestorbene Seitenlinien und Genomgrößenverläufe. Nodes enthalten reale Funktionspunkttypen und CONST-Werte; Edges enthalten Quell-/Zielinstanz und reale Ports; A₀ bleibt erhalten. Das ist die direkte Datenbasis für eine spätere Graphdarstellung und Genomvergleiche.
+Die Kombination aus unveränderlicher Entity-ID, Elternkanten und deduplizierter vollständiger Genomstruktur beantwortet Elternschaft, Genombesitz, Linien, ausgestorbene Seitenlinien und Genomgrößenverläufe. Nodes enthalten reale Funktionspunkttypen, CONST-Werte und Segment-IDs; Edges enthalten Quell-/Zielinstanz, reale Ports und Kantengewichte; A₀ bleibt erhalten. Das ist die direkte Datenbasis für Graphdarstellung und Genomvergleiche.
 
-Das Ereignis `genome_created` protokolliert zusätzlich den tatsächlich gezogenen Größen- und A₀-Elternteil, jedes übernommene zusammenhängende Fragment, die Abbildung elterlicher auf kindliche Node-IDs sowie die konkret ausgeführte Mutation mit Vorher-/Nachherwert. Die Instrumentierung verbraucht keinen Zufall und verändert keine Auswahl; die übernommenen Determinismus- und Fachmodelltests sichern diese Beobachtungsgrenze ab.
+Das Ereignis `genome_created` protokolliert zusätzlich den gezogenen Architektur- und A₀-Elternteil, jeden übernommenen Vererbungsplatz samt Homologiezuordnung, die Abbildung elterlicher auf kindliche Node-IDs, ursprüngliche, neu gekoppelte und weggefallene Anschlusskanten sowie die konkret ausgeführte Inhalts- oder Strukturmutation mit Vorher-/Nachherwert. Die Instrumentierung verbraucht keinen zusätzlichen Zufall und verändert keine Auswahl; Determinismus- und Fachmodelltests sichern diese Beobachtungsgrenze ab.
 
 ## Live, Archiv, Recovery und Replay
 

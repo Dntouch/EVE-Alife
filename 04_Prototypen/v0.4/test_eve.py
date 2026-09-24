@@ -8,6 +8,77 @@ from run_stats import README_END, README_START, dashboard_data, publish_run_repo
 
 
 class EveCoreTests(unittest.TestCase):
+    def test_edge_weight_scales_signal_and_preserves_provenance(self):
+        signal = Signal(200, ("RAM[7]",), (3,))
+        cases = {
+            0: 200,
+            1: 202,
+            50: 300,
+            -50: 100,
+            -100: 0,
+            -150: -100,
+        }
+        for weight, expected in cases.items():
+            with self.subTest(weight=weight):
+                transported = Simulation._transport_signal(signal, weight)
+                self.assertEqual(transported.value, expected)
+                self.assertEqual(transported.sources, signal.sources)
+                self.assertEqual(transported.originators, signal.originators)
+        self.assertEqual(Simulation._transport_signal(Signal(-101, ("G",)), 1).value, -102)
+
+    def test_edge_weight_defaults_to_zero_and_survives_checkpoint(self):
+        sim = Simulation(Config(seed=1, ram_size=8))
+        genome = Genome(
+            [Node(1, "CONST", 20), Node(2, "PAUSE")],
+            [Edge(1, "value", 2, "value", 25)], 1,
+        )
+        sim.add_entity(genome, 100)
+        restored = Simulation.from_checkpoint(sim.checkpoint())
+        self.assertEqual(restored.entities[1].genome.edges[0].weight, 25)
+        self.assertEqual([node.segment for node in restored.entities[1].genome.nodes], [1, 2])
+        self.assertEqual(Edge(1, "value", 2, "value").weight, 0)
+
+    def test_weight_mutation_magnitude_uses_unbounded_inverse_square_draw(self):
+        class Draws:
+            def __init__(self):
+                self.values = iter((0.75, 0.99, 0.4, 0.7, 0.2, 0.9, 0.3, 0.1))
+
+            def random(self):
+                return next(self.values)
+
+        sim = Simulation(Config())
+        sim.rng = Draws()
+        self.assertEqual(sim._weight_mutation_magnitude(), 1)
+        self.assertEqual(sim._weight_mutation_magnitude(), 2)
+        self.assertEqual(sim._weight_mutation_magnitude(), 3)
+
+    def test_weight_mutation_changes_one_edge_only_at_genome_creation(self):
+        class MutationDraws:
+            def __init__(self):
+                self.random_values = iter((0.0, 0.75, 0.75, 0.25, 0.25))
+
+            def random(self):
+                return next(self.random_values)
+
+            def choice(self, values):
+                return "edge_weight"
+
+            def randrange(self, stop):
+                return 0
+
+        genome = Genome(
+            [Node(1, "CONST", 20), Node(2, "PAUSE")],
+            [Edge(1, "value", 2, "value")], 1,
+        )
+        sim = Simulation(Config(mutation_probability=1.0))
+        sim.rng = MutationDraws()
+        mutation = sim._mutate(genome)
+        self.assertEqual(mutation["class"], "edge_weight")
+        self.assertEqual(mutation["delta"], 1)
+        self.assertEqual(genome.edges[0].weight, 1)
+        self.assertEqual(mutation["before"]["weight"], 0)
+        self.assertEqual(mutation["after"]["weight"], 1)
+
     def test_amoeba_names_encode_generation_and_survive_checkpoint(self):
         self.assertEqual(len(AMOEBA_NAMES), 500)
         self.assertEqual(len(set(AMOEBA_NAMES)), 500)
@@ -550,26 +621,57 @@ class EveCoreTests(unittest.TestCase):
         entity.energy = 10_000
         self.assertEqual(sim._mem_read(entity, 2, 0), 9)
 
-    def test_recombination_keeps_connected_fragments_atomic(self):
-        genome = Genome(
-            [Node(1, "CONST", 111), Node(2, "PAUSE"), Node(3, "CONST", 222), Node(4, "PAUSE")],
-            [Edge(1, "value", 2, "value"), Edge(3, "value", 4, "value")], 10,
+    def test_recombination_inherits_one_homologous_allele_per_architecture_slot(self):
+        left = Genome(
+            [Node(1, "CONST", 111, 1), Node(2, "PAUSE", segment=1),
+             Node(3, "CONST", 222, 2), Node(4, "PAUSE", segment=2)],
+            [Edge(1, "value", 2, "value", 7), Edge(3, "value", 4, "value", -9)], 10,
         )
-        sim = Simulation(Config(seed=9, ram_size=8, mutation_probability=0, genome_size_sigma=20))
-        parents = [sim.add_entity(genome, 100), sim.add_entity(genome, 100)]
-        for _ in range(25):
-            child = sim._recombine(parents)
-            by_id = {node.id: node for node in child.nodes}
-            outgoing = {edge.source for edge in child.edges}
-            for node in child.nodes:
-                if node.kind == "CONST" and node.constant in {111, 222}:
-                    self.assertIn(node.id, outgoing)
-                    self.assertTrue(any(
-                        edge.source == node.id and by_id[edge.target].kind == "PAUSE"
-                        for edge in child.edges
-                    ))
+        right = Genome(
+            [Node(1, "CONST", 333, 1), Node(2, "PAUSE", segment=1),
+             Node(3, "CONST", 444, 2), Node(4, "PAUSE", segment=2)],
+            [Edge(1, "value", 2, "value", 8), Edge(3, "value", 4, "value", -10)], 10,
+        )
+        sim = Simulation(Config(seed=9, ram_size=8, mutation_probability=0))
+        parents = [sim.add_entity(left, 100), sim.add_entity(right, 100)]
+        child = sim._recombine(parents)
+        fragments = sim._last_genome_trace["inherited_fragments"]
+        self.assertEqual(sim._last_genome_trace["selection_rule"], "homologous_slot_inheritance")
+        self.assertIsNone(sim._last_genome_trace["target_n_g"])
+        self.assertEqual(len(fragments), 2)
+        self.assertEqual({node.segment for node in child.nodes}, {1, 2})
+        self.assertEqual(child.n_g, left.n_g)
+        self.assertTrue(all(fragment["homologous_matches"] for fragment in fragments))
+        self.assertTrue(all(not fragment["trimmed"] for fragment in fragments))
 
-    def test_closest_fragment_combination_does_not_crowd_out_social_component(self):
+    def test_cross_slot_edge_reconnects_semantically_when_alleles_come_from_different_parents(self):
+        left = Genome(
+            [Node(1, "GATE", segment=1), Node(2, "CONST", 9, 2)],
+            [Edge(2, "value", 1, "condition", 17)], 4,
+        )
+        right = Genome(
+            [Node(1, "GATE", segment=1), Node(2, "CONST", 10, 2)],
+            [Edge(2, "value", 1, "condition", 19)], 4,
+        )
+        witnessed = False
+        for seed in range(30):
+            sim = Simulation(Config(seed=seed, mutation_probability=0))
+            parents = [sim.add_entity(left, 100), sim.add_entity(right, 100)]
+            child = sim._recombine(parents)
+            repaired = [
+                item for fragment in sim._last_genome_trace["inherited_fragments"]
+                for item in fragment["edge_resolutions"] if item["status"] == "reconnected"
+            ]
+            if repaired:
+                self.assertEqual(repaired[0]["match"], "exact")
+                self.assertEqual(repaired[0]["resolved"]["target_port"], "condition")
+                self.assertIn(repaired[0]["resolved"]["weight"], (17, 19))
+                self.assertTrue(any(edge.target_port == "condition" for edge in child.edges))
+                witnessed = True
+                break
+        self.assertTrue(witnessed)
+
+    def test_p1_starts_with_three_unbounded_inheritance_slots(self):
         sim = Simulation(Config(
             seed=9, ram_size=8, mutation_probability=0, genome_size_sigma=2,
         ))
@@ -579,9 +681,26 @@ class EveCoreTests(unittest.TestCase):
         ]
         for _ in range(40):
             child = sim._recombine(parents)
-            self.assertTrue(sim._has_operational_mem_write(child))
-            self.assertEqual(sim._last_genome_trace["selection_rule"], "closest_atomic_subset")
-            self.assertGreaterEqual(child.n_g, 127)
+            self.assertEqual(sim._last_genome_trace["selection_rule"], "homologous_slot_inheritance")
+            self.assertEqual(len({node.segment for node in child.nodes}), 3)
+            self.assertIsNone(sim._last_genome_trace["target_n_g"])
+
+    def test_all_four_slot_structure_mutations_are_reachable(self):
+        seen = set()
+        for seed in range(2000):
+            genome = Genome(
+                [Node(1, "CONST", 1, 1), Node(2, "PAUSE", segment=1),
+                 Node(3, "CONST", 2, 2), Node(4, "PAUSE", segment=2)],
+                [Edge(1, "value", 2, "value"), Edge(3, "value", 4, "value")], 4,
+            )
+            sim = Simulation(Config(seed=seed, mutation_probability=1))
+            mutation = sim._mutate(genome)
+            if mutation["class"].startswith("slot_"):
+                seen.add(mutation["class"])
+                genome.validate()
+            if seen == {"slot_duplicate", "slot_delete", "slot_split", "slot_fuse"}:
+                break
+        self.assertEqual(seen, {"slot_duplicate", "slot_delete", "slot_split", "slot_fuse"})
 
     def test_observation_exposes_read_only_entity_internals_for_lupe(self):
         sim = Simulation(Config(seed=1, ram_size=8))
@@ -591,6 +710,7 @@ class EveCoreTests(unittest.TestCase):
         observation = sim.observation()["entities"][0]
         self.assertEqual(observation["ram_position"], 0)
         self.assertEqual(observation["genome"]["nodes"][0]["kind"], "CONST")
+        self.assertEqual(observation["genome"]["nodes"][0]["segment"], 1)
         self.assertEqual(observation["genome"]["edges"][0]["source"], 1)
         self.assertEqual(observation["k"]["6:address"]["value"], 3)
         self.assertEqual(observation["z"][0]["sources"], ["RAM[3]"])

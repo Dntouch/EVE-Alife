@@ -9,6 +9,7 @@ import unittest
 import zipfile
 import zlib
 from pathlib import Path
+from unittest import mock
 
 from eve_core import Config, Simulation, demo_genome
 from lupe import HTML, chronicle_data, dashboard_data, entity_genome_data, genome_comparison_data, lineage_data, readonly_connection
@@ -41,6 +42,45 @@ class RunLifecycleTests(unittest.TestCase):
 
     def test_corpse_scavenging_is_part_of_the_permanent_run_record(self) -> None:
         self.assertIn("corpse_scavenged", PERSISTED_EVENT_KINDS)
+
+    def test_live_state_omits_unbounded_analysis_payloads(self) -> None:
+        simulation = Simulation(Config(seed=3))
+        simulation.add_entity(demo_genome(2), 100)
+        state = simulation.live_observation()
+        self.assertNotIn("ram", state)
+        self.assertEqual(state["ram_size"], simulation.config.ram_size)
+        entity = state["entities"][0]
+        for key in ("genome", "k", "z", "value_history", "source_history", "ram_last_seen", "ram_seen_count"):
+            self.assertNotIn(key, entity)
+
+    def test_entity_and_genome_are_not_reserialized_after_first_sync(self) -> None:
+        temporary = tempfile.TemporaryDirectory()
+        self.addCleanup(temporary.cleanup)
+        simulation = Simulation(Config(seed=3))
+        simulation.add_entity(demo_genome(2), 100)
+        manifest = {
+            "run_id": "cache-test", "format_version": 2,
+            "prototype_version": "0.4", "created_at": "2026-01-01T00:00:00+00:00",
+            "mode": "limited", "tick_limit": 1, "configuration": {},
+            "git_commit": "test",
+        }
+        with RunStore(Path(temporary.name), create=True) as store:
+            store.initialize(manifest)
+            with mock.patch.object(store, "register_genome", wraps=store.register_genome) as register:
+                store.sync_entities(simulation)
+                store.sync_entities(simulation)
+                self.assertEqual(register.call_count, 1)
+
+    def test_cli_publishes_compact_live_state_but_keeps_full_observation(self) -> None:
+        _, run_dir = self.run_cli("--ticks", "2")
+        live = json.loads((run_dir / "live.json").read_text(encoding="utf-8"))
+        self.assertNotIn("genome", live["entities"][0])
+        with sqlite3.connect(run_dir / "run.sqlite3") as db:
+            payload = db.execute(
+                "SELECT payload_zlib FROM observations ORDER BY tick DESC LIMIT 1"
+            ).fetchone()[0]
+        observation = json.loads(zlib.decompress(payload))
+        self.assertIn("genome", observation["entities"][0])
 
     def test_default_run_uses_frozen_p1_reference_start(self) -> None:
         _, run_dir = self.run_cli("--ticks", "1")
@@ -123,6 +163,11 @@ class RunLifecycleTests(unittest.TestCase):
         self.assertIn("genome-node-inspector", ui_script)
         self.assertIn("HAT STRUKTURELL ZUR FOLGE, DASS", ui_script)
         self.assertIn("genome-consequence", ui_style)
+        self.assertIn("Gewichtsspanne", ui_script)
+        self.assertIn("EVE · EDGE TRACE", ui_script)
+        self.assertIn("Veränderte Gewichte", ui_script)
+        self.assertIn("weight-inverted", ui_style)
+        self.assertIn("data-weight", HTML)
         self.assertIn("K · KURZZEIT", ui_script)
         self.assertIn("Z · ZUSTAND", ui_script)
         self.assertIn("Startenergie S₀", ui_script)
@@ -264,11 +309,13 @@ class RunLifecycleTests(unittest.TestCase):
         trace = sim._last_genome_trace
         self.assertIsNotNone(trace)
         self.assertTrue(trace["inherited_fragments"])
-        self.assertIn(trace["size_parent_id"], (1, 2))
+        self.assertIsNone(trace["size_parent_id"])
+        self.assertIn(trace["architecture_parent_id"], (1, 2))
         self.assertIn(trace["activity_parent_id"], (1, 2))
         self.assertIn(
             trace["mutation"]["class"],
-            ("activity", "knock_capacity", "bond_ticks", "node", "edge"),
+            ("activity", "knock_capacity", "bond_ticks", "node", "edge", "edge_weight",
+             "slot_duplicate", "slot_delete", "slot_split", "slot_fuse"),
         )
 
     def test_portable_archive_contains_manifest_and_consistent_database(self) -> None:

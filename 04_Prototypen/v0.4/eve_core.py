@@ -85,6 +85,7 @@ class Node:
     id: int
     kind: str
     constant: int | None = None
+    segment: int | None = None
 
     def __post_init__(self) -> None:
         if self.kind not in PORTS:
@@ -99,6 +100,7 @@ class Edge:
     source_port: str
     target: int
     target_port: str
+    weight: int = 0
 
 
 @dataclass
@@ -108,6 +110,14 @@ class Genome:
     activity_base: int
     knock_capacity: int = 1
     bond_ticks: int = 1
+
+    def __post_init__(self) -> None:
+        # Altformate besitzen noch keine Segmentangabe. Ein einzelner Punkt je
+        # Segment ist die neutralste verlustfreie Migration: Es wird keine
+        # funktionale Zusammengehörigkeit erfunden.
+        for node in self.nodes:
+            if node.segment is None:
+                node.segment = node.id
 
     @property
     def n_p(self) -> int:
@@ -127,6 +137,8 @@ class Genome:
             raise ValueError("Nₖ muss zwischen 1 und 16 liegen")
         if self.bond_ticks < 1:
             raise ValueError("Tₚ muss mindestens 1 sein")
+        if any(node.segment is None or node.segment < 1 for node in self.nodes):
+            raise ValueError("Jeder Funktionspunkt benötigt ein positives Segment")
         for edge in self.edges:
             if edge.source not in by_id or edge.target not in by_id:
                 raise ValueError("Kante referenziert eine fehlende Instanz")
@@ -174,7 +186,7 @@ class Config:
     genome_size_sigma: float = 2.0
     mutation_probability: float = 0.001
     standby_cost: float = 1.0
-    aging_cost_rate: float = 0.01
+    aging_cost_rate: float = 0.005
     genome_node_cost: float = 0.05
     genome_edge_cost: float = 0.01
     execution_cost: float = 0.0
@@ -409,8 +421,27 @@ class Simulation:
             for edge in edges:
                 signal = outputs.get(edge.source_port)
                 if signal is not None:
-                    entity.k[Entity.key(edge.target, edge.target_port)] = signal
-                    self.emit("signal", entity_id=entity.id, source=node.id, target=edge.target, value=signal.value)
+                    transported = self._transport_signal(signal, edge.weight)
+                    entity.k[Entity.key(edge.target, edge.target_port)] = transported
+                    self.emit(
+                        "signal", entity_id=entity.id, source=node.id,
+                        target=edge.target, source_value=signal.value,
+                        value=transported.value, edge_weight=edge.weight,
+                    )
+
+    @staticmethod
+    def _transport_signal(signal: Signal, weight: int) -> Signal:
+        """Wende den erblichen Kantengain deterministisch auf ein i64-Signal an.
+
+        Gewicht 0 ist bitgenau neutral. Die ganzzahlige Division rundet wie die
+        übrigen Maschinenoperationen gegen null; anschließend gilt weiterhin
+        die bestehende vorzeichenbehaftete 64-Bit-Semantik.
+        """
+        numerator = signal.value * (100 + weight)
+        value = abs(numerator) // 100
+        if numerator < 0:
+            value = -value
+        return Signal(i64(value), signal.sources, signal.originators)
 
     def _take_inputs(self, entity: Entity, node: Node) -> dict[str, Signal]:
         result: dict[str, Signal] = {}
@@ -824,7 +855,201 @@ class Simulation:
         aging_cost = self.config.aging_cost_rate * heartbeats * (heartbeats + 1) / 2
         return heartbeats * (fixed_cost + execution_cost) + aging_cost
 
+    @staticmethod
+    def _slot_homology(left: Genome, left_slot: int, right: Genome, right_slot: int) -> float:
+        """Strukturelle Homologie zweier Vererbungsplätze, ohne Nutzenwissen."""
+        left_nodes = [node for node in left.nodes if node.segment == left_slot]
+        right_nodes = [node for node in right.nodes if node.segment == right_slot]
+        left_ids = {node.id for node in left_nodes}
+        right_ids = {node.id for node in right_nodes}
+        left_kinds = Counter(node.kind for node in left_nodes)
+        right_kinds = Counter(node.kind for node in right_nodes)
+
+        def multiset_similarity(a: Counter, b: Counter) -> float:
+            total = max(sum(a.values()), sum(b.values()), 1)
+            return sum((a & b).values()) / total
+
+        left_by_id = {node.id: node.kind for node in left.nodes}
+        right_by_id = {node.id: node.kind for node in right.nodes}
+        left_edges = Counter(
+            (left_by_id[edge.source], edge.source_port,
+             left_by_id[edge.target], edge.target_port)
+            for edge in left.edges if edge.source in left_ids
+        )
+        right_edges = Counter(
+            (right_by_id[edge.source], edge.source_port,
+             right_by_id[edge.target], edge.target_port)
+            for edge in right.edges if edge.source in right_ids
+        )
+        size_left = len(left_nodes) + sum(left_edges.values())
+        size_right = len(right_nodes) + sum(right_edges.values())
+        size_similarity = min(size_left, size_right) / max(size_left, size_right, 1)
+        return (
+            0.45 * multiset_similarity(left_kinds, right_kinds)
+            + 0.45 * multiset_similarity(left_edges, right_edges)
+            + 0.10 * size_similarity
+        )
+
     def _recombine(self, parents: list[Entity]) -> Genome:
+        """Vererbt homologe Plätze; die Gesamtgröße entsteht erst danach."""
+        architecture_parent = self.rng.choice(parents)
+        activity_parent = self.rng.choice(parents)
+        knock_parent = self.rng.choice(parents)
+        bond_parent = self.rng.choice(parents)
+        slots_by_parent = {
+            parent.id: sorted({node.segment for node in parent.genome.nodes})
+            for parent in parents
+        }
+        used: dict[int, set[int]] = {parent.id: set() for parent in parents}
+        chosen_slots: list[tuple[Entity, int, list[dict[str, Any]]]] = []
+        homology_threshold = 0.55
+
+        for architecture_slot in slots_by_parent[architecture_parent.id]:
+            alleles: list[tuple[Entity, int, float]] = [
+                (architecture_parent, architecture_slot, 1.0)
+            ]
+            matches: list[dict[str, Any]] = []
+            for parent in parents:
+                if parent.id == architecture_parent.id:
+                    continue
+                candidates = [
+                    (self._slot_homology(
+                        architecture_parent.genome, architecture_slot,
+                        parent.genome, candidate,
+                    ), candidate)
+                    for candidate in slots_by_parent[parent.id]
+                    if candidate not in used[parent.id]
+                ]
+                if not candidates:
+                    continue
+                score, candidate = max(candidates)
+                if score < homology_threshold:
+                    continue
+                used[parent.id].add(candidate)
+                alleles.append((parent, candidate, score))
+                matches.append({
+                    "parent_id": parent.id, "slot_id": candidate,
+                    "homology": round(score, 6),
+                })
+            donor, donor_slot, _score = self.rng.choice(alleles)
+            chosen_slots.append((donor, donor_slot, matches))
+
+        child_nodes: list[Node] = []
+        child_edges: list[Edge] = []
+        node_mapping: dict[tuple[int, int], int] = {}
+        inherited_fragments: list[dict[str, Any]] = []
+        next_id = 1
+        for child_slot, (donor, donor_slot, matches) in enumerate(chosen_slots, start=1):
+            selected_nodes = sorted(
+                (node for node in donor.genome.nodes if node.segment == donor_slot),
+                key=lambda node: node.id,
+            )
+            mapping: dict[int, int] = {}
+            for original in selected_nodes:
+                mapping[original.id] = next_id
+                node_mapping[(donor.id, original.id)] = next_id
+                child_nodes.append(Node(
+                    next_id, original.kind, original.constant, child_slot,
+                ))
+                next_id += 1
+            inherited_fragments.append({
+                "parent_id": donor.id,
+                "segment_id": donor_slot,
+                "child_segment_id": child_slot,
+                "homologous_matches": matches,
+                "trimmed": False,
+                "node_mapping": {str(source): target for source, target in sorted(mapping.items())},
+                "edges": [], "resolved_edges": [], "dropped_edges": [],
+                "edge_resolutions": [],
+            })
+
+        # Anschlusskanten gehören weiterhin zum Platz ihres Quellpunkts.
+        pending: list[tuple[dict[str, Any], Edge, int, Node | None]] = []
+        fragment_by_donor_slot = {
+            (fragment["parent_id"], fragment["segment_id"]): fragment
+            for fragment in inherited_fragments
+        }
+        for donor, donor_slot, _matches in chosen_slots:
+            fragment = fragment_by_donor_slot[(donor.id, donor_slot)]
+            source_ids = {
+                node.id for node in donor.genome.nodes if node.segment == donor_slot
+            }
+            donor_by_id = {node.id: node for node in donor.genome.nodes}
+            for edge in donor.genome.edges:
+                if edge.source not in source_ids:
+                    continue
+                fragment["edges"].append(asdict(edge))
+                source = node_mapping[(donor.id, edge.source)]
+                target = node_mapping.get((donor.id, edge.target))
+                if target is not None:
+                    resolved = Edge(
+                        source, edge.source_port, target, edge.target_port, edge.weight,
+                    )
+                    child_edges.append(resolved)
+                    fragment["resolved_edges"].append(asdict(resolved))
+                    fragment["edge_resolutions"].append({
+                        "status": "preserved", "original": asdict(edge),
+                        "resolved": asdict(resolved),
+                    })
+                else:
+                    pending.append((fragment, edge, source, donor_by_id.get(edge.target)))
+
+        def semantic_role(port: str) -> str:
+            return "operand" if port in {"a", "b"} else port
+
+        occupied = {(edge.target, edge.target_port) for edge in child_edges}
+        for fragment, edge, source, target_spec in pending:
+            exact: list[tuple[int, str]] = []
+            compatible: list[tuple[int, str]] = []
+            if target_spec is not None:
+                wanted_role = semantic_role(edge.target_port)
+                for node in child_nodes:
+                    for port in PORTS[node.kind][0]:
+                        if node.id == source or (node.id, port) in occupied:
+                            continue
+                        if node.kind == target_spec.kind and port == edge.target_port:
+                            exact.append((node.id, port))
+                        elif semantic_role(port) == wanted_role:
+                            compatible.append((node.id, port))
+            candidates = exact or compatible
+            if not candidates:
+                fragment["dropped_edges"].append(asdict(edge))
+                fragment["edge_resolutions"].append({
+                    "status": "dropped", "reason": "no_semantic_target",
+                    "original": asdict(edge), "resolved": None,
+                })
+                continue
+            target, target_port = self.rng.choice(candidates)
+            resolved = Edge(source, edge.source_port, target, target_port, edge.weight)
+            child_edges.append(resolved)
+            occupied.add((target, target_port))
+            fragment["resolved_edges"].append(asdict(resolved))
+            fragment["edge_resolutions"].append({
+                "status": "reconnected", "match": "exact" if exact else "role",
+                "original": asdict(edge), "resolved": asdict(resolved),
+            })
+
+        genome = Genome(
+            child_nodes, child_edges, activity_parent.genome.activity_base,
+            knock_parent.genome.knock_capacity, bond_parent.genome.bond_ticks,
+        )
+        mutation = self._mutate(genome)
+        genome.validate()
+        self._last_genome_trace = {
+            "target_n_g": None,
+            "architecture_parent_id": architecture_parent.id,
+            "size_parent_id": None,
+            "activity_parent_id": activity_parent.id,
+            "knock_capacity_parent_id": knock_parent.id,
+            "bond_ticks_parent_id": bond_parent.id,
+            "selection_rule": "homologous_slot_inheritance",
+            "homology_threshold": homology_threshold,
+            "inherited_fragments": inherited_fragments,
+            "mutation": mutation,
+        }
+        return genome
+
+    def _recombine_capacity_legacy(self, parents: list[Entity]) -> Genome:
         chosen_size_parent = self.rng.choice(parents)
         target = round(self.rng.gauss(chosen_size_parent.genome.n_g, self.config.genome_size_sigma))
         target = max(1, min(target, sum(p.genome.n_g for p in parents)))
@@ -834,78 +1059,165 @@ class Simulation:
         knock_capacity = knock_parent.genome.knock_capacity
         bond_parent = self.rng.choice(parents)
         bond_ticks = bond_parent.genome.bond_ticks
-        fragments: list[tuple[int, list[Node], list[Edge]]] = []
+        segments: list[tuple[int, int, list[Node], list[Edge]]] = []
         for parent in parents:
-            nodes = {node.id: node for node in parent.genome.nodes}
-            neighbors: dict[int, set[int]] = {node_id: set() for node_id in nodes}
-            for edge in parent.genome.edges:
-                neighbors[edge.source].add(edge.target)
-                neighbors[edge.target].add(edge.source)
-            remaining = set(nodes)
-            while remaining:
-                seed = min(remaining)
-                component = {seed}
-                frontier = [seed]
-                while frontier:
-                    current = frontier.pop()
-                    for neighbor in neighbors[current]:
-                        if neighbor not in component:
-                            component.add(neighbor)
-                            frontier.append(neighbor)
-                remaining -= component
-                component_edges = [
-                    edge for edge in parent.genome.edges
-                    if edge.source in component and edge.target in component
+            by_segment: dict[int, list[Node]] = {}
+            for node in parent.genome.nodes:
+                assert node.segment is not None
+                by_segment.setdefault(node.segment, []).append(node)
+            for segment_id, segment_nodes in sorted(by_segment.items()):
+                node_ids = {node.id for node in segment_nodes}
+                # Eine Kante gehört erblich zum Segment ihres Quellpunkts.
+                outgoing_edges = [
+                    edge for edge in parent.genome.edges if edge.source in node_ids
                 ]
-                fragments.append((parent.id, [nodes[node_id] for node_id in sorted(component)], component_edges))
+                segments.append((parent.id, segment_id, segment_nodes, outgoing_edges))
+        # Elterliches Material wird fortlaufend bis zur gezogenen Kapazität
+        # eingefüllt. Vollständige Segmente bleiben intakt; nur das letzte
+        # Segment darf an der Kapazitätsgrenze abgeschnitten werden. Dadurch
+        # kann ein größeres Kind zusätzliches Material beider Eltern aufnehmen,
+        # ohne dass die Zielgröße selbst neue Geninformation erfindet.
+        segment_order = list(range(len(segments)))
+        self.rng.shuffle(segment_order)
+        selected_parts: list[tuple[int, int, list[Node], list[Edge], bool]] = []
+        remaining = target
+        for segment_index in segment_order:
+            parent_id, segment_id, segment_nodes, segment_edges = segments[segment_index]
+            segment_size = len(segment_nodes) + len(segment_edges)
+            if segment_size <= remaining:
+                selected_parts.append((
+                    parent_id, segment_id, list(segment_nodes), list(segment_edges), False,
+                ))
+                remaining -= segment_size
+                if remaining == 0:
+                    break
+                continue
+
+            # Das letzte Segment wird in stabiler Punktreihenfolge angeschnitten.
+            # Ein übernommener Punkt bringt seine ausgehenden Kanten mit, soweit
+            # die Restkapazität reicht; danach endet die Vererbung.
+            partial_nodes: list[Node] = []
+            partial_edges: list[Edge] = []
+            outgoing: dict[int, list[Edge]] = {}
+            for edge in segment_edges:
+                outgoing.setdefault(edge.source, []).append(edge)
+            for node in sorted(segment_nodes, key=lambda item: item.id):
+                if remaining <= 0:
+                    break
+                partial_nodes.append(node)
+                remaining -= 1
+                for edge in outgoing.get(node.id, []):
+                    if remaining <= 0:
+                        break
+                    partial_edges.append(edge)
+                    remaining -= 1
+                if remaining <= 0:
+                    break
+            if partial_nodes:
+                selected_parts.append((
+                    parent_id, segment_id, partial_nodes, partial_edges, True,
+                ))
+            break
+
         child_nodes: list[Node] = []
         child_edges: list[Edge] = []
         inherited_fragments: list[dict[str, Any]] = []
         next_id = 1
-        # Atomare 0/1-Knapsack-Auswahl: Die Kombination soll die zufällig
-        # gezogene Zielgröße möglichst gut erreichen. Damit kann eine deutlich
-        # schlechter passende Folge kleiner Fragmente eine große Komponente
-        # nicht mehr allein durch die Reihenfolge verdrängen. Gleich gute
-        # Kombinationen bleiben zufällig.
-        reachable: dict[int, tuple[tuple[int, ...], int]] = {0: ((), 1)}
-        for index, (_parent_id, nodes, edges) in enumerate(fragments):
-            size = len(nodes) + len(edges)
-            for total, (combination, _count) in list(reachable.items())[::-1]:
-                candidate_total = total + size
-                if candidate_total > target:
-                    continue
-                candidate = combination + (index,)
-                existing = reachable.get(candidate_total)
-                if existing is None:
-                    reachable[candidate_total] = (candidate, 1)
-                else:
-                    previous, count = existing
-                    count += 1
-                    reachable[candidate_total] = (
-                        candidate if self.rng.randrange(count) == 0 else previous,
-                        count,
-                    )
-        best_size = max(reachable)
-        selected_indices = reachable[best_size][0]
-        if not selected_indices:
-            # Ein Fragment bleibt unteilbar, auch wenn die Zielgröße kleiner ist.
-            selected_indices = (min(
-                range(len(fragments)),
-                key=lambda index: len(fragments[index][1]) + len(fragments[index][2]),
-            ),)
-        for fragment_index in selected_indices:
-            parent_id, selected_nodes, selected_edges = fragments[fragment_index]
-            mapping: dict[int, int] = {}
+        node_mapping: dict[tuple[int, int], int] = {}
+        child_segment_by_node: dict[int, int] = {}
+        segment_mapping: dict[tuple[int, int], int] = {}
+        for child_segment, part in enumerate(selected_parts, start=1):
+            parent_id, segment_id, selected_nodes, _selected_edges, _trimmed = part
+            segment_mapping[(parent_id, segment_id)] = child_segment
             for original in selected_nodes:
-                mapping[original.id] = next_id
-                child_nodes.append(Node(next_id, original.kind, original.constant))
+                node_mapping[(parent_id, original.id)] = next_id
+                child_segment_by_node[next_id] = child_segment
+                child_nodes.append(Node(
+                    next_id, original.kind, original.constant, child_segment,
+                ))
                 next_id += 1
-            for edge in selected_edges:
-                child_edges.append(Edge(mapping[edge.source], edge.source_port, mapping[edge.target], edge.target_port))
-            inherited_fragments.append({
+
+        # Zuerst werden alle noch vollständig vorhandenen Originalziele
+        # reserviert. Semantisch reparierte Schnittkanten dürfen keine dieser
+        # Eingaben verdrängen.
+        resolutions: list[tuple[dict[str, Any], Edge, int, Node | None]] = []
+        for parent_id, segment_id, selected_nodes, selected_edges, trimmed in selected_parts:
+            mapping = {
+                node.id: node_mapping[(parent_id, node.id)] for node in selected_nodes
+            }
+            resolved_edges: list[Edge] = []
+            dropped_edges: list[dict[str, Any]] = []
+            edge_resolutions: list[dict[str, Any]] = []
+            fragment = {
                 "parent_id": parent_id,
+                "segment_id": segment_id,
+                "child_segment_id": segment_mapping[(parent_id, segment_id)],
+                "trimmed": trimmed,
                 "node_mapping": {str(source): target for source, target in sorted(mapping.items())},
                 "edges": [asdict(edge) for edge in selected_edges],
+                "resolved_edges": resolved_edges,
+                "dropped_edges": dropped_edges,
+                "edge_resolutions": edge_resolutions,
+            }
+            inherited_fragments.append(fragment)
+            for edge in selected_edges:
+                source = node_mapping[(parent_id, edge.source)]
+                original_target = node_mapping.get((parent_id, edge.target))
+                if original_target is not None:
+                    resolved = Edge(
+                        source, edge.source_port, original_target,
+                        edge.target_port, edge.weight,
+                    )
+                    child_edges.append(resolved)
+                    resolved_edges.append(asdict(resolved))
+                    edge_resolutions.append({
+                        "status": "preserved", "original": asdict(edge),
+                        "resolved": asdict(resolved),
+                    })
+                    continue
+                parent_genome = self.entities[parent_id].genome
+                target_spec = next(
+                    (node for node in parent_genome.nodes if node.id == edge.target), None
+                )
+                resolutions.append((fragment, edge, source, target_spec))
+
+        def semantic_role(port: str) -> str:
+            if port in {"a", "b"}:
+                return "operand"
+            return port
+
+        occupied = {(edge.target, edge.target_port) for edge in child_edges}
+        for fragment, edge, source, target_spec in resolutions:
+            exact: list[tuple[int, str]] = []
+            compatible: list[tuple[int, str]] = []
+            if target_spec is not None:
+                wanted_role = semantic_role(edge.target_port)
+                for node in child_nodes:
+                    for port in PORTS[node.kind][0]:
+                        if (node.id, port) in occupied or node.id == source:
+                            continue
+                        if node.kind == target_spec.kind and port == edge.target_port:
+                            exact.append((node.id, port))
+                        elif semantic_role(port) == wanted_role:
+                            compatible.append((node.id, port))
+            candidates = exact or compatible
+            if not candidates:
+                fragment["dropped_edges"].append(asdict(edge))
+                fragment["edge_resolutions"].append({
+                    "status": "dropped", "reason": "no_semantic_target",
+                    "original": asdict(edge), "resolved": None,
+                })
+                continue
+            target_node, target_port = self.rng.choice(candidates)
+            resolved = Edge(
+                source, edge.source_port, target_node, target_port, edge.weight,
+            )
+            child_edges.append(resolved)
+            occupied.add((target_node, target_port))
+            fragment["resolved_edges"].append(asdict(resolved))
+            fragment["edge_resolutions"].append({
+                "status": "reconnected", "match": "exact" if exact else "role",
+                "original": asdict(edge), "resolved": asdict(resolved),
             })
         genome = Genome(child_nodes, child_edges, activity_base, knock_capacity, bond_ticks)
         mutation = self._mutate(genome)
@@ -916,7 +1228,7 @@ class Simulation:
             "activity_parent_id": activity_parent.id,
             "knock_capacity_parent_id": knock_parent.id,
             "bond_ticks_parent_id": bond_parent.id,
-            "selection_rule": "closest_atomic_subset",
+            "selection_rule": "ordered_segment_fill_with_semantic_trim",
             "inherited_fragments": inherited_fragments,
             "mutation": mutation,
         }
@@ -925,14 +1237,88 @@ class Simulation:
     def _mutate(self, genome: Genome) -> dict[str, Any] | None:
         if self.rng.random() >= self.config.mutation_probability:
             return None
-        classes = ["activity", "knock_capacity", "bond_ticks"]
-        if genome.nodes:
-            classes.append("node")
-        if genome.edges:
-            classes.append("edge")
-        mutation = self.rng.choice(classes)
+        slots = sorted({node.segment for node in genome.nodes})
+        structural = ["slot_duplicate"] if slots else []
+        if len(slots) > 1:
+            structural.extend(("slot_delete", "slot_fuse"))
+        if any(sum(node.segment == slot for node in genome.nodes) > 1 for slot in slots):
+            structural.append("slot_split")
+        if structural and self.rng.random() < 0.10:
+            mutation = self.rng.choice(structural)
+        else:
+            classes = ["activity", "knock_capacity", "bond_ticks"]
+            if genome.nodes:
+                classes.append("node")
+            if genome.edges:
+                classes.extend(("edge", "edge_weight"))
+            mutation = self.rng.choice(classes)
         detail: dict[str, Any] = {"class": mutation}
-        if mutation == "activity":
+        if mutation == "slot_duplicate":
+            source_slot = self.rng.choice(slots)
+            new_slot = max(slots, default=0) + 1
+            originals = [node for node in genome.nodes if node.segment == source_slot]
+            next_id = max((node.id for node in genome.nodes), default=0) + 1
+            mapping: dict[int, int] = {}
+            copies: list[Node] = []
+            for original in originals:
+                mapping[original.id] = next_id
+                copies.append(Node(next_id, original.kind, original.constant, new_slot))
+                next_id += 1
+            copied_edges: list[Edge] = []
+            for edge in list(genome.edges):
+                if edge.source not in mapping:
+                    continue
+                copied_edges.append(Edge(
+                    mapping[edge.source], edge.source_port,
+                    mapping.get(edge.target, edge.target), edge.target_port, edge.weight,
+                ))
+            genome.nodes.extend(copies)
+            genome.edges.extend(copied_edges)
+            detail.update({
+                "source_slot": source_slot, "new_slot": new_slot,
+                "nodes_added": len(copies), "edges_added": len(copied_edges),
+            })
+        elif mutation == "slot_delete":
+            removed_slot = self.rng.choice(slots)
+            removed = {node.id for node in genome.nodes if node.segment == removed_slot}
+            before_edges = len(genome.edges)
+            genome.nodes[:] = [node for node in genome.nodes if node.id not in removed]
+            genome.edges[:] = [
+                edge for edge in genome.edges
+                if edge.source not in removed and edge.target not in removed
+            ]
+            detail.update({
+                "removed_slot": removed_slot, "nodes_removed": len(removed),
+                "edges_removed": before_edges - len(genome.edges),
+            })
+        elif mutation == "slot_split":
+            candidates = [
+                slot for slot in slots
+                if sum(node.segment == slot for node in genome.nodes) > 1
+            ]
+            source_slot = self.rng.choice(candidates)
+            members = [node for node in genome.nodes if node.segment == source_slot]
+            self.rng.shuffle(members)
+            moved = members[len(members) // 2:]
+            new_slot = max(slots, default=0) + 1
+            for node in moved:
+                node.segment = new_slot
+            detail.update({
+                "source_slot": source_slot, "new_slot": new_slot,
+                "nodes_moved": len(moved),
+            })
+        elif mutation == "slot_fuse":
+            target_slot, removed_slot = self.rng.sample(slots, 2)
+            moved = 0
+            for node in genome.nodes:
+                if node.segment == removed_slot:
+                    node.segment = target_slot
+                    moved += 1
+            detail.update({
+                "target_slot": target_slot, "removed_slot": removed_slot,
+                "nodes_moved": moved,
+            })
+        elif mutation == "activity":
             detail["before"] = genome.activity_base
             genome.activity_base = max(1, genome.activity_base + self.rng.choice((-1, 1)))
             detail["after"] = genome.activity_base
@@ -956,20 +1342,53 @@ class Simulation:
                     node.kind = self.rng.choice(choices)
                     node.constant = 0 if node.kind == "CONST" else None
             detail["after"] = asdict(node)
-        else:
+        elif mutation == "edge":
             edge_index = self.rng.randrange(len(genome.edges))
             edge = genome.edges[edge_index]
             detail.update({"edge_index": edge_index, "before": asdict(edge)})
             if self.rng.random() < 0.5:
                 candidates = [(n.id, p) for n in genome.nodes for p in PORTS[n.kind][1]]
                 source, port = self.rng.choice(candidates)
-                genome.edges[edge_index] = Edge(source, port, edge.target, edge.target_port)
+                genome.edges[edge_index] = Edge(
+                    source, port, edge.target, edge.target_port, edge.weight,
+                )
             else:
                 candidates = [(n.id, p) for n in genome.nodes for p in PORTS[n.kind][0]]
                 target, port = self.rng.choice(candidates)
-                genome.edges[edge_index] = Edge(edge.source, edge.source_port, target, port)
+                genome.edges[edge_index] = Edge(
+                    edge.source, edge.source_port, target, port, edge.weight,
+                )
+            detail["after"] = asdict(genome.edges[edge_index])
+        else:
+            edge_index = self.rng.randrange(len(genome.edges))
+            edge = genome.edges[edge_index]
+            magnitude = self._weight_mutation_magnitude()
+            delta = magnitude if self.rng.random() < 0.5 else -magnitude
+            detail.update({
+                "edge_index": edge_index,
+                "before": asdict(edge),
+                "delta": delta,
+            })
+            genome.edges[edge_index] = Edge(
+                edge.source, edge.source_port, edge.target, edge.target_port,
+                edge.weight + delta,
+            )
             detail["after"] = asdict(genome.edges[edge_index])
         return detail
+
+    def _weight_mutation_magnitude(self) -> int:
+        """Ziehe exakt proportional zu 1/k², k >= 1, ohne feste Obergrenze.
+
+        1/(k(k+1)) dient als leicht ziehbare Vorschlagsverteilung. Eine
+        Akzeptanzwahrscheinlichkeit von (k+1)/(2k) korrigiert sie auf 1/k².
+        """
+        while True:
+            draw = self.rng.random()
+            if draw == 0.0:
+                continue
+            magnitude = int(1.0 / draw)
+            if self.rng.random() < (magnitude + 1) / (2 * magnitude):
+                return magnitude
 
     def observation(self) -> dict[str, Any]:
         return {
@@ -1016,6 +1435,48 @@ class Simulation:
                     "ram_seen_count": dict(sorted(e.ram_seen_count.items())),
                 }
                 for e in sorted(self.entities.values(), key=lambda item: item.id)
+            ],
+        }
+
+    def live_observation(self) -> dict[str, Any]:
+        """Small read-only state for the live desk.
+
+        Unlike :meth:`observation`, this deliberately contains no RAM copy,
+        signal stores, histories, or repeated genome topology.  Those remain
+        available through periodic observations and the normalized genome
+        tables.  Building the live view must not scale with the amount of
+        historical knowledge accumulated by every amoeba.
+        """
+        return {
+            "schema": 1,
+            "version": self.version,
+            "tick": self.tick,
+            "config": asdict(self.config),
+            "ram_size": len(self.ram),
+            "environment_toys": self.environment_toys,
+            "entities": [
+                {
+                    "id": entity.id,
+                    "name": entity.name,
+                    "alive": entity.alive,
+                    "corpse_available": entity.corpse_available,
+                    "energy": entity.energy,
+                    "start_energy": entity.start_energy,
+                    "born_at": entity.born_at,
+                    "generation": entity.generation,
+                    "ram_position": entity.ram_position,
+                    "parents": list(entity.parents),
+                    "partners": list(entity.partner_ids),
+                    "n_f": len(entity.genome.nodes),
+                    "n_p": entity.genome.n_p,
+                    "n_g": entity.genome.n_g,
+                    "activity_base": entity.genome.activity_base,
+                    "knock_capacity": entity.genome.knock_capacity,
+                    "bond_ticks": entity.genome.bond_ticks,
+                    "k_slots": len(entity.k),
+                    "z_used": sum(value is not None for value in entity.z),
+                }
+                for entity in sorted(self.entities.values(), key=lambda item: item.id)
             ],
         }
 
@@ -1141,11 +1602,26 @@ class Simulation:
         return sim
 
 
+def _segment_nodes(nodes: list[Node], groups: Iterable[Iterable[int]]) -> None:
+    """Vergib explizite erbliche Segmente und prüfe vollständige Abdeckung."""
+    assignments: dict[int, int] = {}
+    for segment, node_ids in enumerate(groups, start=1):
+        for node_id in node_ids:
+            if node_id in assignments:
+                raise ValueError("Funktionspunkt steht in mehreren Segmenten")
+            assignments[node_id] = segment
+    if set(assignments) != {node.id for node in nodes}:
+        raise ValueError("Segmentdefinition muss jeden Funktionspunkt genau einmal abdecken")
+    for node in nodes:
+        node.segment = assignments[node.id]
+
+
 def demo_genome(partner_id: int, ram_start: int = 0) -> Genome:
     nodes = [
         Node(1, "CONST", 1), Node(2, "CONST", 0), Node(3, "CONST", partner_id), Node(4, "MEM_WRITE"),
         Node(5, "CONST", ram_start), Node(6, "RAM_READ"), Node(7, "CONST", 0), Node(8, "Z_WRITE"),
     ]
+    _segment_nodes(nodes, (range(1, 5), range(5, 9)))
     edges = [
         Edge(1, "value", 4, "offset"), Edge(2, "value", 4, "slot"), Edge(3, "value", 4, "value"),
         Edge(5, "value", 6, "address"), Edge(6, "value", 8, "value"), Edge(7, "value", 8, "address"),
@@ -1160,6 +1636,7 @@ def explorer_demo_genome(partner_id: int, ram_start: int = 0) -> Genome:
         Node(5, "CONST", ram_start), Node(6, "CONST", 1), Node(7, "ADD"), Node(8, "RAM_READ"),
         Node(9, "CONST", 0), Node(10, "Z_WRITE"),
     ]
+    _segment_nodes(nodes, (range(1, 5), range(5, 11)))
     edges = [
         Edge(1, "value", 4, "offset"), Edge(2, "value", 4, "slot"), Edge(3, "value", 4, "value"),
         Edge(5, "value", 7, "a"), Edge(6, "value", 7, "b"),
@@ -1232,6 +1709,14 @@ def p1_explorer_genome(
         Node(72, "MEM_READ"), Node(73, "EQ"), Node(74, "MEM_READ"),
         Node(75, "GATE"), Node(76, "MEM_WRITE"),
     ]
+    # Die Rumpfamöbe beginnt mit drei evolvierbaren Vererbungsplätzen.
+    # Ihre Größe ist nicht begrenzt; die Gruppierung ist Verpackung, keine
+    # Aussage über erwünschte Funktion oder späteren Nutzen.
+    _segment_nodes(nodes, (
+        (*range(1, 18), *range(41, 48), 53),
+        (*range(18, 41), *range(48, 53), *range(54, 68)),
+        range(68, 77),
+    ))
     edges = [
         Edge(3, "value", 5, "address"), Edge(5, "value", 6, "a"),
         Edge(53, "value", 6, "b"), Edge(47, "value", 7, "a"),

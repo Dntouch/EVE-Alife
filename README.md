@@ -9,10 +9,11 @@ Untersucht wird, was aus sehr einfachen digitalen Entitäten entstehen kann, wen
 ## Aktueller Prototyp
 
 Der aktive Entwicklungsstand ist [Prototyp v0.4](04_Prototypen/v0.4/README.md).
-Er basiert auf dem abgeschlossenen v0.3-Stand und beginnt als Genomrevision für
-evolvierbare Kantengewichte. Im neutralen Ausgangsstand sind Gewichte noch nicht
-aktiv; der Wert `0` ist bereits verbindlich als unverändertes bisheriges
-Kantenverhalten festgelegt.
+Er basiert auf dem abgeschlossenen v0.3-Stand und revidiert Genomvererbung sowie
+evolvierbare Kantengewichte. Gewicht `0` bewahrt das bisherige Kantenverhalten;
+Mutationen können die transportierten Werte proportional verändern. Homologe,
+größenfreie Genomplätze verhindern den zuvor beobachteten erzwungenen
+Genomverlust.
 
 Der konservierte [Prototyp v0.3](04_Prototypen/v0.3/README.md) ergänzt gegenüber
 v0.2:
@@ -30,12 +31,19 @@ Run-Datenformat bleibt kompatibel bei Version 2; v0.2 selbst wird nicht verände
 
 Der jüngste abgeschlossene Versuch ist [v0.3/Lauf 7](07_Laufergebnisse/v0.3/Lauf_007.md): Mit halbierter Altersrate trug der Run 163 Nachkommen bis Generation 28 und erreichte Tick 10.000 mit 13 lebenden Amöben. Da gegenüber dem 5.000-Tick-Standardlauf gleichzeitig Laufdauer und Altersrate geändert wurden, ist dies noch kein isolierter Test einer einzelnen Umweltbedingung.
 
+Der erste große [v0.4-Lauf](07_Laufergebnisse/v0.4/Lauf_001.md) erzeugte bis
+Tick 4.034 insgesamt 9.446 Amöben und erreichte Generation 38. Er endete nicht
+fachlich, sondern durch einen dokumentierten OOM-Abbruch. Der Befund führte zu
+einem skalierbaren Live- und Persistenzpfad, ohne die Simulationssemantik zu
+ändern.
+
 Der erste ausführbare Stand [v0.1](04_Prototypen/v0.1/README.md) und die Ergebnisse von P0/P1 bleiben als abgeschlossene historische Prototypstände erhalten; die genaue Grenze steht in der [Konservierungsnotiz](04_Prototypen/KONSERVIERUNG_P0_P1.md).
 
 ## Neues aus dem Schlammeimer
 
 | Prototyp | Dokumentierte Läufe | Massenaussterben | Nachkommen | Gewonnene RAM-Energie |
 | :--- | ---: | ---: | ---: | ---: |
+| [v0.4](07_Laufergebnisse/v0.4/README.md) | 1 abgebrochen | **0** | 9.426 | nicht abschließend bilanziert |
 | [v0.3](07_Laufergebnisse/v0.3/README.md) | 7 | **1** | 387 | 5.494.422,00 |
 | [v0.2](07_Laufergebnisse/v0.2/README.md) | 16 | **5** | 536 | 6.603.400,00 |
 | [v0.1](07_Laufergebnisse/v0.1/README.md) | 41 | **17** | 2.478 | 14.070.529,67 |
@@ -47,7 +55,7 @@ Als Massenaussterben zählt ein Lauf, an dessen Ende keine Amöbe mehr lebt. Die
 Voraussetzung ist Python 3. Es werden keine externen Python-Pakete benötigt.
 
 ```bash
-cd 04_Prototypen/v0.3
+cd 04_Prototypen/v0.4
 python3 run.py --ticks 500
 python3 supervisor.py
 python3 lupe.py runs/DEINE-RUN-ID --port 8766
@@ -56,7 +64,7 @@ python3 lupe.py runs/DEINE-RUN-ID --port 8766
 Die Lupe ist danach unter `http://127.0.0.1:8766/` erreichbar. Ein Testlauf des Codes:
 
 ```bash
-cd 04_Prototypen/v0.3
+cd 04_Prototypen/v0.4
 python3 -m unittest -v
 ```
 
@@ -67,9 +75,9 @@ Run-Rohdaten können groß werden und bleiben deshalb lokal unter `04_Prototypen
 | Einstieg | Inhalt |
 | :--- | :--- |
 | [Das Genom verstehen](02_Konzept/Genom_verstehen.md) | Einführung in `G`, Funktionspunkte, Kanten, Datenfluss, Vererbung und Mutation |
-| [v0.3-Lupe](04_Prototypen/v0.3/LUPE.md) | Arbeitsbereiche, Fokusmodus, Bedienung und Beobachtungsgrenze |
-| [v0.3-Spezifikation](04_Prototypen/v0.3/SPEZIFIKATION.md) | ausführbare Regeln und Abgrenzung zum Fachkonzept |
-| [v0.3-Architektur](04_Prototypen/v0.3/ARCHITEKTUR.md) | Run-Lebenszyklus, Datenmodell, Skalierung und Beobachtung |
+| [v0.4-Lupe](04_Prototypen/v0.4/LUPE.md) | Arbeitsbereiche, Fokusmodus, Bedienung und Beobachtungsgrenze |
+| [v0.4-Spezifikation](04_Prototypen/v0.4/SPEZIFIKATION.md) | ausführbare Regeln der Genomrevision |
+| [v0.4-Architektur](04_Prototypen/v0.4/ARCHITEKTUR.md) | Run-Lebenszyklus, Datenmodell, Skalierung und Beobachtung |
 | [Laufergebnisse](07_Laufergebnisse/README.md) | nach Prototypversion getrennte Versuchsberichte |
 | [Projektlog](05_Projektlog/README.md) | chronologische Entstehung einschließlich Irrwegen und Entscheidungen |
 | [Blog](06_Blog/README.md) | lesbare Gesprächserzählungen und Lab Notes; derzeit interne Entwürfe |

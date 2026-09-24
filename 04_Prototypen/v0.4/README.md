@@ -26,28 +26,52 @@ definiert. Er bedeutet weder „abgeschaltet“ noch „wirkungslos“.
 Nicht übernommen wurden Run-Rohdaten, Caches und v0.3-Screenshots. Die
 v0.4-Lupe liest weiterhin die konservierten v0.2- und v0.3-Run-Verzeichnisse.
 
-## Noch nicht implementiert
+## Implementierter v0.4-Kern
 
-Kantengewichte sind im Ausgangsstand nicht evolutionär aktiv. Vor der
-Implementierung werden gemeinsam festgelegt:
+Kantengewichte sind evolutionär aktiv. Alle Rumpf- und Altformatkanten beginnen
+neutral bei `0`. Bei einer Geburt kann eine vorhandene Kante eine eigene
+Gewichtsmutation erfahren. Kleine Schritte dominieren gemäß `P(k) ∝ 1/k²`,
+große Sprünge bleiben ohne feste Gewichtsgrenze möglich; beide Richtungen sind
+gleich wahrscheinlich. Zur Laufzeit gilt `T(v,w) = trunc(v × (100+w) / 100)`.
 
-- mathematische Wirkung positiver und negativer Werte,
-- Wertebereich und Rechenverhalten bei Grenzen,
-- Genomkodierung und Run-Format,
-- Vererbung und Rekombination,
-- Mutationswahrscheinlichkeit und Schrittverteilung,
-- Kostenwirkung,
-- Darstellung in Lupe, Genomvergleich und Stammbaum.
+Gewichte werden mit den Anschlusskanten ihrer Segmente vererbt, in Genomfingerprints und Checkpoints
+gespeichert und von der Lupe einschließlich des direkten Genomvergleichs
+angezeigt. Sie verändern derzeit weder Kantenkosten noch Genomgröße.
+
+Die Vererbung arbeitet in v0.4 mit evolvierbaren Genomplätzen beliebiger Größe.
+P1 startet mit drei Plätzen. Ein Architektur-Elternteil liefert die kindlichen
+Loci; strukturell homologe Varianten aller Eltern werden bevorzugt gepaart und
+je Locus vollständig vererbt. Eine vorgegebene Zielgenomgröße existiert nicht
+mehr. Duplikation, Verlust, Teilung und Verschmelzung verändern selten die
+Platzarchitektur. Offene platzübergreifende Kanten werden semantisch neu
+angeschlossen oder verworfen; Quelle und Gewicht bleiben erhalten.
 
 Die geprüfte heutige Bedeutung einer Kante und der Neutralitätsvertrag stehen
 in [KANTENGEWICHTE_KONZEPT.md](KANTENGEWICHTE_KONZEPT.md). Die technische und
 fachliche Abgrenzung zu v0.3 steht in [VERSIONSGRENZE.md](VERSIONSGRENZE.md).
+Die revidierte Vererbungsentscheidung, das Segmentmodell und die semantische
+Reparatur von Schnittkanten stehen in
+[SEGMENTVERERBUNG_KONZEPT.md](SEGMENTVERERBUNG_KONZEPT.md).
+
+## Skalierbarer Beobachtungspfad
+
+Der erste große v0.4-Lauf erreichte 9.446 erzeugte und 8.761 lebende Amöben,
+bevor der Prozess bei Tick 4.034 durch einen OOM-Abbruch endete. Die vollständige
+[Laufanalyse](../../07_Laufergebnisse/v0.4/Lauf_001.md) trennt den biologischen
+Populationsdurchbruch vom technischen Ende.
+
+Persistierte Ereignisse werden nun unmittelbar aus dem Simulationsspeicher
+freigegeben. Das Live-Bild ist kompakt und auf zwei Aktualisierungen pro Sekunde
+begrenzt; periodische wissenschaftliche Beobachtungen bleiben davon getrennt.
+Status, Commit und Manifest werden am Messintervall gebündelt. Entitäten und
+Genome werden nur bei ihrer Entstehung registriert.
 
 ## Testen
 
 ```bash
 cd 04_Prototypen/v0.4
 python3 -m unittest -v
+python3 benchmark_performance.py --population 1000 --ticks 10
 ```
 
 ## Starten
@@ -64,5 +88,8 @@ python3 lupe.py runs/DEINE-RUN-ID --port 8766
 - `run.py`, `run_store.py`: Run-Ausführung und Persistenz
 - `supervisor.py`, `run_parameters.py`: kontrollierte Run-Steuerung
 - `lupe.py`, `assets/v04.js`, `assets/v04.css`: Analyseoberfläche
+- `benchmark_performance.py`: reproduzierbarer CPU- und Beobachtungsbenchmark
+- `PERFORMANCE.md`: OOM-Ursache, Gegenmaßnahmen und Referenzmessung
 - `KANTENGEWICHTE_KONZEPT.md`: fachlicher Ausgangspunkt der Genomrevision
-- `test_*.py`: übernommene Regressionstests und kommende v0.4-Tests
+- `SEGMENTVERERBUNG_KONZEPT.md`: geplante Segmente und Anschlusskanten
+- `test_*.py`: 67 Regressionstests einschließlich skalierbarer Persistenz

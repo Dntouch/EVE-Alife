@@ -1,6 +1,6 @@
 # Konzeptionelle Genomerweiterung: evolvierbare Kantengewichte
 
-Status: erstes Arbeitspaket von v0.4, im Simulationskern noch nicht implementiert.
+Status: für v0.4 festgelegt und im Simulationskern implementiert.
 
 ## Ziel und Nicht-Ziel
 
@@ -21,8 +21,8 @@ negative Werte ← veränderte/hemmende Wirkung
                                       veränderte/verstärkende Wirkung → positive Werte
 ```
 
-Die Begriffe „hemmend“ und „verstärkend“ beschreiben hier nur den vorgesehenen
-Suchraum. Sie legen noch keine mathematische Operation fest.
+Die Begriffe „hemmend“ und „verstärkend“ beschreiben den proportionalen Einfluss
+auf den transportierten Zahlenwert.
 
 ## Exakte Bedeutung einer Kante im aktuellen Prototyp
 
@@ -68,9 +68,17 @@ Quell- und Zielport. Abstrakt gilt:
 T(v, 0) = v
 ```
 
-Dieser Neutralitätsvertrag ist verbindlich. Die konkrete Funktion `T` bleibt
-bis zur gemeinsamen Überarbeitung von Genomgröße, Redundanz,
-Funktionsbausteinen und Mutationsmechanik offen.
+Für v0.4 ist die Funktion festgelegt als:
+
+```text
+T(v, w) = trunc(v × (100 + w) / 100)
+```
+
+`trunc` rundet gegen null. Das Ergebnis wird anschließend wie alle übrigen
+Maschinenwerte auf die bestehende vorzeichenbehaftete 64-Bit-Darstellung
+abgebildet. Damit bewirkt `w = 0` exakt 100 Prozent, `w = 100` 200 Prozent,
+`w = -100` blockiert das Signal numerisch und Werte unter `-100` kehren sein
+Vorzeichen um. Es gibt keine besondere Gewichtsunter- oder -obergrenze.
 
 Weiterhin vorgesehen sind folgende Invarianten:
 
@@ -84,34 +92,27 @@ Weiterhin vorgesehen sind folgende Invarianten:
 
 ## Vererbung, Mutation und Beobachtbarkeit
 
-Für die spätere Implementierung gilt:
-
 - Das Gewicht wird zusammen mit seiner Kante vererbt.
-- Bei der Rekombination eines Fragments bleiben dessen Kantengewichte erhalten.
+- Bei der Rekombination eines Segments bleiben die Gewichte seiner internen
+  Kanten und ausgehenden Anschlusskanten erhalten.
 - Eine Umverdrahtung ändert nicht implizit das Gewicht der Kante.
-- Die Mutationsmechanik muss das Gewicht einer bestehenden Kante verändern
-  können. Dies ist eine zusätzliche Möglichkeit neben Entstehung, Entfernung
-  und Umverdrahtung von Kanten.
+- Das Gewicht kann ausschließlich während der Genomerzeugung bei einer Geburt
+  mutieren. Eine Gewichtsmutation ist eine zusätzliche Mutationsklasse neben
+  den bereits vorhandenen Klassen.
+- Der Änderungsbetrag `k >= 1` wird ohne feste Obergrenze mit
+  `P(k) ∝ 1/k²` gezogen. Kleine Schritte dominieren; große Sprünge bleiben
+  selten möglich. Das Vorzeichen des Schritts wird unabhängig mit gleicher
+  Wahrscheinlichkeit gezogen.
 - Es gibt keine bevorzugte Mutationsrichtung und keinen eingebauten Druck weg
   vom Neutralwert.
 - Lupe, Genomvergleich, Abstammungsanalyse und Mutationsprovenienz müssen eine
   Gewichtsänderung als eigene genomische Veränderung ausweisen können.
-- Genomfingerprints und kanonische Serialisierung müssen das Gewicht
-  berücksichtigen, sobald die Erweiterung implementiert wird.
-- Ältere Genome ohne Gewicht werden dann kompatibel als Gewicht `0` gelesen.
+- Genomfingerprints und kanonische Serialisierung berücksichtigen das Gewicht.
+- Ältere Genome ohne Gewicht werden kompatibel als Gewicht `0` gelesen.
 
-## Bewusst offene Entscheidungen
+## Für spätere Genomrevisionen offen
 
-Noch nicht festgelegt werden:
-
-- Wertebereich und Bitbreite,
-- Kodierung und Serialisierungsform,
-- typische oder mögliche Mutationsschritte,
-- Begrenzung, Sättigung oder Überlauf,
-- die genaue Wirkung positiver und negativer Werte,
-- ein möglicher Einfluss auf Ausführungs- oder Unterhaltskosten,
-- die Behandlung eines Gewichts bei neu entstehenden Kanten.
-
-Diese Entscheidungen dürfen nicht isoliert getroffen werden. Sie gehören in
-die nächste gemeinsame Genomrevision. Bis dahin beschreibt dieses Dokument
-eine vorgesehene Fähigkeit, aber keine bereits aktive biologische Regel.
+Noch nicht festgelegt sind ein möglicher Einfluss des Gewichtsbetrags auf
+Ausführungs- oder Unterhaltskosten und die Initialisierung künftig neu
+entstehender Kanten. Im aktuellen Kern entstehen durch Mutation noch keine
+neuen Kanten; sämtliche Rumpf- und Altformatkanten beginnen neutral bei `0`.

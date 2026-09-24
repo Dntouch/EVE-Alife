@@ -20,7 +20,10 @@ Beobachtungsbilder ab und ist ausdrücklich kein exakter Tick-Replay.
 
 Der Evolutionsverlauf zeigt Population, Genomvielfalt, Geburten, Tode und
 laufübergreifend konsistente Schlüsselereignisse. Ziehen wählt einen Zeitraum,
-das Mausrad zoomt und Umschalt-Ziehen verschiebt die sichtbare Zeitachse.
+`Strg`/`Cmd` plus Mausrad zoomt und Umschalt-Ziehen verschiebt die sichtbare
+Zeitachse. Während eines laufenden Experiments aktualisiert sich die Darstellung
+alle zehn Sekunden automatisch. Zoom, Position und Auswahl bleiben dabei
+erhalten; ein manueller Aktualisieren-Knopf zeigt zugleich den letzten Abruf an.
 
 Die Amöbenliste unterstützt mehrere kommagetrennte Suchbegriffe als ODER-Suche,
 beispielsweise `Ada, Vera, #99`. Suchbegriffe erscheinen als einzeln entfernbare
@@ -51,6 +54,12 @@ ihre Nachkommen rechts ab. Vorfahren erscheinen cyan, Nachkommen violett.
 Unmittelbare Eltern und unmittelbare Kinder werden gegenüber entfernteren
 Beziehungen besonders hell dargestellt.
 
+Während eines laufenden Experiments wird der Stammbaum alle zehn Sekunden
+nachgeführt, ohne Auswahl, Zoom oder Kameraposition zu verlieren. Umfangreiche
+Bäume erscheinen in der Gesamtansicht zunächst als Gruppen aus gleicher
+Generation und ähnlicher Geburtszeit. Ein Klick auf eine Gruppe löst sie
+räumlich auf; anschließend kann eine einzelne Amöbe fokussiert werden.
+
 Umschalt-Klick vergleicht zwei Amöben und ermittelt ihren letzten gemeinsamen
 Vorfahren. Mausrad und Ziehen steuern den zweidimensionalen Arbeitsraum. Ein
 Klick auf freie Fläche löst den Fokus und stellt die vorherige Kameraposition
@@ -63,6 +72,23 @@ EVE-Netzkarte dar. Klick auf einen Funktionspunkt hebt seine direkten Beziehunge
 hervor und blendet Unbeteiligtes ab. Der Arbeitsraum kann zweidimensional
 verschoben und bis 64-fach gezoomt werden. Eine Genomkarte lässt sich weiterhin
 in einem separaten Fenster öffnen.
+
+Vererbungsplätze sind unmittelbar sichtbar: Jeder Platz besitzt eine eigene
+Farbkontur und Kennung an seinen Funktionspunkten. Eine dynamische Legende nennt
+je Platz Funktionspunkte, interne Kanten und ausgehende Anschlusskanten. Ein
+Klick auf einen Platz isoliert seinen Inhalt und alle beteiligten Übergänge.
+Interne Kanten erscheinen in der Platzfarbe; platzübergreifende Anschlusskanten
+sind gestrichelt und tragen Quell- und Zielplatz in den Analysedaten.
+
+Kantengewichte sind Bestandteil derselben Analyse. Kopfzeile und Legende zeigen
+Zahl und Spannweite veränderter Gewichte. Farbe und Stärke einer Kante
+unterscheiden neutrale, verstärkende, dämpfende, blockierende und invertierende
+Übertragung. Ein Klick auf die Kante öffnet Quelle, Ziel, erbliches Gewicht,
+Quell- und Zielport, interne beziehungsweise platzübergreifende Zugehörigkeit,
+prozentuale Übertragung und ihre strukturelle Folge. Im direkten
+Eltern-Kind-Vergleich zählt und markiert die Lupe veränderte Kantengewichte und
+stellt Eltern- und Kindwert gegenüber. Historische Genome ohne Gewicht werden
+in allen Ansichten neutral als `0` dargestellt.
 
 ## Fokusmodus
 

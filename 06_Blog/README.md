@@ -41,6 +41,7 @@ Eine Kennzeichnung gilt für die unmittelbar zugehörige Passage. Der restliche 
 - [012 – Die reichste Amöbe der Welt ist allein](012_Die_reichste_Amoebe_der_Welt_ist_allein.md)
 - [013 – Die Lupe, die einen Stammbaum verschluckte](013_Die_Lupe_die_einen_Stammbaum_verschluckte.md)
 - [014 – Der Arme ist ja durch ein Leichenfeld gestolpert](014_Der_Arme_ist_durch_ein_Leichenfeld_gestolpert.md)
+- [015 – Die Rammler fraßen den RAM](015_Die_Rammler_frassen_den_RAM.md)
 
 ## Status
 

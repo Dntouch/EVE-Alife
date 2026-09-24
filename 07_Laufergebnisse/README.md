@@ -4,6 +4,9 @@ Laufnummern gelten immer nur innerhalb einer Prototypversion. Ein Lauf wird durc
 
 ## Versionen
 
+- [v0.4 – aktive Genomrevision](v0.4/README.md): homologe Genomplätze,
+  evolvierbare Kantengewichte und der dokumentierte erste Populationsdurchbruch
+  samt technischem OOM-Abbruch.
 - [v0.3 – abgeschlossene Analyse- und Beobachtungsreihe](v0.3/README.md): reproduzierte 5.000-Tick-Standardläufe, 10.000-Tick-Lauf mit halbierter Altersrate und dokumentierte v0.3-Technikläufe.
 - [v0.2 – konservierte Versuchsreihe](v0.2/README.md): SQLite-Format 2, variable genomische Partnersuche, grafische Live-Lupe, RAM-Habitate, gemeinsame Elternfinanzierung und Versuche mit reduziertem Genomkostentarif.
 - [v0.1 – konservierte P0/P1-Läufe](v0.1/README.md): 41 historische Läufe sowie die damaligen Reihen-Auswertungen.
