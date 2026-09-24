@@ -186,7 +186,7 @@ class Config:
     genome_size_sigma: float = 2.0
     mutation_probability: float = 0.001
     standby_cost: float = 1.0
-    aging_cost_rate: float = 0.005
+    aging_cost_rate: float = 0.01
     genome_node_cost: float = 0.05
     genome_edge_cost: float = 0.01
     execution_cost: float = 0.0

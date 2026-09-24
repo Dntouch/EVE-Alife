@@ -225,6 +225,19 @@ class RunLifecycleTests(unittest.TestCase):
         self.assertGreater(len(set(positions)), 1)
         self.assertTrue(manifest["configuration"]["local_ram_coordinates"])
 
+    def test_bare_world_distributes_founders_without_environment_toys(self) -> None:
+        _, run_dir = self.run_cli("--ticks", "1", "--ram-world", "bare")
+        manifest = json.loads((run_dir / "manifest.json").read_text(encoding="utf-8"))
+        self.assertEqual(manifest["ram_world"], "bare")
+        self.assertEqual(manifest["configuration"]["toy_habitats"], 0)
+        self.assertTrue(manifest["configuration"]["local_ram_coordinates"])
+        live = json.loads((run_dir / "live.json").read_text(encoding="utf-8"))
+        self.assertEqual(live["environment_toys"], {
+            "stones": [], "bubbles": [], "switches": [],
+        })
+        positions = [entity["ram_position"] for entity in live["entities"] if not entity["parents"]]
+        self.assertGreater(len(set(positions)), 1)
+
     def test_dashboard_orders_runs_by_creation_time_newest_first(self) -> None:
         temporary = tempfile.TemporaryDirectory()
         self.addCleanup(temporary.cleanup)

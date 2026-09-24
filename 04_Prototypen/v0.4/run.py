@@ -58,15 +58,15 @@ def main() -> None:
     parser.add_argument("--birth-energy-fraction", type=float, default=0.5, help="Geburtsenergie als Anteil der mittleren aktuellen Elternenergie")
     parser.add_argument("--birth-min-heartbeats", type=int, default=5, help="Mindestzahl vollständig finanzierbarer Heartbeats des Kindergenoms")
     parser.add_argument("--novelty-base", type=float, default=60.0, help="P1-Tarif für den ersten belohnten RAM-Wechsel")
-    parser.add_argument("--aging-cost-rate", type=float, default=0.005, help="Zusätzliche Standby-Kosten je bereits gelebtem Heartbeat")
+    parser.add_argument("--aging-cost-rate", type=float, default=0.01, help="Zusätzliche Standby-Kosten je bereits gelebtem Heartbeat")
     parser.add_argument("--genome-node-cost", type=float, default=0.05, help="Faktor der unterlinear wachsenden Funktionspunktkosten")
     parser.add_argument("--genome-edge-cost", type=float, default=0.01, help="Faktor der unterlinear wachsenden Kantenkosten")
     parser.add_argument("--entity-discovery-base", type=float, default=10.0, help="Energie für den neuen Fund einer lebenden fremden Amöbe")
     parser.add_argument("--invitation-discovery-base", type=float, default=20.0, help="Energie für eine neu erkannte Einladung im fremden Partnerslot")
     parser.add_argument("--life-state-discovery-base", type=float, default=10.0, help="Energie für einen neu erkannten Lebenszustand einer fremden Amöbe")
     parser.add_argument(
-        "--ram-world", choices=("random", "islands", "toys"), default="random",
-        help="RAM-Suppe: Zahlenbrei, statische Inseln oder experimenteller Spielzeugkasten",
+        "--ram-world", choices=("random", "islands", "bare", "toys"), default="random",
+        help="RAM-Suppe: absoluter Zahlenbrei, statische Inseln, räumliche Welt ohne Spielzeuge oder Spielzeugkasten",
     )
     parser.add_argument("--population-model", choices=("p1", "demo", "technical-explorer"), default="p1")
     parser.add_argument("--explorers", action="store_true", help="Technische Population mit rückgekoppeltem RAM-Adresszähler")
@@ -127,7 +127,7 @@ def main() -> None:
             invitation_discovery_base=args.invitation_discovery_base,
             life_state_discovery_base=args.life_state_discovery_base,
             toy_habitats=128 if args.ram_world == "toys" else 0,
-            local_ram_coordinates=args.ram_world == "toys",
+            local_ram_coordinates=args.ram_world in {"bare", "toys"},
         )
         ram = None
         if args.ram_world == "islands":

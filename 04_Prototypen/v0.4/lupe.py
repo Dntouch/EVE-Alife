@@ -49,7 +49,7 @@ async function dashboard(){const d=await fetch('/api/dashboard',{cache:'no-store
 async function dashboardWithFertility(){await dashboard();const d=await fetch('/api/dashboard',{cache:'no-store'}).then(r=>r.json());document.querySelector('#run-history').innerHTML=d.history.length?`<table><thead><tr><th>Lauf</th><th>Tick</th><th>Status</th><th>Nachkommen</th><th>Unfruchtbar</th><th>Energie</th></tr></thead><tbody>${d.history.slice(0,5).map(r=>`<tr><td>${r.run_number}</td><td>${r.tick}</td><td>${r.mass_extinction?'ausgestorben':r.population_alive+' lebend'}</td><td>${r.offspring}</td><td>${r.infertile_offspring}</td><td>${r.energy_gained.toFixed(2)}</td></tr>`).join('')}</tbody></table>`:'<p class="empty">Noch keine Läufe.</p>'}
 const soupCanvas=document.querySelector('#soup-canvas'),soupCtx=soupCanvas.getContext('2d');
 sharpenCanvas(soupCanvas);sharpenCanvas(chartCanvas,()=>drawTimeline());sharpenCanvas(contactCanvas,()=>drawEnvironment());
-let liveCursor=0,liveRamSize=65536,liveEntities=[],liveToys={},soupPulses=[],livePolling=false,hoveredSoupEntity=null,historicalSoup=false,soupHistoryTimers=[];
+let liveCursor=0,liveRamSize=65536,liveEntities=[],liveToys={},soupPulses=[],livePolling=false,hoveredSoupEntity=null,historicalSoup=false,soupHistoryTimers=[],soupTickInterval=Number(localStorage.getItem('eve-soup-ticks')||25),lastSoupTick=-Infinity,pendingSoupEvents=[];
 const soupTooltip=document.createElement('div');soupTooltip.className='soup-tooltip';soupTooltip.hidden=true;document.querySelector('#live-soup').appendChild(soupTooltip);
 const soupVisible={amoebas:true,toys:true,reads:true,writes:true,environment:true,births:true,deaths:true},legendItems=[['amoebas','#73dc8c','Amöben'],['toys','#89948c','Spielzeuge'],['reads','#77b9e8','Lesen'],['writes','#e6bd68','Schreiben'],['environment','#b98bea','Umwelt'],['births','#ffffff','Geburten'],['deaths','#e17b72','Tode']];document.querySelector('.live-legend').innerHTML=legendItems.map(([key,color,label])=>`<label><input type="checkbox" data-soup-filter="${key}" checked><i style="background:${color}"></i>${label}</label>`).join('');document.querySelectorAll('[data-soup-filter]').forEach(input=>input.addEventListener('change',()=>{soupVisible[input.dataset.soupFilter]=input.checked}));
 let ramZoom=1,ramCenter=liveRamSize/2,soupTargets=[],hoveredSoupCluster=null,ramInitialized=false,ramDrag=null,suppressSoupClick=false;
@@ -63,8 +63,9 @@ function drawSoup(now){const g=soupCtx,w=soupCanvas.width,h=soupCanvas.height,pa
  if(soupVisible.toys){for(const stone of liveToys.stones||[]){const[x,y]=soupPoint(stone.start,1);if(!inside(x))continue;g.fillStyle='#65758a';g.fillRect(x-3,y-3,6,6)}for(const bubble of liveToys.bubbles||[]){const[x,y]=soupPoint(bubble.address,1);if(!inside(x))continue;g.strokeStyle='#a862ff';g.lineWidth=1.5;g.beginPath();g.arc(x,y,4,0,Math.PI*2);g.stroke()}for(const sw of liveToys.switches||[]){const[x,y]=soupPoint(sw.trigger,1);if(!inside(x))continue;g.fillStyle='#f4b942';g.beginPath();g.moveTo(x,y-5);g.lineTo(x+5,y+4);g.lineTo(x-5,y+4);g.closePath();g.fill()}}
  soupTargets=[];if(soupVisible.amoebas){const points=liveEntities.filter(e=>e.alive).map(entity=>{const[x,y]=soupPoint(entity.position,-1);return{x,y,entity}}).filter(p=>inside(p.x)).sort((a,b)=>a.x-b.x);const clusters=[];for(const point of points){const last=clusters.at(-1);if(last&&point.x-last.maxX<18){last.entities.push(point.entity);last.maxX=point.x;last.x=(last.x*(last.entities.length-1)+point.x)/last.entities.length}else clusters.push({x:point.x,y:point.y,maxX:point.x,entities:[point.entity]})}for(const cluster of clusters){const count=cluster.entities.length,selected=hoveredSoupCluster?.entities.some(e=>cluster.entities.some(c=>c.id===e.id)),baseRadius=Math.min(17,5+Math.log2(count)*3),r=baseRadius+(count>1?Math.sin(now/850+cluster.x)*.45:0);g.globalAlpha=hoveredSoupCluster&&!selected ? .28 : 1;g.fillStyle=count>1?'#24bff5':'#20e6d2';g.shadowColor=g.fillStyle;g.shadowBlur=selected?20:8;g.beginPath();g.arc(cluster.x,cluster.y,r,0,Math.PI*2);g.fill();g.shadowBlur=0;if(count>1){g.fillStyle='#fff';g.font='bold 10px ui-monospace,monospace';g.textAlign='center';g.textBaseline='middle';g.fillText(String(count),cluster.x,cluster.y+.5);g.textAlign='left';g.textBaseline='alphabetic'}g.globalAlpha=1;soupTargets.push(cluster)}}
  soupPulses=soupPulses.filter(p=>now-p.born<1800);for(const p of soupPulses){if(!soupVisible[p.type]||(hoveredSoupEntity&&!p.entityIds.includes(hoveredSoupEntity.id)))continue;const age=(now-p.born)/1800,[x,y]=soupPoint(p.address,0);if(!inside(x))continue;g.globalAlpha=1-age;g.strokeStyle=p.color;g.lineWidth=p.type==='environment'?1.5:2.5;g.beginPath();g.arc(x,y,p.size+age*p.grow*.45,0,Math.PI*2);g.stroke()}g.globalAlpha=1;requestAnimationFrame(drawSoup)}
-async function pollSoup(){if(livePolling)return;livePolling=true;try{const d=await fetch(`/api/live-feed?after=${liveCursor}`,{cache:'no-store'}).then(r=>r.json());liveCursor=d.cursor||liveCursor;liveRamSize=d.ram_size||liveRamSize;if(!ramInitialized){ramCenter=liveRamSize/2;ramInitialized=true}liveEntities=d.entities||[];liveToys=d.toys||{};document.querySelector('#live-soup-numbers').textContent=`Tick ${Number(d.tick||0).toLocaleString()} · ${Number(d.population||0).toLocaleString()} Amöben`;if((d.events||[]).length&&window.eveV04)window.eveV04.signalDataArrival();const positions=new Map(liveEntities.map(e=>[e.id,e.position]));for(const e of d.events||[]){const owners=[e.entity_id,...(e.parents||[])].filter(Boolean);if(e.kind==='ram_read')soupPulse(e.address,'#77b9e8',3,'reads',15,owners);else if(e.kind==='ram_write')soupPulse(e.address,'#e6bd68',4,'writes',17,owners);else if(e.kind==='environment_change')soupPulse(e.address,'#b98bea',2,'environment',7,owners);else if(e.kind==='birth')soupPulse(e.ram_position,'#ffffff',7,'births',20,owners);else if(e.kind==='death')soupPulse(e.ram_position??positions.get(e.entity_id),'#e17b72',7,'deaths',20,owners);else if(e.kind==='corpse_scavenged')soupPulse(e.ram_position,'#f4b942',9,'deaths',26,owners)}}catch(_e){}finally{livePolling=false}}
-requestAnimationFrame(drawSoup);pollSoup();let soupPollTimer=setInterval(pollSoup,500);
+async function pollSoup(){if(livePolling)return;livePolling=true;try{const d=await fetch(`/api/live-feed?after=${liveCursor}`,{cache:'no-store'}).then(r=>r.json());liveCursor=d.cursor||liveCursor;pendingSoupEvents.push(...(d.events||[]));const tick=Number(d.tick||0);if(lastSoupTick!==-Infinity&&tick-lastSoupTick<soupTickInterval)return;lastSoupTick=tick;liveRamSize=d.ram_size||liveRamSize;if(!ramInitialized){ramCenter=liveRamSize/2;ramInitialized=true}liveEntities=d.entities||[];liveToys=d.toys||{};document.querySelector('#live-soup-numbers').textContent=`Tick ${tick.toLocaleString()} · ${Number(d.population||0).toLocaleString()} Amöben · Bild alle ${soupTickInterval} Ticks`;if(pendingSoupEvents.length&&window.eveV04)window.eveV04.signalDataArrival();const positions=new Map(liveEntities.map(e=>[e.id,e.position]));for(const e of pendingSoupEvents.splice(0)){const owners=[e.entity_id,...(e.parents||[])].filter(Boolean);if(e.kind==='ram_read')soupPulse(e.address,'#77b9e8',3,'reads',15,owners);else if(e.kind==='ram_write')soupPulse(e.address,'#e6bd68',4,'writes',17,owners);else if(e.kind==='environment_change')soupPulse(e.address,'#b98bea',2,'environment',7,owners);else if(e.kind==='birth')soupPulse(e.ram_position,'#ffffff',7,'births',20,owners);else if(e.kind==='death')soupPulse(e.ram_position??positions.get(e.entity_id),'#e17b72',7,'deaths',20,owners);else if(e.kind==='corpse_scavenged')soupPulse(e.ram_position,'#f4b942',9,'deaths',26,owners)}}catch(_e){}finally{livePolling=false}}
+window.eveSetSoupTickInterval=value=>{soupTickInterval=Math.max(1,Number(value)||25);localStorage.setItem('eve-soup-ticks',String(soupTickInterval));lastSoupTick=-Infinity;pollSoup()};
+requestAnimationFrame(drawSoup);pollSoup();let soupPollTimer=setInterval(pollSoup,1500);
 soupCanvas.addEventListener('pointermove',event=>{const rect=soupCanvas.getBoundingClientRect();if(ramDrag){const dx=event.clientX-ramDrag.startX,span=liveRamSize/ramZoom;ramCenter=((ramDrag.startCenter-dx/rect.width*span)%liveRamSize+liveRamSize)%liveRamSize;updateRamNavigator();if(Math.abs(dx)>4){ramDrag.moved=true;suppressSoupClick=true}soupTooltip.hidden=true;return}const px=(event.clientX-rect.left)*soupCanvas.width/rect.width,py=(event.clientY-rect.top)*soupCanvas.height/rect.height;let nearest=null,best=Infinity;for(const cluster of soupTargets){const distance=Math.hypot(px-cluster.x,py-cluster.y);if(distance<best){best=distance;nearest=cluster}}if(!nearest||best>22||!soupVisible.amoebas){hoveredSoupCluster=null;hoveredSoupEntity=null;soupTooltip.hidden=true;soupCanvas.classList.remove('has-target');return}hoveredSoupCluster=nearest;hoveredSoupEntity=nearest.entities.length===1?nearest.entities[0]:null;soupCanvas.classList.add('has-target');soupTooltip.hidden=false;if(nearest.entities.length===1){const entity=nearest.entities[0];soupTooltip.innerHTML=`<b>${esc(entity.name||nameOf(entity.id))} · #${entity.id}</b><br>RAM ${Number(entity.position).toLocaleString()} · S ${Number(entity.energy).toFixed(2)}<br><span class="muted">Klicken zum Beobachten</span>`}else{const energy=nearest.entities.reduce((sum,e)=>sum+Number(e.energy||0),0),samePosition=new Set(nearest.entities.map(e=>e.position)).size===1;soupTooltip.innerHTML=`<b>${nearest.entities.length} Amöben gruppiert</b><br>Ø Energie ${(energy/nearest.entities.length).toFixed(2)}<br><span class="muted">${samePosition?'Identische RAM-Position · klicken zum Auswählen':'Klicken zum Hineinzoomen'}</span>`}soupTooltip.style.left=`${event.clientX-rect.left+14}px`;soupTooltip.style.top=`${event.clientY-rect.top+58}px`});
 soupCanvas.addEventListener('pointerdown',event=>{if(ramZoom<=1||hoveredSoupCluster)return;ramDrag={pointerId:event.pointerId,startX:event.clientX,startCenter:ramCenter,moved:false};soupCanvas.setPointerCapture(event.pointerId);soupCanvas.classList.add('is-panning');event.preventDefault()});
 const finishRamDrag=event=>{if(!ramDrag||event.pointerId!==ramDrag.pointerId)return;const moved=ramDrag.moved;ramDrag=null;soupCanvas.classList.remove('is-panning');if(soupCanvas.hasPointerCapture(event.pointerId))soupCanvas.releasePointerCapture(event.pointerId);if(moved)setTimeout(()=>{suppressSoupClick=false},0)};
@@ -78,7 +79,7 @@ function historyPulse(event,positions){const owners=[event.entity_id,...(event.p
 let soupSelectionRequest=0;
 async function syncSoupToSelection(){
  const request=++soupSelectionRequest;clearSoupHistory();
- if(selection.mode==='all'){historicalSoup=false;if(!soupPollTimer)soupPollTimer=setInterval(pollSoup,500);pollSoup();return}
+ if(selection.mode==='all'){historicalSoup=false;if(!soupPollTimer)soupPollTimer=setInterval(pollSoup,1500);pollSoup();return}
  historicalSoup=true;if(soupPollTimer){clearInterval(soupPollTimer);soupPollTimer=null}
  const[start,end]=selectionRange(),snapshot=snapshotNames.filter(n=>parseInt(n)<=end).at(-1),path=snapshot?'/api/snapshot/'+snapshot:'/api/latest';
  try{
@@ -97,10 +98,10 @@ function eventsForSelection(){const [start,end]=selectionRange();return activity
 function renderActivity(){const events=eventsForSelection(),counts={birth:0,death:0,discoveries:0,invitations:0,deadFinds:0,writes:0,rejections:0};events.forEach(e=>{if(e.kind==='birth'&&(e.parents||[]).length)counts.birth++;if(e.kind==='death')counts.death++;if(e.discovery_type==='entity')counts.discoveries++;if(e.discovery_type==='invitation')counts.invitations++;if(e.discovery_type==='life_state'&&!e.value)counts.deadFinds++;if(e.kind==='ram_write')counts.writes++;if(e.kind==='birth_rejected')counts.rejections++});document.querySelector('#selection-stats').innerHTML=`<div class="metric">Amöben<strong>${visibleIds.size}</strong></div><div class="metric">Geburten<strong>${counts.birth}</strong></div><div class="metric">Tode<strong>${counts.death}</strong></div><div class="metric">Funde<strong>${counts.discoveries}</strong></div><div class="metric">Tot aufgefunden<strong>${counts.deadFinds}</strong></div><div class="metric">Einladungen<strong>${counts.invitations}</strong></div><div class="metric">RAM-Schreiben<strong>${counts.writes}</strong></div>`;const important=events.filter(e=>e.kind!=='ram_write').slice(-150).reverse();document.querySelector('#selection-events').innerHTML=important.length?important.map(e=>`<li><b>Tick ${e.tick}</b> · Amöbe #${e.entity_id||'—'} · ${esc(describe(e))}</li>`).join(''):'<li class="empty">In dieser Auswahl wurde kein biologisch relevantes Ereignis protokolliert.</li>'}
 async function applySelection(){const [start,end]=selectionRange(),snapshot=snapshotNames.filter(n=>parseInt(n)<=end).at(-1),path=snapshot?'/api/snapshot/'+snapshot:'/api/latest';try{const s=await fetch(path,{cache:'no-store'}).then(r=>r.json());if(s.error)throw Error(s.error);currentTick=s.tick;const deaths=new Map(activityEvents.filter(e=>e.kind==='death').map(e=>[e.entity_id,e.tick])),shown=s.entities.filter(e=>e.born_at<=end&&(!deaths.has(e.id)||deaths.get(e.id)>=start));visibleIds=new Set(shown.map(e=>e.id));const aliveAtEnd=shown.filter(e=>e.born_at<=end&&(!deaths.has(e.id)||deaths.get(e.id)>end)).length;const title=selection.mode==='all'?'Gesamter Lauf':selection.mode==='point'?`Tick ${end}`:`Ticks ${start}–${end}`;document.querySelector('#selection-label').textContent=title;document.querySelector('#selection-help').textContent=`Zustand aus Snapshot Tick ${s.tick}`;metaBox.innerHTML=`<div class="metric">Auswahl<strong>${title}</strong></div><div class="metric">Am Ende lebend<strong>${aliveAtEnd}</strong></div><div class="metric">Beteiligte Amöben<strong>${shown.length}</strong></div><div class="metric">Seed<strong>${s.config.seed}</strong></div><div class="metric">Run<strong style="font-size:.8rem">${esc(s.run_id||'—')}</strong></div>`;const chosen=envSelect.value;if(shown.length&&window.eveV04)window.eveV04.renderEntityBrowser(shown,box);else box.innerHTML=shown.length?shown.map(e=>card(e,new Set())).join(''):'<p class="empty">Keine Amöbe berührt diese Auswahl.</p>';envSelect.innerHTML='<option value="all">alle</option>'+shown.map(e=>`<option value="${e.id}">${amoeba(e)} #${e.id}</option>`).join('');if([...envSelect.options].some(o=>o.value===chosen))envSelect.value=chosen;renderActivity();drawEnvironment();drawTimeline()}catch(e){box.innerHTML=`<p class="error">${esc(e.message)}</p>`}}
 function timelineRefreshState(text,busy=false){const state=document.querySelector('[data-evolution-refresh-state]'),button=document.querySelector('[data-evolution-refresh]');if(state)state.textContent=text;if(button){button.disabled=busy;button.classList.toggle('is-busy',busy)}}
-async function list(preserve=false){if(timelineRefreshing)return;timelineRefreshing=true;timelineRefreshState('aktualisiert …',true);const previousMax=maxTick(),previousView={...timelineViewport},previousSelection={...selection},previousSnapshot=select.value;try{const [a,t,e,activity,lineage]=await Promise.all([fetch('/api/snapshots',{cache:'no-store'}).then(r=>r.json()),fetch('/api/timeline',{cache:'no-store'}).then(r=>r.json()),fetch('/api/environment',{cache:'no-store'}).then(r=>r.json()),fetch('/api/activity',{cache:'no-store'}).then(r=>r.json()),fetch('/api/lineage',{cache:'no-store'}).then(r=>r.json())]);snapshotNames=a;timelinePoints=t;environmentEvents=e;activityEvents=activity;timelineMilestones=lineage.milestones||[];const currentMax=maxTick();if(!preserve||!previousMax){timelineViewport={start:0,end:currentMax};selection={mode:'all',start:0,end:currentMax}}else{const span=Math.max(10,previousView.end-previousView.start),wasFull=previousView.start<=0&&previousView.end>=previousMax,followedEnd=previousView.end>=previousMax;if(wasFull)timelineViewport={start:0,end:currentMax};else if(followedEnd)timelineViewport={start:Math.max(0,currentMax-span),end:currentMax};else{const start=Math.max(0,Math.min(Math.max(0,currentMax-span),previousView.start));timelineViewport={start,end:Math.min(currentMax,start+span)}}selection=previousSelection.mode==='all'?{mode:'all',start:0,end:currentMax}:previousSelection}select.innerHTML='<option value="latest">aktuell</option>'+a.map(x=>`<option value="${esc(x)}">Tick ${parseInt(x)}</option>`).join('');if(previousSnapshot&&[...select.options].some(option=>option.value===previousSnapshot))select.value=previousSnapshot;drawTimeline();timelineRefreshState(`aktuell · ${new Date().toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit',second:'2-digit'})}`)}catch(error){timelineRefreshState('Aktualisierung fehlgeschlagen')}finally{timelineRefreshing=false;const button=document.querySelector('[data-evolution-refresh]');if(button)button.disabled=false}}
+async function list(preserve=false){if(timelineRefreshing)return;timelineRefreshing=true;timelineRefreshState(preserve?'ergänzt neue Ticks …':'lädt …',true);const previousMax=maxTick(),previousView={...timelineViewport},previousSelection={...selection},previousSnapshot=select.value;try{let a,t;if(preserve){[a,t]=await Promise.all([fetch('/api/snapshots',{cache:'no-store'}).then(r=>r.json()),fetch(`/api/timeline?after=${previousMax}`,{cache:'no-store'}).then(r=>r.json())]);const known=new Set(timelinePoints.map(point=>point.tick));timelinePoints.push(...t.filter(point=>!known.has(point.tick)));timelinePoints.sort((x,y)=>x.tick-y.tick)}else{const initial=await Promise.all([fetch('/api/snapshots',{cache:'no-store'}).then(r=>r.json()),fetch('/api/timeline',{cache:'no-store'}).then(r=>r.json()),fetch('/api/environment',{cache:'no-store'}).then(r=>r.json()),fetch('/api/activity',{cache:'no-store'}).then(r=>r.json()),fetch('/api/lineage?limit=50',{cache:'no-store'}).then(r=>r.json())]);[a,t,environmentEvents,activityEvents]=initial;timelinePoints=t;timelineMilestones=initial[4].milestones||[]}snapshotNames=a;const currentMax=maxTick();if(!preserve||!previousMax){timelineViewport={start:0,end:currentMax};selection={mode:'all',start:0,end:currentMax}}else{const span=Math.max(10,previousView.end-previousView.start),wasFull=previousView.start<=0&&previousView.end>=previousMax,followedEnd=previousView.end>=previousMax;if(wasFull)timelineViewport={start:0,end:currentMax};else if(followedEnd)timelineViewport={start:Math.max(0,currentMax-span),end:currentMax};else{const start=Math.max(0,Math.min(Math.max(0,currentMax-span),previousView.start));timelineViewport={start,end:Math.min(currentMax,start+span)}}selection=previousSelection.mode==='all'?{mode:'all',start:0,end:currentMax}:previousSelection}select.innerHTML='<option value="latest">aktuell</option>'+a.map(x=>`<option value="${esc(x)}">Tick ${parseInt(x)}</option>`).join('');if(previousSnapshot&&[...select.options].some(option=>option.value===previousSnapshot))select.value=previousSnapshot;drawTimeline();timelineRefreshState(`${preserve&&t.length?`+${t.length} Messpunkte`:'aktuell'} · ${new Date().toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit',second:'2-digit'})}`)}catch(error){timelineRefreshState('Aktualisierung fehlgeschlagen')}finally{timelineRefreshing=false;const button=document.querySelector('[data-evolution-refresh]');if(button)button.disabled=false}}
 chartCanvas.onpointerdown=e=>{if(e.shiftKey){timelinePan={x:e.clientX,start:timelineViewport.start,end:timelineViewport.end};chartCanvas.classList.add('is-panning')}else dragStart=tickFromPointer(e);chartCanvas.setPointerCapture(e.pointerId)};chartCanvas.onpointermove=e=>{const tick=tickFromPointer(e);timelineHover=tick;if(timelinePan){const rect=chartCanvas.getBoundingClientRect(),delta=(timelinePan.x-e.clientX)/rect.width*(timelinePan.end-timelinePan.start),span=timelinePan.end-timelinePan.start,start=Math.max(0,Math.min(maxTick()-span,timelinePan.start+delta));timelineViewport={start,end:start+span};drawTimeline();return}if(dragStart!==null){selection={mode:tick===dragStart?'point':'range',start:Math.min(dragStart,tick),end:Math.max(dragStart,tick)};document.querySelector('#selection-label').textContent=selection.mode==='point'?`Tick ${tick}`:`Ticks ${selection.start}–${selection.end}`}drawTimeline();const point=timelinePoints.reduce((best,p)=>Math.abs(p.tick-tick)<Math.abs(best.tick-tick)?p:best,timelinePoints[0]),tip=document.querySelector('#timeline-tooltip');if(tip&&point){const rect=chartCanvas.getBoundingClientRect(),births=activityEvents.filter(x=>x.kind==='birth'&&x.tick===point.tick).length,deaths=activityEvents.filter(x=>x.kind==='death'&&x.tick===point.tick).length;tip.innerHTML=`<b>Tick ${point.tick}</b><span>Population ${point.alive}</span><span>Genome ${point.genomes||0}</span><span>Geburten ${births} · Tode ${deaths}</span>`;tip.style.left=`${Math.min(rect.width-180,Math.max(8,e.clientX-rect.left+12))}px`;tip.hidden=false}};chartCanvas.onpointerleave=()=>{timelineHover=null;const tip=document.querySelector('#timeline-tooltip');if(tip)tip.hidden=true;drawTimeline()};chartCanvas.onpointerup=async e=>{if(timelinePan){timelinePan=null;chartCanvas.classList.remove('is-panning');return}if(dragStart===null)return;const now=tickFromPointer(e);selection={mode:now===dragStart?'point':'range',start:Math.min(dragStart,now),end:Math.max(dragStart,now)};dragStart=null;await applySelection()};chartCanvas.onwheel=e=>{if(!e.ctrlKey&&!e.metaKey)return;e.preventDefault();const rect=chartCanvas.getBoundingClientRect(),ratio=Math.max(0,Math.min(1,(e.clientX-rect.left)/rect.width)),anchor=timelineViewport.start+ratio*timelineSpan(),factor=e.deltaY<0?.72:1/.72,newSpan=Math.max(10,Math.min(maxTick(),timelineSpan()*factor)),start=Math.max(0,Math.min(maxTick()-newSpan,anchor-ratio*newSpan));timelineViewport={start,end:start+newSpan};drawTimeline()};
-document.querySelector('#timeline-all').onclick=()=>{timelineViewport={start:0,end:maxTick()};selection={mode:'all',start:0,end:maxTick()};select.value='latest';applySelection()};envSelect.onchange=drawEnvironment;select.onchange=()=>{if(select.value==='latest')selection={mode:'all',start:0,end:maxTick()};else{const tick=parseInt(select.value);selection={mode:'point',start:tick,end:tick}}applySelection()};window.addEventListener('eve:evolution-refresh',async()=>{await list(true);if(selection.mode==='all')await applySelection()});Promise.all([runStatus(),dashboardWithFertility(),list()]).then(applySelection);setInterval(runStatus,2000);setInterval(()=>{if(runIsActive&&!document.hidden)list(true)},10000);
-</script><script src="/assets/v04.js?v=8"></script></body></html>'''
+document.querySelector('#timeline-all').onclick=()=>{timelineViewport={start:0,end:maxTick()};selection={mode:'all',start:0,end:maxTick()};select.value='latest';applySelection()};envSelect.onchange=drawEnvironment;select.onchange=()=>{if(select.value==='latest')selection={mode:'all',start:0,end:maxTick()};else{const tick=parseInt(select.value);selection={mode:'point',start:tick,end:tick}}applySelection()};window.addEventListener('eve:evolution-refresh',async()=>{await list(true);if(selection.mode==='all')await applySelection()});window.addEventListener('eve:v04-ready',()=>applySelection(),{once:true});Promise.all([runStatus(),dashboardWithFertility(),list()]).then(applySelection);setInterval(runStatus,2000);setInterval(()=>{if(runIsActive&&!document.hidden)list(true)},10000);
+</script><script src="/assets/v04.js?v=18"></script></body></html>'''
 
 def legacy_handler_for(run_dir: Path):
     activity_cache: list[dict] | None = None
@@ -244,12 +245,18 @@ def entity_genome_data(db: sqlite3.Connection, entity_id: int) -> dict:
     }
 
 
-def lineage_data(db: sqlite3.Connection) -> dict:
-    """Compact, read-only evolutionary graph for the lineage workspace."""
+def lineage_data(
+    db: sqlite3.Connection,
+    focus_id: int | None = None,
+    ancestor_depth: int = 2,
+    descendant_depth: int = 2,
+    limit: int = 400,
+) -> dict:
+    """Bounded, read-only family window for the lineage workspace."""
     rows = db.execute(
         """SELECT e.entity_id,e.name,e.born_tick,e.died_tick,e.death_reason,
                   e.ram_position,e.genome_id,g.n_f,g.n_p,g.n_g,g.activity_base,
-                  g.genome_json
+                  g.genome_id
            FROM entities e JOIN genomes g ON g.genome_id=e.genome_id
            ORDER BY e.born_tick,e.entity_id"""
     ).fetchall()
@@ -258,23 +265,6 @@ def lineage_data(db: sqlite3.Connection) -> dict:
     for edge in db.execute("SELECT child_id,parent_id,parent_order FROM ancestry ORDER BY child_id,parent_order"):
         parents[edge["child_id"]].append(edge["parent_id"])
         children[edge["parent_id"]].append(edge["child_id"])
-    traces: dict[int, dict] = {}
-    for event in db.execute("SELECT payload_json FROM events WHERE kind='genome_created' ORDER BY event_id"):
-        payload = json.loads(event[0]); trace = payload.get("trace") or {}
-        fragments = trace.get("inherited_fragments") or []
-        traces[payload.get("entity_id")] = {
-            "mutation": trace.get("mutation"),
-            "size_parent_id": trace.get("size_parent_id"),
-            "architecture_parent_id": trace.get("architecture_parent_id"),
-            "activity_parent_id": trace.get("activity_parent_id"),
-            "knock_capacity_parent_id": trace.get("knock_capacity_parent_id"),
-            "bond_ticks_parent_id": trace.get("bond_ticks_parent_id"),
-            "selection_rule": trace.get("selection_rule"),
-            "inherited_fragments": len(fragments),
-            "inherited_slots": len(fragments),
-            "inherited_nodes": sum(len(fragment.get("nodes", [])) for fragment in fragments),
-            "inherited_edges": sum(len(fragment.get("edges", [])) for fragment in fragments),
-        }
     generation_cache: dict[int, int] = {}
     def generation(entity_id: int, visiting: set[int] | None = None) -> int:
         if entity_id in generation_cache:
@@ -309,7 +299,7 @@ def lineage_data(db: sqlite3.Connection) -> dict:
             "generation": generation(entity_id), "n_f": int(row["n_f"]),
             "n_p": int(row["n_p"]), "n_g": int(row["n_g"]),
             "activity_base": int(row["activity_base"]), "genome_id": int(row["genome_id"]),
-            "parent_deltas": parent_deltas, "provenance": traces.get(entity_id),
+            "parent_deltas": parent_deltas, "provenance": None,
         })
     milestones = []
     offspring = [entity for entity in entities if entity["parents"]]
@@ -328,7 +318,63 @@ def lineage_data(db: sqlite3.Connection) -> dict:
     alive = sum(entity["alive"] for entity in entities)
     if entities and alive == 0:
         milestones.append({"kind": "extinction", "tick": current_tick, "label": "Massenaussterben", "source": "protokollierter Laufstatus"})
-    return {"current_tick": current_tick, "entities": entities, "milestones": sorted(milestones, key=lambda item: item["tick"])}
+    total_entities = len(entities)
+    if entities:
+        by_id = {entity["id"]: entity for entity in entities}
+        if focus_id not in by_id:
+            living = [entity for entity in entities if entity["alive"]]
+            focus_id = max(living or entities, key=lambda entity: (entity["born"], entity["id"]))["id"]
+        selected = {focus_id}
+        frontier = {focus_id}
+        for _ in range(ancestor_depth):
+            frontier = {parent for entity_id in frontier for parent in by_id[entity_id]["parents"] if parent in by_id}
+            selected.update(frontier)
+        frontier = {focus_id}
+        for _ in range(descendant_depth):
+            frontier = {child for entity_id in frontier for child in by_id[entity_id]["children"] if child in by_id}
+            selected.update(frontier)
+        for parent in by_id[focus_id]["parents"]:
+            selected.update(child for child in children[parent] if child in by_id)
+        ordered = sorted(
+            (by_id[entity_id] for entity_id in selected),
+            key=lambda entity: (
+                abs(entity["generation"] - by_id[focus_id]["generation"]),
+                abs(entity["born"] - by_id[focus_id]["born"]), entity["id"],
+            ),
+        )
+        entities = sorted(ordered[:limit], key=lambda entity: (entity["born"], entity["id"]))
+        visible = {entity["id"] for entity in entities}
+        placeholders = ",".join("?" for _ in visible)
+        traces: dict[int, dict] = {}
+        if placeholders:
+            for event in db.execute(
+                f"SELECT entity_id,payload_json FROM events WHERE kind='genome_created' AND entity_id IN ({placeholders}) ORDER BY event_id",
+                tuple(sorted(visible)),
+            ):
+                payload = json.loads(event["payload_json"]); trace = payload.get("trace") or {}
+                fragments = trace.get("inherited_fragments") or []
+                traces[int(event["entity_id"])] = {
+                    "mutation": trace.get("mutation"),
+                    "size_parent_id": trace.get("size_parent_id"),
+                    "architecture_parent_id": trace.get("architecture_parent_id"),
+                    "activity_parent_id": trace.get("activity_parent_id"),
+                    "knock_capacity_parent_id": trace.get("knock_capacity_parent_id"),
+                    "bond_ticks_parent_id": trace.get("bond_ticks_parent_id"),
+                    "selection_rule": trace.get("selection_rule"),
+                    "inherited_fragments": len(fragments), "inherited_slots": len(fragments),
+                    "inherited_nodes": sum(len(fragment.get("nodes", [])) for fragment in fragments),
+                    "inherited_edges": sum(len(fragment.get("edges", [])) for fragment in fragments),
+                }
+        for entity in entities:
+            entity["parents"] = [value for value in entity["parents"] if value in visible]
+            entity["children"] = [value for value in entity["children"] if value in visible]
+            entity["provenance"] = traces.get(entity["id"])
+    return {
+        "current_tick": current_tick, "focus_id": focus_id,
+        "total_entities": total_entities, "truncated": len(entities) < total_entities,
+        "entities": entities,
+        "milestones": sorted(milestones, key=lambda item: item["tick"]),
+    }
 
 
 def genome_comparison_data(db: sqlite3.Connection, parent_id: int, child_id: int) -> dict:
@@ -385,7 +431,7 @@ def genome_comparison_data(db: sqlite3.Connection, parent_id: int, child_id: int
     }
 
 
-def chronicle_data(roots: tuple[Path, ...]) -> dict:
+def chronicle_data(roots: tuple[Path, ...], detailed: bool = False) -> dict:
     """Cross-version archive summary without mutating conserved runs."""
     runs = []
     amoeba_candidates: dict[str, list[dict]] = defaultdict(list)
@@ -424,44 +470,28 @@ def chronicle_data(roots: tuple[Path, ...]) -> dict:
                         cache[entity_id] = 0 if not parents[entity_id] else 1 + max(depth(parent, visiting | {entity_id}) for parent in parents[entity_id])
                         return cache[entity_id]
                     deepest = max((depth(entity_id) for entity_id in ids), default=0)
-                    child_map: dict[int, set[int]] = defaultdict(set)
-                    for child, parent in db.execute("SELECT child_id,parent_id FROM ancestry"):
-                        child_map[int(parent)].add(int(child))
-                    def descendants(entity_id: int) -> int:
-                        found, pending = set(), list(child_map[entity_id])
-                        while pending:
-                            child = pending.pop()
-                            if child not in found:
-                                found.add(child); pending.extend(child_map[child])
-                        return len(found)
-                    entity_rows = db.execute(
-                        """SELECT e.entity_id,e.name,e.born_tick,e.died_tick,g.n_g,g.n_f,g.n_p
-                           FROM entities e JOIN genomes g ON g.genome_id=e.genome_id"""
-                    ).fetchall()
                     run_label = manifest.get("label") or f"Run {run['run_id'][:8]}"
-                    for entity in entity_rows:
-                        base = {"entity_id": int(entity["entity_id"]), "name": entity["name"],
-                                "run_id": run["run_id"], "run_label": run_label,
-                                "prototype_version": run["prototype_version"]}
-                        entity_id = int(entity["entity_id"])
-                        lifespan = (int(entity["died_tick"]) if entity["died_tick"] is not None else int(run["current_tick"])) - int(entity["born_tick"])
-                        amoeba_candidates["largest_genome"].append({**base, "value": int(entity["n_g"]), "n_f": int(entity["n_f"]), "n_p": int(entity["n_p"])})
-                        amoeba_candidates["longest_life"].append({**base, "value": lifespan, "alive": entity["died_tick"] is None})
-                        amoeba_candidates["direct_children"].append({**base, "value": len(child_map[entity_id])})
-                        amoeba_candidates["descendants"].append({**base, "value": descendants(entity_id)})
-                        amoeba_candidates["deepest_generation"].append({**base, "value": depth(entity_id)})
-                    latest = db.execute("SELECT payload_zlib FROM observations ORDER BY tick DESC LIMIT 1").fetchone()
-                    if latest is not None:
-                        snapshot = json.loads(zlib.decompress(latest[0]))
-                        for entity in snapshot.get("entities", []):
-                            amoeba_candidates["highest_energy"].append({
-                                "entity_id": int(entity["id"]), "name": entity.get("name", f"Amöbe {entity['id']}"),
-                                "run_id": run["run_id"], "run_label": run_label,
-                                "prototype_version": run["prototype_version"], "value": float(entity.get("energy", 0)),
-                            })
                     energy = 0.0
-                    for row in db.execute("SELECT payload_json FROM events WHERE kind='ram_read'"):
-                        energy += float(json.loads(row[0]).get("reward", 0) or 0)
+                    if detailed:
+                        child_map: dict[int, set[int]] = defaultdict(set)
+                        for child, parent in db.execute("SELECT child_id,parent_id FROM ancestry"):
+                            child_map[int(parent)].add(int(child))
+                        entity_rows = db.execute(
+                            """SELECT e.entity_id,e.name,e.born_tick,e.died_tick,g.n_g,g.n_f,g.n_p
+                               FROM entities e JOIN genomes g ON g.genome_id=e.genome_id"""
+                        ).fetchall()
+                        for entity in entity_rows:
+                            base = {"entity_id": int(entity["entity_id"]), "name": entity["name"],
+                                    "run_id": run["run_id"], "run_label": run_label,
+                                    "prototype_version": run["prototype_version"]}
+                            entity_id = int(entity["entity_id"])
+                            lifespan = (int(entity["died_tick"]) if entity["died_tick"] is not None else int(run["current_tick"])) - int(entity["born_tick"])
+                            amoeba_candidates["largest_genome"].append({**base, "value": int(entity["n_g"]), "n_f": int(entity["n_f"]), "n_p": int(entity["n_p"])})
+                            amoeba_candidates["longest_life"].append({**base, "value": lifespan, "alive": entity["died_tick"] is None})
+                            amoeba_candidates["direct_children"].append({**base, "value": len(child_map[entity_id])})
+                            amoeba_candidates["deepest_generation"].append({**base, "value": depth(entity_id)})
+                        for row in db.execute("SELECT payload_json FROM events WHERE kind='ram_read'"):
+                            energy += float(json.loads(row[0]).get("reward", 0) or 0)
                     runs.append({
                         "run_id": run["run_id"], "label": manifest.get("label") or f"Run {run['run_id'][:8]}",
                         "prototype_version": run["prototype_version"], "created_at": run["created_at"],
@@ -478,7 +508,7 @@ def chronicle_data(roots: tuple[Path, ...]) -> dict:
     def record(key: str) -> dict | None:
         return max(runs, key=lambda item: item[key], default=None)
     return {
-        "runs": runs,
+        "runs": runs, "summary_only": not detailed,
         "totals": {
             "runs": len(runs), "offspring": sum(run["offspring"] for run in runs),
             "deaths": sum(run["deaths"] for run in runs), "energy_gained": sum(run["energy_gained"] for run in runs),
@@ -488,7 +518,8 @@ def chronicle_data(roots: tuple[Path, ...]) -> dict:
         "records": {
             "peak_population": record("peak_population"), "longest_run": record("ticks"),
             "most_offspring": record("offspring"), "genome_diversity": record("genomes"),
-            "deepest_generation": record("deepest_generation"), "energy_gained": record("energy_gained"),
+            "deepest_generation": record("deepest_generation"),
+            "energy_gained": record("energy_gained") if detailed else None,
         },
         "amoeba_records": {
             key: max(values, key=lambda item: item["value"], default=None)
@@ -653,6 +684,34 @@ def handler_for(default_run: Path, catalog_roots: tuple[Path, ...] = ()):
                         pass
         return default_run
 
+    def compact_observation(snapshot: dict) -> dict:
+        entities = snapshot.get("entities", [])
+        snapshot["entities_total"] = len(entities)
+        if len(entities) > 1000:
+            entities = [*entities[:500], *entities[-500:]]
+        compact = []
+        for entity in entities:
+            genome = entity.get("genome") or {}
+            nodes = genome.get("nodes") or []
+            edges = genome.get("edges") or []
+            writers = {int(node["id"]) for node in nodes if node.get("kind") == "MEM_WRITE"}
+            wired_ports: dict[int, set[str]] = defaultdict(set)
+            for edge in edges:
+                target = int(edge.get("target", -1))
+                if target in writers:
+                    wired_ports[target].add(str(edge.get("target_port")))
+            item = {
+                key: value for key, value in entity.items()
+                if key not in {"genome", "k", "z", "value_history", "source_history", "ram_last_seen", "ram_seen_count"}
+            }
+            item["reproduction_operational"] = any(
+                {"offset", "slot", "value"}.issubset(wired_ports[node_id]) for node_id in writers
+            )
+            compact.append(item)
+        snapshot["entities"] = compact
+        snapshot["entities_windowed"] = len(compact) < snapshot["entities_total"]
+        return snapshot
+
     def observation(db: sqlite3.Connection, tick: int | None = None) -> dict:
         query = "SELECT payload_zlib FROM observations"
         arguments: tuple = ()
@@ -664,7 +723,38 @@ def handler_for(default_run: Path, catalog_roots: tuple[Path, ...] = ()):
         row = db.execute(query, arguments).fetchone()
         if row is None:
             return {"error": "Kein gespeichertes Lupe-Bild"}
-        return json.loads(zlib.decompress(row[0]))
+        return compact_observation(json.loads(zlib.decompress(row[0])))
+
+    def observation_entity(run_dir: Path, db: sqlite3.Connection, entity_id: int, tick: int | None = None) -> dict:
+        def result(at_tick: int, entity: dict) -> dict:
+            if "genome" not in entity:
+                genome = entity_genome_data(db, entity_id)
+                if "error" not in genome:
+                    entity = {**entity, "genome": genome["genome"], "genome_id": genome["genome_id"]}
+            rows = db.execute(
+                "SELECT tick,kind,payload_json FROM events WHERE entity_id=? AND tick<=? ORDER BY event_id DESC LIMIT 10000",
+                (entity_id, at_tick),
+            ).fetchall()
+            return {"tick": at_tick, "entity": entity, "events": [unpack_event(row) for row in reversed(rows)]}
+        # Das flüchtige live.json ist absichtlich kompakt und enthält weder K/Z
+        # noch die vollständigen individuellen Erinnerungen. Für ein geöffnetes
+        # Dossier muss deshalb auch bei "aktuell" der letzte volle Snapshot
+        # verwendet werden.
+        query = "SELECT tick,payload_zlib FROM observations"
+        arguments: tuple = ()
+        if tick is None:
+            query += " ORDER BY tick DESC LIMIT 1"
+        else:
+            query += " WHERE tick<=? ORDER BY tick DESC LIMIT 1"
+            arguments = (tick,)
+        row = db.execute(query, arguments).fetchone()
+        if row is None:
+            return {"error": "Kein gespeichertes Lupe-Bild"}
+        snapshot = json.loads(zlib.decompress(row["payload_zlib"]))
+        entity = next((item for item in snapshot.get("entities", []) if int(item["id"]) == entity_id), None)
+        if entity is None:
+            return {"error": "Amöbe ist in diesem Snapshot nicht enthalten"}
+        return result(int(row["tick"]), entity)
 
     class Handler(BaseHTTPRequestHandler):
         def respond(self, value: object, status: int = 200) -> None:
@@ -714,7 +804,7 @@ def handler_for(default_run: Path, catalog_roots: tuple[Path, ...] = ()):
                     elif path == "/api/dashboard":
                         self.respond(dashboard_data(run_dir.parent))
                     elif path == "/api/latest":
-                        try: self.respond(json.loads((run_dir / "live.json").read_text(encoding="utf-8")))
+                        try: self.respond(compact_observation(json.loads((run_dir / "live.json").read_text(encoding="utf-8"))))
                         except FileNotFoundError: self.respond(observation(db))
                     elif path == "/api/live-feed":
                         query = parse_qs(request.query)
@@ -757,14 +847,23 @@ def handler_for(default_run: Path, catalog_roots: tuple[Path, ...] = ()):
                     elif path == "/api/snapshots":
                         self.respond([f"{row[0]:012d}.json" for row in db.execute("SELECT tick FROM observations ORDER BY tick")])
                     elif path == "/api/timeline":
+                        query = parse_qs(request.query)
+                        after = max(-1, int(query.get("after", [-1])[0]))
                         self.respond([
                             {"tick": row[0], "alive": row[1], "genomes": row[2], "entities_total": row[3]}
                             for row in db.execute(
-                                "SELECT tick,population,genomes_distinct,entities_total FROM measurements ORDER BY tick"
+                                "SELECT tick,population,genomes_distinct,entities_total FROM measurements WHERE tick>? ORDER BY tick",
+                                (after,),
                             )
                         ])
                     elif path == "/api/lineage":
-                        self.respond(lineage_data(db))
+                        query = parse_qs(request.query)
+                        raw_focus = query.get("focus", [""])[0]
+                        focus = int(raw_focus) if raw_focus.isdigit() else None
+                        ancestors = min(12, max(0, int(query.get("ancestors", [2])[0])))
+                        descendants = min(12, max(0, int(query.get("descendants", [2])[0])))
+                        limit = min(800, max(25, int(query.get("limit", [400])[0])))
+                        self.respond(lineage_data(db, focus, ancestors, descendants, limit))
                     elif path == "/api/genome-compare":
                         query = parse_qs(request.query)
                         parent = query.get("parent", [""])[0]
@@ -772,16 +871,43 @@ def handler_for(default_run: Path, catalog_roots: tuple[Path, ...] = ()):
                         if not parent.isdigit() or not child.isdigit():
                             self.respond({"error": "Eltern- und Kind-ID müssen angegeben werden"}, 400); return
                         self.respond(genome_comparison_data(db, int(parent), int(child)))
+                    elif path.startswith("/api/history/entity/"):
+                        raw_id = path.removeprefix("/api/history/entity/")
+                        if not raw_id.isdigit(): self.respond({"error": "Ungültige ID"}, 400); return
+                        query = parse_qs(request.query)
+                        raw_tick = query.get("tick", [""])[0]
+                        tick = int(raw_tick) if raw_tick.isdigit() else None
+                        result = observation_entity(run_dir, db, int(raw_id), tick)
+                        self.respond(result, 404 if "error" in result else 200)
                     elif path.startswith("/api/entity/") and not path.endswith("/life"):
                         raw_id = path.removeprefix("/api/entity/")
                         if not raw_id.isdigit(): self.respond({"error": "Ungültige ID"}, 400); return
                         entity = entity_genome_data(db, int(raw_id))
                         self.respond(entity, 404 if "error" in entity else 200)
                     elif path in {"/api/activity", "/api/environment"}:
-                        events = [unpack_event(row) for row in db.execute("SELECT tick,kind,payload_json FROM events ORDER BY event_id")]
+                        query = parse_qs(request.query)
+                        if "limit" not in query:
+                            self.respond([]); return
+                        limit = min(100_000, max(1_000, int(query.get("limit", [10_000])[0])))
                         if path == "/api/activity":
+                            kinds = (
+                                "birth", "death", "birth_rejected", "mem_write", "mem_write_rejected",
+                                "knock", "reproduction_cost", "ram_write", "genome_created",
+                                "environment_change", "corpse_scavenged", "ram_read",
+                            )
+                            placeholders = ",".join("?" for _ in kinds)
+                            rows = db.execute(
+                                f"SELECT tick,kind,payload_json FROM (SELECT event_id,tick,kind,payload_json FROM events WHERE kind IN ({placeholders}) ORDER BY event_id DESC LIMIT ?) ORDER BY event_id",
+                                (*kinds, limit),
+                            )
+                            events = [unpack_event(row) for row in rows]
                             events = [event for event in events if event["kind"] in {"birth", "death", "birth_rejected", "mem_write", "mem_write_rejected", "knock", "reproduction_cost", "ram_write", "genome_created", "environment_change", "corpse_scavenged"} or (event["kind"] == "ram_read" and event.get("reward", 0) > 0)]
                         else:
+                            rows = db.execute(
+                                "SELECT tick,kind,payload_json FROM (SELECT event_id,tick,kind,payload_json FROM events WHERE kind IN ('ram_read','ram_write') ORDER BY event_id DESC LIMIT ?) ORDER BY event_id",
+                                (limit,),
+                            )
+                            events = [unpack_event(row) for row in rows]
                             events = [event for event in events if event["kind"] in {"ram_read", "ram_write"} and not event.get("virtual")]
                         self.respond(events)
                     elif path.startswith("/api/entity/") and path.endswith("/life"):

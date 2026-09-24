@@ -4,6 +4,35 @@ Dieses Dokument hält bewusste konzeptionelle Entscheidungen fest.
 
 Eine Entscheidung sollte mindestens Datum, Gegenstand, Entscheidung, Begründung und mögliche Folgen enthalten. Gesprächsideen und Arbeitshypothesen sind noch keine Entscheidungen.
 
+## 2026-09-24: `Z -> G` wird Evolutionsachse von v0.5
+
+Gegenstand: Einfluss individuell erfahrener Umwelt auf das vererbbare Genom.
+
+Entscheidung: **v0.5 führt einen begrenzten, evolvierbaren und energetisch
+kostenpflichtigen Rückkanal `Umwelt -> K -> Z -> G -> Nachkommen` ein.** Die
+Umwelt schreibt nicht selbst und nicht zielgerichtet in `G`. Ein Genom muss die
+Disposition und ausführbare Strategie hervorbringen, ausgewählte Erfahrung aus
+`Z` in eine vererbbare Form zu überführen. Neue Entitäten erben nicht
+automatisch den vollständigen Lebensspeicher ihrer Eltern.
+
+Begründung: In v0.4 startet jedes Kind mit leerem Umweltgedächtnis und kann
+bereits bekannte Umweltwerte erneut als subjektive Neuheit energetisch nutzen.
+Zugleich endet der gegenwärtige Erfahrungspfad bei `Z`; die Umwelt selektiert
+Genome nur indirekt und kann keine im Leben erworbene Information genomisch
+wirksam machen. Der bereits am 6. September vorgesehene seltene Pfad `A_ZG`
+soll diese Lücke öffnen, ohne festzulegen, welches Wissen nützlich ist.
+
+Mögliche Folgen: v0.5 benötigt eine eigene Spezifikation für Schreiboperation,
+Kapazitätsgrenze, Energiekosten, Kodierung, Rekombination, Mutation,
+Beobachtbarkeit und Sicherheitsgrenzen. Zu prüfen ist insbesondere, ob der
+Mechanismus als genetische Assimilation, epigenetische Vererbung oder eigene
+EVE-Kategorie beschrieben wird. v0.4 bleibt ohne aktiven `Z -> G`-Pfad
+konserviert.
+
+Herkunft: Auswertung der v0.4-Populationsexplosion und des spielzeugfreien
+Kontrolllaufs am 24. September 2026; Konkretisierung der Entscheidung
+„Anschlussfähigkeit für seltenes `A_ZG`“ vom 6. September 2026.
+
 ## 2026-09-20: Eindeutige Projektbezeichnung EVE-Alife
 
 Gegenstand: Abgrenzung des Artificial-Life-Projekts von EVE, der Home-Assistant-Assistentin.
